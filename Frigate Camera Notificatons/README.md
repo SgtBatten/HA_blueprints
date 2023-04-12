@@ -4,6 +4,12 @@ This blueprint will send a notification to your device when a Frigate event for 
 
 With this blueprint, you may send the notification to multiple devices by leaving "Device" blank and instead use a [notification group][1].
 
+### STABLE 
+[![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSgtBatten/HA_blueprints/blob/main/Frigate%20Camera%20Notificatons/Stable)
+
+### BETA
+[![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSgtBatten/HA_blueprints/blob/main/Frigate%20Camera%20Notificatons/Beta)
+
 ### Software Version Requirements
 
 - Minimum Home Assistant Version: 2022.2
@@ -17,8 +23,4 @@ With this blueprint, you may send the notification to multiple devices by leavin
   - Frigate Camera Name
   - Mobile App Device **or** the name of a Notification Group or TV
 
-## STABLE 
-[![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSgtBatten/HA_blueprints/blob/main/Frigate%20Camera%20Notificatons/Stable)
 
-## BETA
-[![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSgtBatten/HA_blueprints/blob/main/Frigate%20Camera%20Notificatons/Beta)
