@@ -56,12 +56,12 @@ body:
         2.
         3.
         ...
- - type: textarea
+  - type: textarea
     id: screenshot
     attributes:
       label: Screenshots of the Trace Diagram
       description: Please upload a screenshot of your trace tree/diagram from Home Assistant. 
- - type: textarea
+  - type: textarea
     id: log
     attributes:
       label: Other relevant config/log
