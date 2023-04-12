@@ -36,15 +36,6 @@ body:
       options:
         - label: "Yes"
         - label: "No, I have specified the version in the Issue description."
-  - type: input
-    id: latest
-    attributes:
-      label: Are you using the latest version?
-      description: Please check the latest version of the blueprint in this repository
-      placeholder: "Yes"
-      value: "Something unexpected happened"
-    validations:
-      required: true
   - type: textarea
     id: automation
     attributes:
