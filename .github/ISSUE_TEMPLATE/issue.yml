@@ -66,3 +66,4 @@ body:
     attributes:
       label: Other relevant config/log
       description: A place for your frigate config or log output if relevant. 
+      render: yaml
