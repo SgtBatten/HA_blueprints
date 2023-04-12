@@ -59,6 +59,5 @@ body:
   - type: textarea
     id: log
     attributes:
-      label: Other relevant config or log
-      description: A place for your frigate config or log output if relevant. This will be automatically formatted into code, so no need for backticks.
-      render: yaml
+      label: Screenshots or other relevant config/log
+      description: Please upload a screenshot of your trace tree from Home Assistant. This is also a place for your frigate config or log output if relevant. 
