@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.11.0.16a) - SgtB
+  name: Frigate Notifications (0.11.0.16b) - SgtB
   description: |
     ## Frigate Notifications
 
@@ -61,10 +61,12 @@ blueprint:
       - Support for multiple Frigate instances with clientIDs
       - Live View on IOS
       - Android options: Sticky and Channel as per https://community.home-assistant.io/t/frigate-mobile-app-notifications/311091/1043
-      - Handle capitilisation in lists (state Filter, Object filter etc) properly
+      - Handle capitilisation in inputs properly
+      - Handle trailing slash in base urls properly
       - Choose to atatch thumbnail or snapshot to the notification
       - Debug option - prints parameters to the Home Assistant logbook
       - Choose between enforcing all required zones simultaneously or any one zone
+      - Add 10s delay to final notification update to ensure frigate has time to save snapshot edits (crop, bounding box etc) if update thumbnail is enabled. 
 
     [1]: https://companion.home-assistant.io/docs/notifications/notifications-basic#sending-notifications-to-multiple-devices
     [2]: https://blakeblackshear.github.io/frigate/configuration/cameras#zones
@@ -591,7 +593,8 @@ variables:
   input_camera: !input camera
   camera: "{{ input_camera | replace('camera.', '') }}"
   camera_name: "{{ camera | replace('_', ' ') | title }}"
-  base_url: !input base_url
+  input_base_url: !input base_url
+  base_url: "{{ input_base_url.rstrip('/')}}"
   input_client_id: !input client_id
   client_id: "{{input_client_id if not input_client_id else '/' + input_client_id if '/' not in input_client_id else input_client_id }}"
   attachment: !input attachment
@@ -736,7 +739,7 @@ action:
           - alias: "Notify on new object"
             choose:
               - conditions:
-                  - "{{ not zone_only or (not zone_multi and zones|select('in', initial_entered_zones)|list|length )  or (zone_multi and initial_entered_zones|length and zones and zones |reject('in', initial_entered_zones) |list |length == 0) }}"
+                  - "{{ not zone_only or (not zone_multi and zones|select('in', initial_entered_zones)|list|length > 0) or (zone_multi and initial_entered_zones|length > 0 and zones |reject('in', initial_entered_zones) |list |length == 0) }}"
                   - "{{ not initial_home }}"
                   - "{{ not state_only or states(input_entity) in states_filter }}"
                 sequence:
@@ -888,7 +891,7 @@ action:
                     last_zones: "{{ event['before']['entered_zones'] |lower}}"
                     entered_zones: "{{ event['after']['entered_zones'] |lower}}"
                     zone_filter: "{{ not zone_only or zones|select('in', entered_zones)|list|length > 0 }}"
-                    zone_multi_filter: "{{not zone_only or not zone_multi or ( entered_zones|length and zones and zones|reject('in', entered_zones)|list|length == 0 ) }}"
+                    zone_multi_filter: "{{not zone_only or not zone_multi or ( entered_zones|list|length > 0 and zones and zones|reject('in', entered_zones)|list|length == 0 ) }}"
                     stationary_moved: "{{ event['after']['position_changes'] > event['before']['position_changes'] }}"
                     zone_only_changed: "{{ zone_only and (entered_zones|length > 0 and not last_zones|length) }}"
                     entered_zones_changed: "{{ zones|length > 0 and (zones|select('in', entered_zones)|list|length > 0 and not zones|select('in', last_zones)|list|length) }}"
@@ -908,6 +911,14 @@ action:
                       {%else%}
                         {{message}}
                       {%endif%}
+                - alias: "Update thumbnail at end of event"
+                  choose:
+                    - conditions: "{{wait.trigger.payload_json['type'] == 'end' }}"
+                      sequence:
+                        - delay:
+                            seconds: 10
+                        - variables:
+                            new_snapshot: "{{update_thumbnail}}"
                 - alias: "Debug: write to Log"
                   choose:
                     - conditions:
@@ -1076,158 +1087,3 @@ action:
                                       uri: "{{url_3}}"
                                       destructive: true
               until: "{{ not wait.trigger or wait.trigger.payload_json['type'] == 'end' }}"
-  - alias: "Update thumbnail at end of event"
-    choose:
-      - conditions:
-          - "{{update_thumbnail}}"
-          - "{{attachment == 'snapshot'}}"
-        sequence:
-          - variables:
-              id: "{{ trigger.payload_json['after']['id'] }}"
-              object: "{{ trigger.payload_json['after']['label'] }}"
-              label: "{{ object | title }}"
-              # Customisation of text
-              title: !input title
-              message: !input message
-              tap_action: !input tap_action
-              button_1: !input button_1
-              button_2: !input button_2
-              button_3: !input button_3
-              url_1: !input url_1
-              url_2: !input url_2
-              url_3: !input url_3
-              icon: !input icon
-              channel: !input channel
-          - delay: 00:00:10
-          - choose:
-              - conditions: "{{ not group_target }}"
-                sequence:
-                  - device_id: !input notify_device
-                    domain: mobile_app
-                    type: notify
-                    title: "{{title}}"
-                    message: "{{message}}"
-                    data:
-                      tag: "{{ id }}{{'-loitering' if loitering}}"
-                      group: "{{ camera }}-frigate-notification{{'-loitering' if loitering}}"
-                      color: "{{color}}"
-                      # Android Specific
-                      image: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
-                      clickAction: "{{tap_action}}"
-                      ttl: "{{ iif(critical, 0, 3600000) }}"
-                      priority: "{{ iif(critical, 'high', 'normal') }}"
-                      alert_once: "{{ alert_once }}"
-                      notification_icon: "{{icon}}"
-                      sticky: "{{sticky}}"
-                      channel: "{{channel}}"
-                      # iOS Specific
-                      url: "{{tap_action}}"
-                      attachment:
-                        url: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
-                      push:
-                        sound: "{{ iif(update, 'none', sound) }}"
-                        interruption-level: "{{ iif(critical, 'critical', 'active') }}"
-                      entity_id: "{{ iif(ios_live_view, input_camera, '' ) }}"
-                      # Actions
-                      actions:
-                        - action: URI
-                          title: "{{button_1}}"
-                          uri: "{{url_1}}"
-                        - action: URI
-                          title: "{{button_2}}"
-                          uri: "{{url_2}}"
-                        - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
-                          title: "{{button_3}}"
-                          uri: "{{url_3}}"
-                          destructive: true
-              - conditions: "{{ tv }}"
-                sequence:
-                  - service: "notify.{{ group_target }}"
-                    data:
-                      title: "{{title}}"
-                      message: "{{message}}"
-                      data:
-                        tag: "{{ id }}"
-                        group: "{{ camera }}-frigate-notification"
-                        color: "{{color}}"
-                        # Android Specific
-                        clickAction: "{{tap_action}}"
-                        ttl: "{{ iif(critical, 0, 3600000) }}"
-                        priority: "{{ iif(critical, 'high', 'normal') }}"
-                        alert_once: "{{ alert_once }}"
-                        notification_icon: "{{icon}}"
-                        sticky: "{{sticky}}"
-                        channel: "{{channel}}"
-                        # Android/Fire TV
-                        image:
-                          url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
-                        fontsize: "{{tv_size}}"
-                        position: "{{tv_position}}"
-                        duration: "{{tv_duration}}"
-                        transparency: "{{tv_transparency}}"
-                        interrupt: "{{tv_interrupt}}"
-                        timeout: 30
-                        # iOS Specific
-                        url: "{{tap_action}}"
-                        attachment:
-                          url: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
-                        push:
-                          sound: "{{ iif(update, 'none', sound) }}"
-                          interruption-level: "{{ iif(critical, 'critical', 'active') }}"
-                        entity_id: "{{ iif(ios_live_view, input_camera, '' ) }}"
-                        # Actions
-                        actions:
-                          - action: URI
-                            title: "{{button_1}}"
-                            uri: "{{url_1}}"
-                          - action: URI
-                            title: "{{button_2}}"
-                            uri: "{{url_2}}"
-                          - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
-                            title: "{{button_3}}"
-                            uri: "{{url_3}}"
-                            destructive: true
-            default:
-              - service: "notify.{{ group_target }}"
-                data:
-                  title: "{{title}}"
-                  message: "{{message}}"
-                  data:
-                    tag: "{{ id }}{{'-loitering' if loitering}}"
-                    group: "{{ camera }}-frigate-notification{{'-loitering' if loitering}}"
-                    color: "{{color}}"
-                    # Android Specific
-                    image: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
-                    clickAction: "{{tap_action}}"
-                    ttl: "{{ iif(critical, 0, 3600000) }}"
-                    priority: "{{ iif(critical, 'high', 'normal') }}"
-                    alert_once: "{{ alert_once }}"
-                    notification_icon: "{{icon}}"
-                    sticky: "{{sticky}}"
-                    channel: "{{channel}}"
-                    # Android/Fire TV
-                    fontsize: "{{tv_size}}"
-                    position: "{{tv_position}}"
-                    duration: "{{tv_duration}}"
-                    transparency: "{{tv_transparency}}"
-                    interrupt: "{{tv_interrupt}}"
-                    # iOS Specific
-                    url: "{{tap_action}}"
-                    attachment:
-                      url: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
-                    push:
-                      sound: "{{ iif(update, 'none', sound) }}"
-                      interruption-level: "{{ iif(critical, 'critical', 'active') }}"
-                    entity_id: "{{ iif(ios_live_view, input_camera, '' ) }}"
-                    # Actions
-                    actions:
-                      - action: URI
-                        title: "{{button_1}}"
-                        uri: "{{url_1}}"
-                      - action: URI
-                        title: "{{button_2}}"
-                        uri: "{{url_2}}"
-                      - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
-                        title: "{{button_3}}"
-                        uri: "{{url_3}}"
-                        destructive: true
