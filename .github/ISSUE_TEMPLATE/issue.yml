@@ -56,8 +56,13 @@ body:
         2.
         3.
         ...
+ - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshots of the Trace Diagram
+      description: Please upload a screenshot of your trace tree/diagram from Home Assistant. 
   - type: textarea
     id: log
     attributes:
-      label: Screenshots or other relevant config/log
-      description: Please upload a screenshot of your trace tree from Home Assistant. This is also a place for your frigate config or log output if relevant. 
+      label: Other relevant config/log
+      description: A place for your frigate config or log output if relevant. 
