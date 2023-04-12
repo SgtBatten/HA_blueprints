@@ -1,0 +1,54 @@
+name: Bug Report
+description: File a bug report
+title: "[Bug]: TitleHere"
+labels: ["bug", "triage"]
+assignees:
+  - sgtbatten
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Also tell us, what did you expect to happen?
+      placeholder: Tell us what you see!
+      value: "Something unexpected happened"
+    validations:
+      required: true
+  - type: dropdown
+    id: version
+    attributes:
+      label: Version
+      description: What version of the blueprint are you using?
+      options:
+        - Stable
+        - Beta
+    validations:
+      required: true
+  - type: textarea
+    id: automation
+    attributes:
+      label: Automation config
+      description: Please copy and paste your automation config from Home Assistant. This will be automatically formatted into code, so no need for backticks.
+      render: yaml
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: If you can reproduce the issue, please detail relevant steps. 
+      value: |
+        1.
+        2.
+        3.
+        ...
+  - type: textarea
+    id: log
+    attributes:
+      label: Other relevant config or log
+      description: A place for your frigate config or log output if relevant. This will be automatically formatted into code, so no need for backticks.
+      render: yaml
