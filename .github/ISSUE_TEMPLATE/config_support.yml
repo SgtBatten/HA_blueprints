@@ -1,5 +1,5 @@
 name: Config Support Request
-description: Support for Frigate configuration
+description: Support for Automation configuration
 title: "[Config Support]: "
 labels: ["support", "triage"]
 assignees: []
@@ -7,7 +7,7 @@ body:
   - type: textarea
     id: description
     attributes:
-      label: Describe the problem you are having
+      label: Describe the problem you are having or the outcome you are trying to achieve. 
     validations:
       required: true
   - type: input
