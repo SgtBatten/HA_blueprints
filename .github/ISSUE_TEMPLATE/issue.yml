@@ -34,14 +34,6 @@ body:
     validations:
       required: true
   - type: textarea
-    id: frigate
-    attributes:
-      label: Frigate Config
-      description: please paste the frigate configuration.
-      render: yaml
-     validations:
-       required: true
-  - type: textarea
     id: log
     attributes:
       label: Other relevant log
