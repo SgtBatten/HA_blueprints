@@ -44,7 +44,7 @@ body:
   - type: textarea
     id: log
     attributes:
-      label: Other relevant log
+      label: Any other relevant information
       description: Paste the debug log output from the trace if enabled. If you have an error in the home assistant log paste it here. 
       render: yaml
   - type: markdown
