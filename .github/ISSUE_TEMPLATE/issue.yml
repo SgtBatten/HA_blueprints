@@ -13,29 +13,16 @@ body:
     id: description
     attributes:
       label: Description
-      description: Also tell us, what did you expect to happen?
+      description: Also tell us, what did you expect to happen and how you make it happen if you can reproduce in a specific way.
       placeholder: Tell us what you see!
       value: "Something unexpected happened"
     validations:
       required: true
-  - type: dropdown
+  - type: input
     id: version
     attributes:
       label: Version
-      description: What version of the blueprint are you using?
-      options:
-        - Stable
-        - Beta
-    validations:
-      required: true
-  - type: checkboxes
-    id: latest
-    attributes:
-      label: Latest Version
-      description: Are you using the latest version from this repository?
-      options:
-        - label: "Yes"
-        - label: "No, I have specified the version in the Issue description."
+      description: What version of the blueprint are you using? Located near the top of the automation UI in Home Assistant.
     validations:
       required: true
   - type: textarea
@@ -47,23 +34,20 @@ body:
     validations:
       required: true
   - type: textarea
-    id: steps
+    id: frigate
     attributes:
-      label: Steps to Reproduce
-      description: If you can reproduce the issue, please detail relevant steps. 
-      value: |
-        1.
-        2.
-        3.
-        ...
-  - type: textarea
-    id: screenshot
-    attributes:
-      label: Screenshots of the Trace Diagram
-      description: Please upload a screenshot of your trace tree/diagram from Home Assistant. 
+      label: Frigate Config
+      description: please paste the frigate configuration.
+      render: yaml
+     validations:
+       required: true
   - type: textarea
     id: log
     attributes:
-      label: Other relevant config/log
-      description: A place for your frigate config or log output if relevant. 
+      label: Other relevant log
+      description: please paste the debug log output from the trace if enabled. If you have an error in the home assistant log paste it here. 
       render: yaml
+  - type: markdown
+    attributes:
+      value: |
+        After submitting please consider uploading the relevant screenshot of your trace tree/diagram from Home Assistant in the first reply. 
