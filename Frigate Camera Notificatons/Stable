@@ -66,9 +66,12 @@ blueprint:
     [1]: https://companion.home-assistant.io/docs/notifications/notifications-basic#sending-notifications-to-multiple-devices
     [2]: https://blakeblackshear.github.io/frigate/configuration/cameras#zones
     [3]: https://blakeblackshear.github.io/frigate/configuration/objects
+    
+    ## Support
+    Go to https://github.com/SgtBatten/HA_blueprints to report bugs, request new features or get support with your configuration. 
 
   domain: automation
-  source_url: https://gist.github.com/hunterjm/8ff0005104dce3f28923294f49a443b1
+  source_url: https://github.com/SgtBatten/HA_blueprints/blob/main/Frigate%20Camera%20Notificatons/Stable
   input:
     camera:
       name: Frigate Camera
