@@ -37,15 +37,15 @@ body:
     id: frigate
     attributes:
       label: Frigate Config
-      description: Please paste the frigate configuration.
+      description: Please paste your frigate configuration.
       render: yaml
     validations:
-      required: true
+      required: false
   - type: textarea
     id: log
     attributes:
       label: Other relevant log
-      description: please paste the debug log output from the trace if enabled. If you have an error in the home assistant log paste it here. 
+      description: Paste the debug log output from the trace if enabled. If you have an error in the home assistant log paste it here. 
       render: yaml
   - type: markdown
     attributes:
