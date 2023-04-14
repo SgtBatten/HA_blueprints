@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.11.0.16c) - SgtB
+  name: Frigate Notifications (0.11.0.16d)
   description: |
     ## Frigate Notifications
 
@@ -19,52 +19,38 @@ blueprint:
       - Frigate Camera Name
       - Mobile App Device **or** the name of a Notification Group or TV
 
-    ### Optional features:
-      - You can optionally send the notification as a critical alert.
-      - You can choose whether or not to update the notification with new thumbnails as they become available.
-      - You can limit notifications to objects entering pre-defined [zones][2] in Frigate.
-      - You can specify which [zones][2] to be notified about. This must be a list (e.g.):
-        ```yaml
-        - backyard
-        ```
-      - You can specify what type of [objects][3] to be notified about. This must be a list (e.g.):
-        ```yaml
-        - person
-        - car
-        ```
-      - You can disable notifications if a presence entity or group is "home".
-      - You can configure a cooldown for the camera to reduce the number of notifications when back-to-back events occur.
-      - You can silence future notifications for a defined amount of time through actionable notifications. This is helpful in situations where you know you will be triggering detections for an extended period of time. i.e. kids playing outside.
-      - You can set a loitering timer to notify you of stationary objects that remain for a set period of time.
-      
-    ### Updates by SgtBatten:
-      - Fix for fps_value template error as per https://community.home-assistant.io/t/frigate-mobile-app-notifications/311091/451
-      - Fix Zone Filter being bypassed by snapshots as per https://community.home-assistant.io/t/frigate-mobile-app-notifications/311091/421
-      - Fix Zone Filter being incorrectly applied to the initial notification when Zone Filter was set to false.
-      - Improve camera entity selection by limiting it to frigate entities
-      - Improve presence entity selection by limiting it to device trackers, persons and groups
-      - You can prevent all secondary updates from making notification sounds (Alert Once)
-      - You can add use a state condition to restrict when you recieve notifications. E.g only when your door is locked, or only when your car isn't in the driveway or the sun is below the horizon.
-      - Added optional title for the notifications
-      - Added ability to customise the message text and buttons in the notification.
-      - You can customise the color of the notification
-      - Made the Action buttons customisable so you can link to anything of choice.
-      - Fix issue if user does not cleanup the yaml after removing object filter
-      - Added customisable Notification Icon. (Unsure if it works on IOS)
-      - Added customisable sound for IOS. 
-      - You can disable the notifications at certain times (Time Filter)
-      - You can choose to have the notifications sent as critical only at certain times (different method to the time filter to test preferences)
-      - Notify Android/Fire TV devices using https://www.home-assistant.io/integrations/nfandroidtv/
-      - Handle camera names with hyphens in frigate.yaml
-      - Replace {{label}} in title and message of the notification with a persons name if double-take face match is detected.
-      - You can customise the Tap Action
-      - Support for multiple Frigate instances with clientIDs
-      - Live View on IOS
+    ### Features:
+      - Easily select the camera entity or mobile device using a drop down menu.
+      - Send notifications to an Android or IOS mobile device or a TV.
+        - or a group containing any combination of the above.
+      - Configure the title and message of the notification. 
+      - Dynamically handle things like object type, zones and face detection from doubletake.
+      - Automatically handle some common errors like case matching and bad urls etc.
+      - Optionally send the notification as a critical alert. (Critical)
+      - Optionally limit the playing of audio for secondary notification updates, and on IOS, customise the sound. (Alert Once)
+      - Choose whether or not to update the notification with new thumbnails as they become available.
+      - Customise the notification colour and icon.
+      - Optionally send a live view to IOS.
+      - Configure custom notification channels on Android.
+      - Specify which [zones][2] to be notified about. (Zone Filter)
+      - Specify what type of [objects][3] to be notified about. (Object Filter)
+      - Disable notifications if a presence entity or group is "home". (Presence Filter)
+      - Limit notifications based on the state of another entity. (State Filter)
+      - Limit notifications to certain hours of the day. (Time Filter)
+      - Configure a cooldown for the camera to reduce the number of notifications when back-to-back events occur.
+      - Silence future notifications for a defined amount of time through actionable notifications. This is helpful in situations where you know you will be triggering detections for an extended period of time. i.e. kids playing outside.
+      - Set a loitering timer to notify you of stationary objects that remain for a set period of time.
+      - Configure what happens when you tap the notification (Tap Action)
+      - Configure 3 action buttons to open almost anything (defaults are: View Clip, View Snapshot and Silence New Notifications)
+
+      - Configure the size, transparency, position and duration of TV notifications.
+      - Debug option to help troubleshooting
+
+    ### Beta Changes:
+      - Support for multiple Frigate instances by specifying the ClientID and MQTT topic
       - Android options: Sticky and Channel as per https://community.home-assistant.io/t/frigate-mobile-app-notifications/311091/1043
       - Handle capitilisation in inputs properly
       - Handle trailing slash in base urls properly
-      - Choose to atatch thumbnail or snapshot to the notification
-      - Debug option - prints parameters to the Home Assistant logbook
       - Choose between enforcing all required zones simultaneously or any one zone
       - Add 10s delay to final notification update to ensure frigate has time to save snapshot edits (crop, bounding box etc) if update thumbnail is enabled. 
 
@@ -143,20 +129,6 @@ blueprint:
             - label: "Long:      e.g A Person was detected on the Side camera in the driveway."
               value: "A {{ label }} {{ 'is loitering' if loitering else 'was detected' }} on the {{ camera_name }} camera{{ ' in the ' + entered_zones if entered_zones else '.'}}"
           custom_value: true
-    attachment:
-      name: Attachment
-      description: |
-        Choose to attach the event thumbnail or snapshot to the notification.
-
-        Note: TVs will always get sent the snapshot if TV is true
-      default: thumbnail
-      selector:
-        select:
-          options:
-            - label: Thumbnail
-              value: thumbnail
-            - label: Snapshot
-              value: snapshot
     critical:
       name: Critical Notification (Optional)
       description: |
@@ -178,9 +150,23 @@ blueprint:
       default: false
       selector:
         boolean:
+    attachment:
+      name: Attachment
+      description: |
+        Choose which image to attach to the notification.
+
+        Note: TVs will always get sent the snapshot if TV is true
+      default: thumbnail
+      selector:
+        select:
+          options:
+            - label: Thumbnail
+              value: thumbnail
+            - label: Snapshot
+              value: snapshot
     update_thumbnail:
-      name: Update Thumbnail (Optional)
-      description: Update notification if a new "better" thumbnail is available.
+      name: Update Attachment (Optional)
+      description: Update the notification if a new "better" image is available.
       default: false
       selector:
         boolean:
@@ -1008,8 +994,8 @@ action:
                                     title: "{{title}}"
                                     message: "{{message}}"
                                     data:
-                                      tag: "{{ id }}"
-                                      group: "{{ camera }}-frigate-notification"
+                                      tag: "{{ id }}{{'-loitering' if loitering}}"
+                                      group: "{{ camera }}-frigate-notification{{'-loitering' if loitering}}"
                                       color: "{{color}}"
                                       # Android Specific
                                       clickAction: "{{tap_action}}"
