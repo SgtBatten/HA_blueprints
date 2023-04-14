@@ -42,7 +42,6 @@ blueprint:
       - Set a loitering timer to notify you of stationary objects that remain for a set period of time.
       - Configure what happens when you tap the notification (Tap Action)
       - Configure 3 action buttons to open almost anything (defaults are: View Clip, View Snapshot and Silence New Notifications)
-
       - Configure the size, transparency, position and duration of TV notifications.
       - Debug option to help troubleshooting
 
