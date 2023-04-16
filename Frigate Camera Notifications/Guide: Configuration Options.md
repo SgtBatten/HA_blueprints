@@ -1,4 +1,4 @@
-## Configuration Options Guide
+# Configuration Options Guide
 
 This guide will give more detail about each of the configuration options and provide some troubleshooting tips where appropriate.
 
@@ -11,5 +11,95 @@ If your dropdown list says "No matching entities found" see this [explanation](h
 
 This input is mandatory.
 
-### Notify device and Notify Group/TV
+### Mobile Device and Notification Group/TV
+This section deals with two input fields. Mobile Device and Notification Group or Android/Fire TV.
+You must use one of them, but if both are filled out, the latter will be used.
+
+**Mobile Device**
+
+**Notification Group or Android/Fire TV**
+
+### Base URL 
+
+### MQTT Topic
+
+### Client ID
+
+## Notification Customisations
+
+### Title
+
+### Message
+
+### Critical
+
+### Alert Once
+
+### Attachment
+
+### Update Attachment
+
+### Color
+
+### Icon
+
+### Sound (IOS)
+
+### Live View (IOS)
+
+### Sticky (Android)
+
+### Channel (Android)
+
+## Filters
+
+### Zone Filter
+
+### Required Zones
+
+### Multi Zone
+
+### Object Filter
+
+### Presence Filter
+
+### State Filter
+
+### State Filter States
+
+### Time Filter
+
+### Cooldown
+
+### Silence timer
+
+### Loitering
+
+## Action Buttons
+
+### Tap Action
+
+### Action Button 1
+
+### Action Button 2
+
+### Action Button 3
+
+## TV Options
+
+### Position
+
+### Size
+
+### Duration
+
+### Transparency
+
+### Interupt
+
+## Troubleshooting
+
+## Debug
+
+
 
