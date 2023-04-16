@@ -15,9 +15,9 @@ This input is mandatory.
 This section deals with two input fields. Mobile Device and Notification Group or Android/Fire TV.
 You must use one of them, but if both are filled out, the latter will be used.
 
-**Mobile Device**
+#### Mobile Device
 
-**Notification Group or Android/Fire TV**
+#### Notification Group or Android/Fire TV
 
 ### Base URL 
 
