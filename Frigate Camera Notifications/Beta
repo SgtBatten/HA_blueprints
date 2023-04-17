@@ -430,8 +430,6 @@ blueprint:
               value: /ccab4aaf_frigate-proxy/dashboard
             - label: Open Reolink App (Android)
               value: app://com.mcu.reolink
-            - label: None
-              value: ""
           custom_value: true
     button_1:
       name: Action Button 1 Text
@@ -452,8 +450,6 @@ blueprint:
               value: "{{base_url}}/api/camera_proxy_stream/camera.{{trigger.payload_json['after']['camera']}}?token={{state_attr( 'camera.' ~ camera, 'access_token')}}"
             - label: Open Home Assistant
               value: "{{base_url}}/lovelace"
-            - label: None (make sure Action Button 1 Text is blank)
-              value: ""
           custom_value: true
     button_2:
       name: Action Button 2 Text
@@ -474,8 +470,6 @@ blueprint:
               value: "{{base_url}}/api/camera_proxy_stream/camera.{{trigger.payload_json['after']['camera']}}?token={{state_attr( 'camera.' ~ camera, 'access_token')}}"
             - label: Open Home Assistant
               value: "{{base_url}}/lovelace"
-            - label: None (make sure Action Button 2 Text is blank)
-              value: ""
           custom_value: true
     button_3:
       name: Action Button 3 Text
