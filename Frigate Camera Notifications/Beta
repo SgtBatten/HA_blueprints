@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.11.0.16d)
+  name: Frigate Notifications (0.11.0.16e)
   description: |
     ## Frigate Notifications
 
@@ -254,7 +254,7 @@ blueprint:
           custom_value: true
     zone_multi:
       name: Multi Zone (Optional)
-      description: Require all zones specified above to be entered, instead of any listed zone
+      description: Require all zones specified above to be entered, instead of any listed zone. Zone Filter must be enabled also.
       default: false
       selector:
         boolean:
@@ -424,6 +424,8 @@ blueprint:
               value: /lovelace
             - label: Open Frigate
               value: /ccab4aaf_frigate/dashboard
+            - label: Open Frigate (Full Access)
+              value: /ccab4aaf_frigate-fa/dashboard
             - label: Open Frigate (proxy)
               value: /ccab4aaf_frigate-proxy/dashboard
             - label: Open Reolink App (Android)
@@ -475,8 +477,8 @@ blueprint:
       default: "Silence New Notifications"
     url_3:
       name: Action Button 3 URL
-      description: Customise what happens when you press the second Action Button. Select from one of the preconfigured options or enter your own custom URL."
-      default: Silence New Notifications
+      description: Customise what happens when you press the third Action Button. Select from one of the preconfigured options or enter your own custom URL."
+      default: silence-{{ camera }}
       selector:
         select:
           options:
@@ -533,6 +535,11 @@ blueprint:
       name: TV Notification Duration (Optional)
       description: The duration (in seconds) the notification will display on your TV.
       default: 10
+      selector:
+        number:
+          max: 300
+          min: 0
+          unit_of_measurement: seconds
     tv_transparency:
       name: TV notification Transaparency (Optional)
       description: Set the transparency of the notificaiton on your TV.
