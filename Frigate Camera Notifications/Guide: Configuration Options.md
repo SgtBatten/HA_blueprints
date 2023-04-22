@@ -17,7 +17,15 @@ You must use one of them, but if both are filled out, the latter will be used.
 
 #### Mobile Device
 
+This field is filtered to only display devices with the Home assistant companion App installed. If you do not see your mobile device here, you need to install the app on the device.
+
 #### Notification Group or Android/Fire TV
+
+Rather than sending to a single mobile device, this option allows you to send the notification to a group of mobile devices and also to Android/Fire TVs. You can create [Notify Groups](https://www.home-assistant.io/integrations/group/#notify-groups) with Home assistant. 
+
+Groups can contain a mix of Android, IOS and TV devices. No restrictions. 
+
+Valid inputs are the full service e.g `notify.android_tv`, the entity id without the domain e.g `android_tv` and the friendly name if it matches the entity id e.g `Android TV`.
 
 ### Base URL 
 
