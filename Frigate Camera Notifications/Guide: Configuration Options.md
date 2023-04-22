@@ -25,13 +25,23 @@ Rather than sending to a single mobile device, this option allows you to send th
 
 Groups can contain a mix of Android, IOS and TV devices. No restrictions. 
 
-Valid inputs are the full service e.g `notify.android_tv`, the entity id without the domain e.g `android_tv` and the friendly name if it matches the entity id e.g `Android TV`.
+Valid inputs are the full service e.g `notify.android_tv`, the entity id without the domain e.g `android_tv` and the friendly name of the group or tv if it matches the entity id e.g `Android TV`.
 
 ### Base URL 
 
+The Base URL field is for you to enter the external url of your Home Assistant Install. e.g `https://ha.mydomain.com` or `https://1234567890.ui.nabu.casa/`
+
+The automation will strip the trailing / if you enter it so it makes no difference if you leave it or remove it.
+
 ### MQTT Topic
 
+This field is for you to customise the MQTT topic. By default frigate sends messages in `frigate/events`. If you have changed this in your frigate configuration then you need to update this field to reflect the same topic and ending in `/events`.
+
+MQTT is no longer required for frigate to work but it is required for the [integration](https://github.com/blakeblackshear/frigate-hass-integration) and for this blueprint. See the [frigate docs](https://docs.frigate.video/configuration/) on how to connect MQTT. 
+
 ### Client ID
+
+If you run [multiple instances](https://docs.frigate.video/integrations/home-assistant#multiple-instance-support) of frigate you must configure a [Client ID](https://docs.frigate.video/configuration/) in order to distinguish between them. If you know what you are doing, enter the customised client id here. 
 
 ## Notification Customisations
 
