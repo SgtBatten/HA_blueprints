@@ -617,8 +617,6 @@ variables:
   input_client_id: !input client_id
   client_id: "{{input_client_id if not input_client_id else '/' + input_client_id if '/' not in input_client_id else input_client_id }}"
   attachment: !input attachment
-  critical_input: !input critical
-  critical: "{{ true if critical_input == 'true' else false }}"
   alert_once: !input alert_once
   update_thumbnail: !input update_thumbnail
   ios_live_view: !input ios_live_view
@@ -676,6 +674,7 @@ action:
           - "{{ not disable_times|length or not now().hour in disable_times|map('int')|list }}"
         sequence:
           - variables:
+              event: "{{ trigger.payload_json }}"
               id: "{{ trigger.payload_json['after']['id'] }}"
               object: "{{ trigger.payload_json['after']['label'] }}"
               label: "{{ object | title }}"
@@ -693,6 +692,9 @@ action:
               url_1: !input url_1
               url_2: !input url_2
               url_3: !input url_3
+              # other things that can be templated and might need info from the event
+              critical_input: !input critical
+              critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
               icon: !input icon
               channel: !input channel
           - alias: "Debug: write to Log"
@@ -717,9 +719,11 @@ action:
                             Update Thumbnails: {{update_thumbnail}}, 
                             Target: {{'group (input/formatted): ' + group + '/' + group_target + ', ' if group else 'Mobile Device'}}
                             cooldown: {{cooldown}}s, 
-                            loiter timer: {{loiter_timer}}s,
+                            loiter timer: {{loiter_timer}}s, 
                             color: {{color}}, 
-                            sound: {{sound}},
+                            sound: {{sound}}, 
+                            Channel: {{channel}}, 
+                            Sticky: {{sticky}}, 
                             Title: {{title}}, 
                             Message: {{message}},
                             tap_action: {{tap_action}}, 
@@ -727,7 +731,7 @@ action:
                             button 2 Text/URL: {{button_2}} ({{url_2}}), 
                             button 3 Text/URL: {{button_3}} ({{url_3}}), 
                             icon: {{icon}}
-                            tv: {{tv}}, 
+                            tv: {{ tv }}, 
                             tv_position: {{tv_position}}, 
                             tv_size: {{tv_size}}, 
                             tv_duration: {{tv_duration}}, 
@@ -918,6 +922,8 @@ action:
                     sub_label: "{{ event['after']['sub_label']}}"
                     sub_label_changed: "{{ sub_label != event['before']['sub_label'] }}"
                     update: "{{ alert_once or (new_snapshot and not loitering and not presence_changed and not zone_only_changed and not entered_zones_changed and not sub_label_changed) }}"
+                    critical_input: !input critical
+                    critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
                     title: >
                       {% if sub_label %} 
                         {{title | replace('A Person', sub_label|title) | replace('Person', sub_label|title)}}
@@ -957,6 +963,7 @@ action:
                                   sublabel: {{sub_label}},
                                   IOS sound: {{update if not critical else 'yes due critical notifications'}}, 
                                   Android Sound: {{'disabled by alert once' if alert_once else 'enabled'}}, 
+                                  critical: {{critical}}, 
                                 Triggers: 
                                   New Snapshot: {{new_snapshot}}, 
                                   Presence Changed: {{presence_changed}}, 
