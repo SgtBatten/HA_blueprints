@@ -65,7 +65,8 @@ blueprint:
       description: |
         Select the camera entity that will trigger notifications. 
         If you do not see cameras listed in the drop down, check you have the frigate integration installed.
-        Note: The automation relies on this matching your frigate config (by default it does).
+        
+        Note: The automation relies the frigate camera name matching the entity id in Home Assistant. It will automatically strip '_x' from the end of the entity id where x=1, 2 or 3.
       selector:
         entity:
           integration: frigate
@@ -129,7 +130,7 @@ blueprint:
       name: Critical Notification (Optional)
       description: |
         Send as a critical notification to the mobile device. This will ignore silent/vibrate modes.
-        You can choose to limit crtical notifications to certain times using a template (two examples provided but you can enter your own as long as it outputs true or false)
+        You can choose to limit crtical notifications to certain times using a template (some examples provided but you can enter your own as long as it outputs true or false)
       default: "false"
       selector:
         select:
@@ -138,6 +139,7 @@ blueprint:
             - "true"
             - "{{'false' if now().hour in [8,9,10,11,12,13,14,15,16,17,18] else 'true'}}"
             - "{{'true' if is_state('sun.sun', 'above_horizon') else 'false' }}"
+            - "{{ event['after']['top_score'] |float(0) > 0.8 }}"
           custom_value: true
     alert_once:
       name: Alert Once (Optional)
@@ -160,11 +162,22 @@ blueprint:
             - label: Snapshot
               value: snapshot
     update_thumbnail:
-      name: Update Attachment (Optional)
+      name: Update Image (Optional)
       description: Update the notification if a new "better" image is available.
       default: false
       selector:
         boolean:
+    video:
+      name: Video (Optional) - Android only for now
+      description: You can optionally attach the clip to the notification which will replace the thumbnail/snapshot above if available.
+      default: ""
+      selector:
+        select:
+          options:
+            - label: None
+              value: ""
+            - label: Clip
+              value: "/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
     color:
       name: Notification Color - Android/TV only (Optional)
       description: Set the color of the notification on your Android mobile device or TV.
@@ -595,7 +608,7 @@ blueprint:
 mode: parallel
 trigger_variables:
   input_camera: !input camera
-  camera: "{{ input_camera | replace('camera.', '') }}"
+  camera: "{{ input_camera.rstrip('_1').rstrip('_2').rstrip('_3') | replace('camera.', '') }}"
   mqtt_topic: !input mqtt_topic
 trigger:
   - platform: event
@@ -697,6 +710,7 @@ action:
               critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
               icon: !input icon
               channel: !input channel
+              video: !input video
           - alias: "Debug: write to Log"
             choose:
               - conditions:
@@ -717,6 +731,7 @@ action:
                             critical: {{critical}}, 
                             alert once: {{alert_once}}, 
                             Update Thumbnails: {{update_thumbnail}}, 
+                            Video: {{video}}, 
                             Target: {{'group (input/formatted): ' + group + '/' + group_target + ', ' if group else 'Mobile Device'}}
                             cooldown: {{cooldown}}s, 
                             loiter timer: {{loiter_timer}}s, 
@@ -780,6 +795,7 @@ action:
                               color: "{{color}}"
                               # Android Specific
                               image: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
+                              video: "{{video}}"
                               clickAction: "{{tap_action}}"
                               ttl: 0
                               priority: high
@@ -863,6 +879,7 @@ action:
                             color: "{{color}}"
                             # Android Specific
                             image: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
+                            video: "{{video}}"
                             clickAction: "{{tap_action}}"
                             ttl: 0
                             priority: high
@@ -960,9 +977,10 @@ action:
                                 Info: 
                                   Last Zones: {{last_zones}}, 
                                   Current zones: {{entered_zones}}, 
-                                  sublabel: {{sub_label}},
+                                  sublabel: {{sub_label}}, 
                                   IOS sound: {{update if not critical else 'yes due critical notifications'}}, 
                                   Android Sound: {{'disabled by alert once' if alert_once else 'enabled'}}, 
+                                  video: "{{video}}"
                                   critical: {{critical}}, 
                                 Triggers: 
                                   New Snapshot: {{new_snapshot}}, 
@@ -997,6 +1015,7 @@ action:
                                     color: "{{color}}"
                                     # Android Specific
                                     image: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
+                                    video: "{{video}}"
                                     clickAction: "{{tap_action}}"
                                     ttl: 0
                                     priority: high
@@ -1045,6 +1064,7 @@ action:
                                       # Android/Fire TV
                                       image:
                                         url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
+                                      video: "{{video}}"
                                       fontsize: "{{tv_size}}"
                                       position: "{{tv_position}}"
                                       duration: "{{tv_duration}}"
@@ -1082,6 +1102,7 @@ action:
                                   color: "{{color}}"
                                   # Android Specific
                                   image: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
+                                  video: "{{video}}"
                                   clickAction: "{{tap_action}}"
                                   ttl: 0
                                   priority: high
