@@ -49,6 +49,14 @@ If you run [multiple instances](https://docs.frigate.video/integrations/home-ass
 
 ### Message
 
+#### Message Variables
+
+| Description | Variable |
+| -----------| ---------- |
+| Camera Name | {{camera}} |
+| Object | {{label}} |
+| Time: The time the event occurred | {{event['after']['start_time']\|timestamp_custom('%H:%M')}} |
+
 ### Critical
 
 ### Alert Once
