@@ -51,11 +51,11 @@ If you run [multiple instances](https://docs.frigate.video/integrations/home-ass
 
 #### Message Variables
 
-| Description | Variable |
-| -----------| ---------- |
-| Camera Name | {{camera}} |
-| Object | {{label}} |
-| Time: The time the event occurred | {{event['after']['start_time']\|timestamp_custom('%H:%M')}} |
+| Name | Variable | Description |
+| -----------| ---------- | -------- |
+| Camera Name | {{camera}} | The formatted (friendly) name of the camera |
+| Object | {{label}} |   |
+| Time | {{event['before']['start_time']\|timestamp_custom('%H:%M')}} |    |
 
 ### Critical
 
