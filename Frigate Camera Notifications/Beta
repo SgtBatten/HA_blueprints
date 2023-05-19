@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.1a)
+  name: Frigate Notifications (0.12.0.1b)
   description: |
     ## Frigate Notifications
 
@@ -49,6 +49,8 @@ blueprint:
       - Support for multiple Frigate instances by specifying the ClientID and MQTT topic
       - Android option: Sticky as per https://community.home-assistant.io/t/frigate-mobile-app-notifications/311091/1043
       - Add 10s delay to final notification update to ensure frigate has time to save snapshot edits (crop, bounding box etc) if update thumbnail is enabled. 
+      - Add Video (gif) option to Android which will be sent 10 seconds after the event ends.
+      - Optional delay to the initial notification to see if it resolves the no attached image issue.
 
     [1]: https://companion.home-assistant.io/docs/notifications/notifications-basic#sending-notifications-to-multiple-devices
     [2]: https://blakeblackshear.github.io/frigate/configuration/cameras#zones
@@ -65,8 +67,8 @@ blueprint:
       description: |
         Select the camera entity that will trigger notifications. 
         If you do not see cameras listed in the drop down, check you have the frigate integration installed.
-        
-        Note: The automation relies the frigate camera name matching the entity id in Home Assistant. It will automatically strip '_x' from the end of the entity id where x=1, 2 or 3.
+
+        Note: The automation relies the frigate camera name matching the entity id in Home Assistant. It will automatically strip '_x' from the end of the entity id where x=1 , 2 or 3.
       selector:
         entity:
           integration: frigate
@@ -246,8 +248,6 @@ blueprint:
       description: |
         Enter the name of one zone at a time. Include underscores as per your frigate config.
         By default any zone is acceptable. if you desire ALL listed zones to be entered before getting a notification, enable the multi toggle below.
-
-        Note: If the text entry is glitching (dissapearing every few seconds) select one of the examples, then edit in yaml mode.
       default: []
       selector:
         select:
@@ -269,8 +269,6 @@ blueprint:
       name: Object Filter (Optional)
       description: |
         Enter or select one object at a time.
-
-        Note: If the text entry is glitching (dissapearing every few seconds) select one of the examples, then edit in yaml mode.
       default: ""
       selector:
         select:
@@ -407,6 +405,18 @@ blueprint:
           max: 300
           min: 0
           unit_of_measurement: minutes
+    initial_delay:
+      name: Delay initial notification (Optional)
+      description: |
+        How long to delay the initial notification. 
+
+        Use this if you DO NOT use "update image" and are experiencing notifications without attached images.
+      default: 0
+      selector:
+        number:
+          max: 15
+          min: 0
+          unit_of_measurement: seconds
     tap_action:
       name: Tap Action URL
       description: |
@@ -646,6 +656,7 @@ variables:
   cooldown: !input cooldown
   loitering: false
   loiter_timer: !input loiter_timer
+  initial_delay: !input initial_delay
   fps: "{{ states('sensor.' + camera + '_camera_fps')|int(5) }}"
   state_only: !input state_filter
   input_entity: !input state_entity
@@ -735,6 +746,7 @@ action:
                             Target: {{'group (input/formatted): ' + group + '/' + group_target + ', ' if group else 'Mobile Device'}}
                             cooldown: {{cooldown}}s, 
                             loiter timer: {{loiter_timer}}s, 
+                            initial delay: {{initial_delay}}s, 
                             color: {{color}}, 
                             sound: {{sound}}, 
                             Channel: {{channel}}, 
@@ -774,6 +786,13 @@ action:
           - alias: "Notifications enabled for object label"
             condition: template
             value_template: "{{ not labels|length or object in labels }}"
+          - alias: "Delay for image"
+            choose:
+              - conditions:
+                  - "{{initial_delay > 0}}"
+                sequence:
+                  - delay:
+                      seconds: "{{initial_delay}}"
           - alias: "Notify on new object"
             choose:
               - conditions:
@@ -957,8 +976,7 @@ action:
                   choose:
                     - conditions:
                         - "{{wait.trigger.payload_json['type'] == 'end' }}"
-                        - "{{attachment == 'snapshot'}}"
-                        - "{{update_thumbnail}}"
+                        - "{{(attachment == 'snapshot' and update_thumbnail) or video|length > 0}}"
                       sequence:
                         - delay:
                             seconds: 10
