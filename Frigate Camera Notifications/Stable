@@ -513,7 +513,7 @@ blueprint:
           unit_of_measurement: seconds
     tv_transparency:
       name: TV notification Transaparency (Optional)
-      description: Set the transparency of the notificaiton on your TV.
+      description: Set the transparency of the notification on your TV.
       default: 0%
       selector:
         select:
