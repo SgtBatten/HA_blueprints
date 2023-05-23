@@ -158,10 +158,11 @@ blueprint:
     color:
       name: Notification Color (Optional)
       description: Set the color of the notification on your mobile device or TV.
-      default: grey
+      default: steelblue
       selector:
         select:
           options:
+            - steelblue
             - grey
             - black
             - indigo
