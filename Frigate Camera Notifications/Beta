@@ -803,7 +803,7 @@ action:
                   - "{{ not state_only or states(input_entity) in states_filter }}"
                 sequence:
                   - choose:
-                      - conditions: "{{ not group_target }}"
+                      - conditions: "{{ not group and not telegram}}"
                         sequence:
                           - device_id: !input notify_device
                             domain: mobile_app
@@ -1033,7 +1033,7 @@ action:
                     - conditions: "{{ loitering or (not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
                       sequence:
                         - choose:
-                            - conditions: "{{ not group_target }}"
+                            - conditions: "{{ not group and not telegram}}"
                               sequence:
                                 - device_id: !input notify_device
                                   domain: mobile_app
