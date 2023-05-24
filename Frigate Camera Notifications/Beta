@@ -898,7 +898,7 @@ action:
                               data:
                                 message_tag: "{{ id }}"
                                 photo:
-                                  - url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
+                                  - url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
                                 video:
                                   - url: "{{video}}"
                     default:
@@ -1133,7 +1133,7 @@ action:
                                       message_tag: "{{ id }}"
                                       disable_notification: "{{ alert_once}}"
                                       photo:
-                                        - url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
+                                        - url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
                                       video:
                                         - url: "{{video}}"
                           default:
