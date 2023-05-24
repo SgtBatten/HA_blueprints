@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.1b)
+  name: Frigate Notifications (0.12.0.1c)
   description: |
     ## Frigate Notifications
 
@@ -89,6 +89,12 @@ blueprint:
 
         Note: If the group contains both mobile devices and TVs, the TV will not display the snapshot unless 'TV notifications' to true, however this will stop android phones recieving thumbnails.
       default: ""
+    notify_telgram:
+      name: Telegram Group (Optional)
+      description: |
+        The name of the telegram group to send notifications to.
+        If set, this will override individual devices and groups above. Note: TV (far below) must be set to false.
+      default: ""
     base_url:
       name: Base URL (Optional)
       description: |
@@ -170,7 +176,7 @@ blueprint:
       selector:
         boolean:
     video:
-      name: Video (Optional) - Android only for now
+      name: Video (Optional) - Android/Telegram only for now
       description: You can optionally attach the clip to the notification which will replace the thumbnail/snapshot above if available.
       default: ""
       selector:
@@ -303,12 +309,6 @@ blueprint:
       default: ""
       selector:
         entity:
-    # state_filter_states_test:
-    #   name: State Filter States TEST (Optional)
-    #   description: Enter the states that the above entity must be in, one at a time.
-    #   selector:
-    #     state:
-    #       entity_id: !input state_entity
     state_filter_states:
       name: State Filter States (Optional)
       description: Enter the states that the above entity must be in, one at a time.
@@ -645,6 +645,8 @@ variables:
   ios_live_view: !input ios_live_view
   group: !input notify_group
   group_target: "{{ group | lower | replace('notify.', '') | replace(' ','_') }}"
+  telegram: !input telegram_group
+  telegram_target: "{{ telegram_group | lower | replace('notify.', '') | replace(' ','_') }}"
   zone_only: !input zone_filter
   input_zones: !input zones
   zones: "{{ input_zones | list | lower }}"
@@ -743,7 +745,7 @@ action:
                             alert once: {{alert_once}}, 
                             Update Thumbnails: {{update_thumbnail}}, 
                             Video: {{video}}, 
-                            Target: {{'group (input/formatted): ' + group + '/' + group_target + ', ' if group else 'Mobile Device'}}
+                            Target: {{'Telegram: ' + telegram_group if telegram else 'group (input/formatted): ' + group + '/' + group_target + ', ' if group else 'Mobile Device'}}
                             cooldown: {{cooldown}}s, 
                             loiter timer: {{loiter_timer}}s, 
                             initial delay: {{initial_delay}}s, 
@@ -887,6 +889,17 @@ action:
                                     title: "{{button_3}}"
                                     uri: "{{url_3}}"
                                     destructive: true
+                      - conditions: "{{ telegram }}"
+                        sequence:
+                          - service: "notify.{{ telegram_target }}"
+                            data:
+                              title: "{{title}}"
+                              message: "{{message}}"
+                              data:
+                                photo:
+                                  - url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
+                                video:
+                                  - url: "{{video}}"
                     default:
                       - service: "notify.{{ group_target }}"
                         data:
@@ -1109,6 +1122,17 @@ action:
                                           title: "{{button_3}}"
                                           uri: "{{url_3}}"
                                           destructive: true
+                            - conditions: "{{ telegram }}"
+                              sequence:
+                                - service: "notify.{{ telegram_target }}"
+                                  data:
+                                    title: "{{title}}"
+                                    message: "{{message}}"
+                                    data:
+                                      photo:
+                                        - url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
+                                      video:
+                                        - url: "{{video}}"
                           default:
                             - service: "notify.{{ group_target }}"
                               data:
