@@ -89,7 +89,7 @@ blueprint:
 
         Note: If the group contains both mobile devices and TVs, the TV will not display the snapshot unless 'TV notifications' to true, however this will stop android phones recieving thumbnails.
       default: ""
-    notify_telgram_group:
+    notify_telegram_group:
       name: Telegram Group (Optional)
       description: |
         The name of the telegram group to send notifications to.
