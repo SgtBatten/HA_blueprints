@@ -889,7 +889,7 @@ action:
                                     title: "{{button_3}}"
                                     uri: "{{url_3}}"
                                     destructive: true
-                      - conditions: "{{ telegram }}"
+                      - conditions: "{{ telegram | length > 0 }}"
                         sequence:
                           - service: "notify.{{ telegram_target }}"
                             data:
@@ -1123,7 +1123,7 @@ action:
                                           title: "{{button_3}}"
                                           uri: "{{url_3}}"
                                           destructive: true
-                            - conditions: "{{ telegram }}"
+                            - conditions: "{{ telegram | length > 0 }}"
                               sequence:
                                 - service: "notify.{{ telegram_target }}"
                                   data:
