@@ -218,11 +218,12 @@ blueprint:
             - none
           custom_value: true
     ios_live_view:
-      name: Live View - IOS only (Optional)
-      description: Attach a live view to the notification for IOS devices
-      default: false
+      name: Live View Entity - IOS only (Optional)
+      description: Attach a live view from the selected entity to the notification for IOS devices.
+      default: ""
       selector:
-        boolean:
+        entity:
+          domain: camera
     sticky:
       name: Sticky - Android only (Optional)
       description: |
@@ -828,7 +829,7 @@ action:
                               push:
                                 sound: "{{sound}}"
                                 interruption-level: "{{ iif(critical, 'critical', 'active') }}"
-                              entity_id: "{{ iif(ios_live_view, input_camera, '' ) }}"
+                              entity_id: "{{ios_live_view}}"
                               # Actions
                               actions:
                                 - action: URI
@@ -874,7 +875,7 @@ action:
                                 push:
                                   sound: "{{sound}}"
                                   interruption-level: "{{ iif(critical, 'critical', 'active') }}"
-                                entity_id: "{{ iif(ios_live_view, input_camera, '' ) }}"
+                                entity_id: "{{ios_live_view}}"
                                 # Actions
                                 actions:
                                   - action: URI
@@ -918,7 +919,7 @@ action:
                             push:
                               sound: "{{sound}}"
                               interruption-level: "{{ iif(critical, 'critical', 'active') }}"
-                            entity_id: "{{ iif(ios_live_view, input_camera, '' ) }}"
+                            entity_id: "{{ios_live_view}}"
                             # Actions
                             actions:
                               - action: URI
@@ -1048,7 +1049,7 @@ action:
                                     push:
                                       sound: "{{ iif(update, 'none', sound) }}"
                                       interruption-level: "{{ iif(critical, 'critical', 'active') }}"
-                                    entity_id: "{{ iif(ios_live_view, input_camera, '' ) }}"
+                                    entity_id: "{{ios_live_view}}"
                                     # Actions
                                     actions:
                                       - action: URI
@@ -1096,7 +1097,7 @@ action:
                                       push:
                                         sound: "{{ iif(update, 'none', sound) }}"
                                         interruption-level: "{{ iif(critical, 'critical', 'active') }}"
-                                      entity_id: "{{ iif(ios_live_view, input_camera, '' ) }}"
+                                      entity_id: "{{ios_live_view}}"
                                       # Actions
                                       actions:
                                         - action: URI
@@ -1141,7 +1142,7 @@ action:
                                   push:
                                     sound: "{{ iif(update, 'none', sound) }}"
                                     interruption-level: "{{ iif(critical, 'critical', 'active') }}"
-                                  entity_id: "{{ iif(ios_live_view, input_camera, '' ) }}"
+                                  entity_id: "{{ios_live_view}}"
                                   # Actions
                                   actions:
                                     - action: URI
