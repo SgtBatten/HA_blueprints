@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.1d)
+  name: Frigate Notifications (0.12.0.1e)
   description: |
     ## Frigate Notifications
 
@@ -727,8 +727,8 @@ action:
               label: "{{ object | title }}"
               # Dynamic Variables per event
               initial_home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
-              initial_entered_zones: "{{ trigger.payload_json['after']['entered_zones'] |lower}}"
-              zone_multi_filter: "{{zone_only and zone_multi and initial_entered_zones|length and zones and zones |reject('in', initial_entered_zones) |list |length == 0 }}"
+              entered_zones: "{{ trigger.payload_json['after']['entered_zones'] |lower}}"
+              zone_multi_filter: "{{zone_only and zone_multi and entered_zones|length and zones and zones |reject('in', entered_zones) |list |length == 0 }}"
               # Customisation of text
               title: !input title
               message: !input message
@@ -797,8 +797,8 @@ action:
                               zone filter toggle on: {{zone_only}}, 
                               Multi Zone toggle on: {{zone_multi}}, 
                               Required zones: {{input_zones}}, 
-                              Entered Zones: {{initial_entered_zones}}, 
-                              Zone Filter TEST: {{'PASS (Multi)' if zone_multi_filter else 'PASS' if ( not zone_only or not zone_multi and zones|select('in', initial_entered_zones)|list|length ) else 'FAIL (Multi)' if zone_multi else 'FAIL' }}, 
+                              Entered Zones: {{entered_zones}}, 
+                              Zone Filter TEST: {{'PASS (Multi)' if zone_multi_filter else 'PASS' if ( not zone_only or not zone_multi and zones|select('in', entered_zones)|list|length ) else 'FAIL (Multi)' if zone_multi else 'FAIL' }}, 
                             Required objects TEST: 
                               Input: {{input_labels}}, 
                               TEST: {{'PASS' if not labels|length or object in labels else 'FAIL'}}
@@ -824,7 +824,7 @@ action:
           - alias: "Notify on new object"
             choose:
               - conditions:
-                  - "{{ not zone_only or (not zone_multi and zones|select('in', initial_entered_zones)|list|length > 0) or (zone_multi and initial_entered_zones|length > 0 and zones |reject('in', initial_entered_zones) |list |length == 0) }}"
+                  - "{{ not zone_only or (not zone_multi and zones|select('in', entered_zones)|list|length > 0) or (zone_multi and entered_zones|length > 0 and zones |reject('in', entered_zones) |list |length == 0) }}"
                   - "{{ not initial_home }}"
                   - "{{ not state_only or states(input_entity) in states_filter }}"
                 sequence:
