@@ -185,7 +185,7 @@ blueprint:
       selector:
         boolean:
     video:
-      name: Video (Optional) - Android only for now
+      name: Video (Optional)
       description: You can optionally attach the clip to the notification which will replace the thumbnail/snapshot above if available.
       default: ""
       selector:
