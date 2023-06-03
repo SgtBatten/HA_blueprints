@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.1e)
+  name: Frigate Notifications (0.12.0.1f)
   description: |
     ## Frigate Notifications
 
@@ -1041,6 +1041,7 @@ action:
                                   sublabel: {{sub_label}}, 
                                   IOS sound: {{update if not critical else 'yes due critical notifications'}}, 
                                   Android Sound: {{'disabled by alert once' if alert_once else 'enabled'}}, 
+                                  IOS url: /api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment + '.jpg'}}
                                   video: "{{video}}"
                                   critical: {{critical}}, 
                                 Triggers: 
