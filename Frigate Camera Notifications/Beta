@@ -445,7 +445,7 @@ blueprint:
             - label: View Snapshot
               value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
             - label: View Stream
-              value: "{{base_url}}/api/camera_proxy_stream/camera.{{trigger.payload_json['after']['camera']}}?token={{state_attr( 'camera.' ~ camera, 'access_token')}}"
+              value: "{{base_url}}/api/camera_proxy_stream/camera.{{trigger.payload_json['after']['camera'].lower()}}?token={{state_attr( 'camera.' ~ camera, 'access_token')}}"
             - label: Open Home Assistant (web)
               value: "{{base_url}}/lovelace"
             - label: Open Home Assistant (app)
@@ -475,7 +475,7 @@ blueprint:
             - label: View Snapshot
               value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
             - label: View Stream
-              value: "{{base_url}}/api/camera_proxy_stream/camera.{{trigger.payload_json['after']['camera']}}?token={{state_attr( 'camera.' ~ camera, 'access_token')}}"
+              value: "{{base_url}}/api/camera_proxy_stream/camera.{{trigger.payload_json['after']['camera'].lower()}}?token={{state_attr( 'camera.' ~ camera, 'access_token')}}"
             - label: Open Home Assistant (web)
               value: "{{base_url}}/lovelace"
             - label: Open Home Assistant (app)
@@ -509,7 +509,7 @@ blueprint:
             - label: View Snapshot
               value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
             - label: View Stream
-              value: "{{base_url}}/api/camera_proxy_stream/camera.{{trigger.payload_json['after']['camera']}}?token={{state_attr( 'camera.' ~ camera, 'access_token')}}"
+              value: "{{base_url}}/api/camera_proxy_stream/camera.{{trigger.payload_json['after']['camera'].lower()}}?token={{state_attr( 'camera.' ~ camera, 'access_token')}}"
             - label: Open Home Assistant (web)
               value: "{{base_url}}/lovelace"
             - label: Open Home Assistant (app)
@@ -545,7 +545,7 @@ blueprint:
             - label: View Snapshot
               value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
             - label: View Stream
-              value: "{{base_url}}/api/camera_proxy_stream/camera.{{trigger.payload_json['after']['camera']}}?token={{state_attr( 'camera.' ~ camera, 'access_token')}}"
+              value: "{{base_url}}/api/camera_proxy_stream/camera.{{trigger.payload_json['after']['camera'].lower()}}?token={{state_attr( 'camera.' ~ camera, 'access_token')}}"
             - label: Open Home Assistant (web)
               value: "{{base_url}}/lovelace"
             - label: Open Home Assistant (app)
