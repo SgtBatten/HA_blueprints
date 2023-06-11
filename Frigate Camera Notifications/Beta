@@ -38,6 +38,7 @@ blueprint:
       - Disable notifications if a presence entity or group is "home". (Presence Filter)
       - Limit notifications based on the state of another entity. (State Filter)
       - Limit notifications to certain hours of the day. (Time Filter)
+      - Limit notifications to day or night. (Sun Filter)
       - Configure a cooldown for the camera to reduce the number of notifications when back-to-back events occur.
       - Silence future notifications for a defined amount of time through actionable notifications. This is helpful in situations where you know you will be triggering detections for an extended period of time. i.e. kids playing outside.
       - Set a loitering timer to notify you of stationary objects that remain for a set period of time.
@@ -385,6 +386,20 @@ blueprint:
               value: "22"
             - label: 23:00 - 23:59
               value: "23"
+    sun_filter:
+      name: Sun Filter
+      description: Only allow notifications to be sent during the day/night.
+      default: ''
+      selector:
+        select:
+          mode: dropdown
+          options:
+            - label: Always Send
+              value: ''
+            - label: Only Send During the Day
+              value: 'day'
+            - label: Only Send at Night
+              value: 'night'
     cooldown:
       name: Cooldown (Optional)
       description: Delay before sending another notification for this camera after the last event.
@@ -676,6 +691,7 @@ variables:
   labels: "{{ input_labels | list | lower }}"
   presence_entity: !input presence_filter
   disable_times: !input disable_times
+  sun_filter: !input sun_filter
   cooldown: !input cooldown
   loitering: false
   loiter_timer: !input loiter_timer
@@ -719,6 +735,7 @@ action:
           - "{{ is_state(this.entity_id, 'on') }}"
           - "{{ not this.attributes.last_triggered or (now() - this.attributes.last_triggered).seconds > cooldown }}"
           - "{{ not disable_times|length or not now().hour in disable_times|map('int')|list }}"
+          - "{{ not sun_filter|length or (sun_filter == 'day' and is_state('sun.sun', 'above_horizon')) or (sun_filter == 'night' and is_state('sun.sun', 'below_horizon')) }}"
         sequence:
           - variables:
               event: "{{ trigger.payload_json }}"
@@ -805,7 +822,8 @@ action:
                             presence entity (not home):
                               Entity: {{presence_entity}}
                               TEST:  {{'PASS' if not initial_home else 'FAIL'}}, 
-                            disabled times: {{disable_times}}, 
+                            disabled times: {{disable_times}},
+                            sun filter: {{sun_filter}},
                             State Filter: 
                               state filter toggle on: {{state_only}}, 
                               state filter entity: {{input_entity}}, 
