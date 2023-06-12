@@ -387,7 +387,7 @@ blueprint:
             - label: 23:00 - 23:59
               value: "23"
     sun_filter:
-      name: Sun Filter
+      name: Sun Filter (Optional)
       description: Only allow notifications to be sent during the day/night.
       default: "always"
       selector:
