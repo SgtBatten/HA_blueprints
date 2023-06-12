@@ -204,51 +204,51 @@ blueprint:
           options:
             - label: Primary (Steelblue)
               value: "#03a9f4"
-            -label: Red
+            - label: Red
               value: "#f44336"
-            -label: Pink
+            - label: Pink
               value: "#e91e63"
-            -label: Purple
+            - label: Purple
               value: "#926bc7"
-            -label: Deep Purple
+            - label: Deep Purple
               value: "#6e41ab"
-            -label: Indigo
+            - label: Indigo
               value: "#3f51b5"
-            -label: Blue
+            - label: Blue
               value: "#2196f3"
-            -label: Light Blue
+            - label: Light Blue
               value: "#03a9f4"
-            -label: Cyan
+            - label: Cyan
               value: "#00bcd4"
-            -label: Teal
+            - label: Teal
               value: "#009688"
-            -label: Green
+            - label: Green
               value: "#4caf50"
-            -label: Light Green
+            - label: Light Green
               value: "#8bc34a"
-            -label: Lime
+            - label: Lime
               value: "#cddc39"
-            -label: Yellow
+            - label: Yellow
               value: "#ffeb3b"
-            -label: Amber
+            - label: Amber
               value: "#ffc107"
-            -label: Orange
+            - label: Orange
               value: "#ff9800"
-            -label: Deep Orange
+            - label: Deep Orange
               value: "#ff5722"
-            -label: Brown
+            - label: Brown
               value: "#795548"
-            -label: Light Grey
+            - label: Light Grey
               value: "#bdbdbd"
-            -label: Grey
+            - label: Grey
               value: "#9e9e9e"
-            -label: Dark Grey
+            - label: Dark Grey
               value: "#606060"
-            -label: Blue grey
+            - label: Blue grey
               value: "#607d8b"
-            -label: Black
+            - label: Black
               value: "#000000"
-            -label: White
+            - label: White
               value: "#ffffff"
     icon:
       name: Notification Icon (Optional)
