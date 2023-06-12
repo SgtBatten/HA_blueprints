@@ -198,20 +198,58 @@ blueprint:
     color:
       name: Notification Color - Android/TV only (Optional)
       description: Set the color of the notification on your Android mobile device or TV.
-      default: steelblue
+      default: "#03a9f4"
       selector:
         select:
           options:
-            - steelblue
-            - grey
-            - black
-            - indigo
-            - green
-            - red
-            - cyan
-            - teal
-            - amber
-            - pink
+            - label: Primary (Steelblue)
+              value: "#03a9f4"
+            -label: Red
+              value: "#f44336"
+            -label: Pink
+              value: "#e91e63"
+            -label: Purple
+              value: "#926bc7"
+            -label: Deep Purple
+              value: "#6e41ab"
+            -label: Indigo
+              value: "#3f51b5"
+            -label: Blue
+              value: "#2196f3"
+            -label: Light Blue
+              value: "#03a9f4"
+            -label: Cyan
+              value: "#00bcd4"
+            -label: Teal
+              value: "#009688"
+            -label: Green
+              value: "#4caf50"
+            -label: Light Green
+              value: "#8bc34a"
+            -label: Lime
+              value: "#cddc39"
+            -label: Yellow
+              value: "#ffeb3b"
+            -label: Amber
+              value: "#ffc107"
+            -label: Orange
+              value: "#ff9800"
+            -label: Deep Orange
+              value: "#ff5722"
+            -label: Brown
+              value: "#795548"
+            -label: Light Grey
+              value: "#bdbdbd"
+            -label: Grey
+              value: "#9e9e9e"
+            -label: Dark Grey
+              value: "#606060"
+            -label: Blue grey
+              value: "#607d8b"
+            -label: Black
+              value: "#000000"
+            -label: White
+              value: "#ffffff"
     icon:
       name: Notification Icon (Optional)
       description: Change the icon that displays on the notification. You can enter a single icon or create a template like the example given in the dropdown. You must include 'mdi:' in the icon name.
