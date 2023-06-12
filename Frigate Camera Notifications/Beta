@@ -389,17 +389,17 @@ blueprint:
     sun_filter:
       name: Sun Filter
       description: Only allow notifications to be sent during the day/night.
-      default: ''
+      default: "always"
       selector:
         select:
           mode: dropdown
           options:
             - label: Always Send
-              value: ''
+              value: "always"
             - label: Only Send During the Day
-              value: 'day'
+              value: "day"
             - label: Only Send at Night
-              value: 'night'
+              value: "night"
     cooldown:
       name: Cooldown (Optional)
       description: Delay before sending another notification for this camera after the last event.
@@ -735,7 +735,7 @@ action:
           - "{{ is_state(this.entity_id, 'on') }}"
           - "{{ not this.attributes.last_triggered or (now() - this.attributes.last_triggered).seconds > cooldown }}"
           - "{{ not disable_times|length or not now().hour in disable_times|map('int')|list }}"
-          - "{{ not sun_filter|length or (sun_filter == 'day' and is_state('sun.sun', 'above_horizon')) or (sun_filter == 'night' and is_state('sun.sun', 'below_horizon')) }}"
+          - "{{ sun_filter == 'always' or (sun_filter == 'day' and is_state('sun.sun', 'above_horizon')) or (sun_filter == 'night' and is_state('sun.sun', 'below_horizon')) }}"
         sequence:
           - variables:
               event: "{{ trigger.payload_json }}"
