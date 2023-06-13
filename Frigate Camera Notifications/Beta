@@ -244,7 +244,7 @@ blueprint:
               value: "#9e9e9e"
             - label: Dark Grey
               value: "#606060"
-            - label: Blue grey
+            - label: Blue Grey
               value: "#607d8b"
             - label: Black
               value: "#000000"
