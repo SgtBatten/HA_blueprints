@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.1g)
+  name: Frigate Notifications (0.12.0.1f)
   description: |
     ## Frigate Notifications
 
@@ -135,9 +135,9 @@ blueprint:
             - label: "Short with a timestamp HH:MM"
               value: "{{ label }} detected - {{ camera_name }} at {{event['after']['start_time']|timestamp_custom('%H:%M')}}"
             - label: "Long:      e.g A Person was detected on the Side camera in the driveway."
-              value: "A {{ label }} {{ 'is loitering' if loitering else 'was detected' }} on the {{ camera_name }} camera{{ ' in the ' + entered_zones if entered_zones else '.'}}"
+              value: "A {{ label }} {{ 'is loitering' if loitering else 'was detected' }} on the {{ camera_name }} camera{% if entered_zones %} in the {{ entered_zones | join(', ') | replace('_',' ') }}{% endif %}."
             - label: "Long with a timestamp HH:MM"
-              value: "A {{ label }} {{ 'is loitering' if loitering else 'was detected' }} on the {{ camera_name }} camera{{ ' in the ' + entered_zones if entered_zones else '.'}} at {{event['after']['start_time']|timestamp_custom('%H:%M')}}"
+              value: "A {{ label }} {{ 'is loitering' if loitering else 'was detected' }} on the {{ camera_name }} camera{{% if entered_zones %} in the {{ entered_zones | join(', ') | replace('_',' ') }}{% endif %} at {{event['after']['start_time']|timestamp_custom('%H:%M')}}."
           custom_value: true
     subtitle:
       name: Subtitle
