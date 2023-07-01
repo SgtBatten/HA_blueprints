@@ -997,6 +997,9 @@ action:
                               sound: "{{sound}}"
                               interruption-level: "{{ iif(critical, 'critical', 'active') }}"
                             entity_id: "{{ios_live_view}}"
+                            # Support SMTP
+                            images: 
+                              - "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
                             # Actions
                             actions:
                               - action: URI
@@ -1235,6 +1238,9 @@ action:
                                     sound: "{{ iif(update, 'none', sound) }}"
                                     interruption-level: "{{ iif(critical, 'critical', 'active') }}"
                                   entity_id: "{{ios_live_view}}"
+                                  # Support SMTP
+                                  images: 
+                                    - "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
                                   # Actions
                                   actions:
                                     - action: URI
