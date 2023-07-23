@@ -181,9 +181,9 @@ blueprint:
         select:
           options:
             - label: Thumbnail
-              value: thumbnail
+              value: "/api/frigate{{client_id}}/notifications/{{id}}/thumbnail.jpg"
             - label: Snapshot
-              value: snapshot
+              value: "/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
     update_thumbnail:
       name: Update Image (Optional)
       description: Update the notification if a new "better" image is available.
@@ -684,6 +684,16 @@ blueprint:
       default: false
       selector:
         boolean:
+    max_updates:
+      name: Max Updates
+      description: |
+        Set the maximum number of times the automation will loop looking for updates. This is useful for cameras where you often get extended events or stationary objects and don't want to recieve ongoing updates.
+        Not every loop results in a notification so don't set it to 3 expecting 3 updates, you might get none.
+      default: 1000
+      selector:
+        number:
+          min: 0
+          max: 1000
 mode: parallel
 trigger_variables:
   input_camera: !input camera
@@ -709,6 +719,7 @@ variables:
   input_client_id: !input client_id
   client_id: "{{input_client_id if not input_client_id else '/' + input_client_id if '/' not in input_client_id else input_client_id }}"
   attachment: !input attachment
+  video: !input video
   alert_once: !input alert_once
   update_thumbnail: !input update_thumbnail
   ios_live_view: !input ios_live_view
@@ -743,6 +754,7 @@ variables:
   tv_transparency: !input tv_transparency
   tv_interrupt: !input tv_interrupt
   debug: !input debug
+  max_updates: !input max_updates
 action:
   - choose:
       - alias: "Silence New Object Notifications"
@@ -796,7 +808,6 @@ action:
               critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
               icon: !input icon
               channel: !input channel
-              video: !input video
           - alias: "Debug: write to Log"
             choose:
               - conditions:
@@ -817,6 +828,7 @@ action:
                             critical: {{critical}}, 
                             alert once: {{alert_once}}, 
                             Update Thumbnails: {{update_thumbnail}}, 
+                            attachment: {{attachment}}
                             Video: {{video}}, 
                             Target: {{'Telegram: ' + telegram_target if telegram else 'group (input/formatted): ' + group + '/' + group_target + ', ' if group else 'Mobile Device'}}
                             cooldown: {{cooldown}}s, 
@@ -840,6 +852,7 @@ action:
                             tv_duration: {{tv_duration}}, 
                             tv_transparency: {{tv_transparency}}, 
                             tv_interrupt: {{tv_interrupt}}, 
+                            Max updates: {{max_updates}}
                           Filters: 
                             Zones: 
                               zone filter toggle on: {{zone_only}}, 
@@ -890,7 +903,7 @@ action:
                               color: "{{color}}"
                               # Android Specific
                               subject: "{{subtitle}}"
-                              image: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
+                              image: "{{attachment}}?format=android"
                               video: "{{video}}"
                               clickAction: "{{tap_action}}"
                               ttl: 0
@@ -902,7 +915,7 @@ action:
                               subtitle: "{{subtitle}}"
                               url: "{{tap_action}}"
                               attachment:
-                                url: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
+                                url: "{{attachment}}"
                               push:
                                 sound: "{{sound}}"
                                 interruption-level: "{{ iif(critical, 'critical', 'active') }}"
@@ -953,7 +966,7 @@ action:
                                 subtitle: "{{subtitle}}"
                                 url: "{{tap_action}}"
                                 attachment:
-                                  url: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
+                                  url: "{{attachment}}"
                                 push:
                                   sound: "{{sound}}"
                                   interruption-level: "{{ iif(critical, 'critical', 'active') }}"
@@ -985,8 +998,8 @@ action:
                                   - url: "{{video}}"
                                     caption: "{{message}}"
                                 photo:
-                                  - url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
-                                    caption: "{{message}}"
+                                  - url: "{{attachment if not video else ''}}"
+                                    caption: "{{message if not video else ''}}"
                     default:
                       - service: "notify.{{ group_target }}"
                         data:
@@ -998,7 +1011,7 @@ action:
                             color: "{{color}}"
                             # Android Specific
                             subject: "{{subtitle}}"
-                            image: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
+                            image: "{{attachment}}?format=android"
                             video: "{{video}}"
                             clickAction: "{{tap_action}}"
                             ttl: 0
@@ -1016,7 +1029,7 @@ action:
                             # iOS Specific
                             url: "{{tap_action}}"
                             attachment:
-                              url: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
+                              url: "{{attachment}}"
                             push:
                               sound: "{{sound}}"
                               interruption-level: "{{ iif(critical, 'critical', 'active') }}"
@@ -1077,16 +1090,22 @@ action:
                       {%else%}
                         {{message}}
                       {%endif%}
+                    subtitle: >
+                      {% if sub_label %} 
+                        {{subtitle | replace('A Person', sub_label|title) | replace('Person', sub_label|title)}}
+                      {%else%}
+                        {{subtitle}}
+                      {%endif%}
                 - alias: "Update thumbnail at end of event"
                   choose:
                     - conditions:
-                        - "{{wait.trigger.payload_json['type'] == 'end' }}"
-                        - "{{(attachment == 'snapshot' and update_thumbnail) or video|length > 0}}"
+                        - "{{event['type'] == 'end' or repeat.index == max_updates}}"
+                        - "{{update_thumbnail or video|length > 0}}"
                       sequence:
                         - delay:
                             seconds: 5
                         - variables:
-                            new_snapshot: "{{update_thumbnail}}"
+                            new_snapshot: true
                 - alias: "Debug: write to Log"
                   choose:
                     - conditions:
@@ -1103,7 +1122,7 @@ action:
                                   sublabel: {{sub_label}}, 
                                   IOS sound: {{update if not critical else 'yes due critical notifications'}}, 
                                   Android Sound: {{'disabled by alert once' if alert_once else 'enabled'}}, 
-                                  IOS url: /api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment + '.jpg'}}
+                                  image: "{{attachment}}"
                                   video: "{{video}}"
                                   critical: {{critical}}, 
                                 Triggers: 
@@ -1119,7 +1138,6 @@ action:
                                   zone filter TEST: {{'ON' if zone_only else 'OFF'}} - {{'PASS' if zone_filter else 'FAIL'}}, 
                                   multi-zone filter: {{'OFF' if not zone_only or not zone_multi else 'ON'}} - {{'PASS' if not zone_only or not zone_multi or ( entered_zones|length and zones and zones |reject('in', entered_zones) |list |length == 0 ) else 'FAIL'}}, 
                                   state filter TEST: {{'ON' if state_only else 'OFF'}} - {{'PASS' if state_true else 'FAIL'}}
-                                  image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
                 - alias: "Notify on loitering or significant change"
                   choose:
                     - conditions: "{{ loitering or (not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
@@ -1138,7 +1156,7 @@ action:
                                     color: "{{color}}"
                                     # Android Specific
                                     subject: "{{subtitle}}"
-                                    image: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
+                                    image: "{{attachment}}?format=android"
                                     video: "{{video}}"
                                     clickAction: "{{tap_action}}"
                                     ttl: 0
@@ -1151,7 +1169,7 @@ action:
                                     subtitle: "{{subtitle}}"
                                     url: "{{tap_action}}"
                                     attachment:
-                                      url: "/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment + '.jpg'}}"
+                                      url: "{{video if video|length>0 and ( event['type'] == 'end' or repeat.index == max_updates) else attachment}}"
                                     push:
                                       sound: "{{ iif(update, 'none', sound) }}"
                                       interruption-level: "{{ iif(critical, 'critical', 'active') }}"
@@ -1204,7 +1222,7 @@ action:
                                       subtitle: "{{subtitle}}"
                                       url: "{{tap_action}}"
                                       attachment:
-                                        url: "/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment + '.jpg'}}"
+                                        url: "{{video if video|length>0 and ( event['type'] == 'end' or repeat.index == max_updates ) else attachment}}"
                                       push:
                                         sound: "{{ iif(update, 'none', sound) }}"
                                         interruption-level: "{{ iif(critical, 'critical', 'active') }}"
@@ -1237,8 +1255,8 @@ action:
                                         - url: "{{video}}"
                                           caption: "{{message}}"
                                       photo:
-                                        - url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
-                                          caption: "{{message}}"
+                                        - url: "{{attachment if not video else '' }}"
+                                          caption: "{{message if not video else '' }}"
                           default:
                             - service: "notify.{{ group_target }}"
                               data:
@@ -1250,7 +1268,7 @@ action:
                                   color: "{{color}}"
                                   # Android Specific
                                   subject: "{{subtitle}}"
-                                  image: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
+                                  image: "{{attachment}}?format=android"
                                   video: "{{video}}"
                                   clickAction: "{{tap_action}}"
                                   ttl: 0
@@ -1269,7 +1287,7 @@ action:
                                   subtitle: "{{subtitle}}"
                                   url: "{{tap_action}}"
                                   attachment:
-                                    url: "/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment + '.jpg'}}"
+                                    url: "{{video if video|length>0 and ( event['type'] == 'end' or repeat.index == max_updates ) else attachment}}"
                                   push:
                                     sound: "{{ iif(update, 'none', sound) }}"
                                     interruption-level: "{{ iif(critical, 'critical', 'active') }}"
@@ -1289,4 +1307,4 @@ action:
                                       uri: "{{url_3}}"
                                       icon: "{{icon_3}}"
                                       destructive: true
-              until: "{{ not wait.trigger or wait.trigger.payload_json['type'] == 'end' }}"
+              until: "{{ not wait.trigger or event['type'] == 'end' or repeat.index == max_updates }}"
