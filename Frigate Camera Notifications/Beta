@@ -21,16 +21,16 @@ blueprint:
 
     ### Features:
       - Easily select the camera entity or mobile device using a drop down menu.
-      - Send notifications to an Android or IOS mobile device or a TV.
+      - Send notifications to an Android or iOS mobile device or a TV.
         - or a group containing any combination of the above.
       - Configure the title and message of the notification. 
       - Dynamically handle things like object type, zones and face detection from doubletake.
       - Automatically handle some common errors like case matching and bad urls etc.
       - Optionally send the notification as a critical alert. (Critical)
-      - Optionally limit the playing of audio for secondary notification updates, and on IOS, customise the sound. (Alert Once)
+      - Optionally limit the playing of audio for secondary notification updates, and on iOS, customise the sound. (Alert Once)
       - Choose whether or not to update the notification with new thumbnails as they become available.
       - Customise the notification colour and icon.
-      - Optionally send a live view to IOS.
+      - Optionally send a live view to iOS.
       - Configure custom notification channels on Android.
       - Specify which [zones][2] to be notified about. (Zone Filter)
         - Choose between enforcing all required zones simultaneously or any one zone
@@ -47,16 +47,16 @@ blueprint:
       - Debug option to help troubleshooting
       - Support for multiple Frigate instances by specifying the ClientID and MQTT topic
       - Optional delay to the initial notification to see if it resolves the no attached image issue.
-      - Live view on IOS
+      - Live view on iOS
       - Android option: Sticky as per https://community.home-assistant.io/t/frigate-mobile-app-notifications/311091/1043
 
     ### Beta Changes:
       - Add 10s delay to final notification update to ensure frigate has time to save snapshot edits (crop, bounding box etc) if update thumbnail is enabled. 
       - Add Video (gif) option to Android which will be sent 5 seconds after the event ends.
       - Subtitle support
-      - Video for IOS sent 5 seconds after the event ends 
-      - Set custom entity for IOS live view
-      - Set Icons for Action Buttons on IOS
+      - Video for iOS sent 5 seconds after the event ends 
+      - Set custom entity for iOS live view
+      - Set Icons for Action Buttons on iOS
       - Strip _1 _2 and _3 from camera entities (trial feedback needed)
 
     [1]: https://companion.home-assistant.io/docs/notifications/notifications-basic#sending-notifications-to-multiple-devices
@@ -100,7 +100,7 @@ blueprint:
       name: Base URL (Optional)
       description: |
         The external url for your Home Assistant instance. 
-        Recommended for IOS and required for Android/Fire TV.
+        Recommended for iOS and required for Android/Fire TV.
       default: ""
     mqtt_topic:
       name: MQTT Topic (Advanced)
@@ -160,7 +160,7 @@ blueprint:
           custom_value: true
     alert_once:
       name: Alert Once (Optional)
-      description: Only the first notification for each event will play a sound. Updates, including new thumbnails will be silent. IOS users who use Critical Notifications above will still hear default critical sounds for updates.
+      description: Only the first notification for each event will play a sound. Updates, including new thumbnails will be silent. iOS users who use Critical Notifications above will still hear default critical sounds for updates.
       default: false
       selector:
         boolean:
@@ -262,7 +262,7 @@ blueprint:
             - "mdi:{{'account-outline' if label == 'Person' else 'dog' if label == 'Dog' else 'cat' if label == 'Cat' else 'car' if label == 'Car' else 'home-assistant'}}"
           custom_value: true
     sound:
-      name: Notification Sound - IOS only (Optional)
+      name: Notification Sound - iOS only (Optional)
       description: You can specify a soud file on your device that will play for the notifications. You will need to import the sound file into home assistant.
       default: default
       selector:
@@ -272,8 +272,8 @@ blueprint:
             - none
           custom_value: true
     ios_live_view:
-      name: Live View Entity - IOS only (Optional)
-      description: Attach a live view from the selected entity to the notification for IOS devices.
+      name: Live View Entity - iOS only (Optional)
+      description: Attach a live view from the selected entity to the notification for iOS devices.
       default: ""
       selector:
         entity:
@@ -528,8 +528,8 @@ blueprint:
               value: app://com.mcu.reolink
           custom_value: true
     icon_1:
-      name: Action Button 1 icon - IOS Only
-      description: Customise the Icon on the first Action Button. Only the IOS SFSymbols library is supported, not mdi:icons. e.g sfsymbols:bell
+      name: Action Button 1 icon - iOS Only
+      description: Customise the Icon on the first Action Button. Only the iOS SFSymbols library is supported, not mdi:icons. e.g sfsymbols:bell
       default: ""
     button_2:
       name: Action Button 2 Text
@@ -562,8 +562,8 @@ blueprint:
               value: app://com.mcu.reolink
           custom_value: true
     icon_2:
-      name: Action Button 2 icon - IOS Only
-      description: Customise the Icon on the second Action Button. Only the IOS SFSymbols library is supported, not mdi:icons. e.g sfsymbols:bell
+      name: Action Button 2 icon - iOS Only
+      description: Customise the Icon on the second Action Button. Only the iOS SFSymbols library is supported, not mdi:icons. e.g sfsymbols:bell
       default: ""
     button_3:
       name: Action Button 3 Text
@@ -598,8 +598,8 @@ blueprint:
               value: app://com.mcu.reolink
           custom_value: true
     icon_3:
-      name: Action Button 3 icon - IOS Only
-      description: Customise the Icon on the third Action Button. Only the IOS SFSymbols library is supported, not mdi:icons. e.g sfsymbols:bell
+      name: Action Button 3 icon - iOS Only
+      description: Customise the Icon on the third Action Button. Only the iOS SFSymbols library is supported, not mdi:icons. e.g sfsymbols:bell
       default: ""
     tv:
       name: TV Notification (Optional)
@@ -1077,9 +1077,9 @@ action:
                                   Last Zones: {{last_zones}}, 
                                   Current zones: {{entered_zones}}, 
                                   sublabel: {{sub_label}}, 
-                                  IOS sound: {{update if not critical else 'yes due critical notifications'}}, 
+                                  iOS sound: {{update if not critical else 'yes due critical notifications'}}, 
                                   Android Sound: {{'disabled by alert once' if alert_once else 'enabled'}}, 
-                                  IOS url: /api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment + '.jpg'}}
+                                  iOS url: /api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment + '.jpg'}}
                                   video: "{{video}}"
                                   critical: {{critical}}, 
                                 Triggers: 
