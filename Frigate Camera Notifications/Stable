@@ -21,16 +21,16 @@ blueprint:
 
     ### Features:
       - Easily select the camera entity or mobile device using a drop down menu.
-      - Send notifications to an Android or IOS mobile device or a TV.
+      - Send notifications to an Android or iOS mobile device or a TV.
         - or a group containing any combination of the above.
       - Configure the title and message of the notification. 
       - Dynamically handle things like object type, zones and face detection from doubletake.
       - Automatically handle some common errors like case matching and bad urls etc.
       - Optionally send the notification as a critical alert. (Critical)
-      - Optionally limit the playing of audio for secondary notification updates, and on IOS, customise the sound. (Alert Once)
+      - Optionally limit the playing of audio for secondary notification updates, and on iOS, customise the sound. (Alert Once)
       - Choose whether or not to update the notification with new thumbnails as they become available.
       - Customise the notification colour and icon.
-      - Optionally send a live view to IOS.
+      - Optionally send a live view to iOS.
       - Configure custom notification channels on Android.
       - Specify which [zones][2] to be notified about. (Zone Filter)
         - Choose between enforcing all required zones simultaneously or any one zone
@@ -87,7 +87,7 @@ blueprint:
       name: Base URL (Optional)
       description: |
         The external url for your Home Assistant instance. 
-        Recommended for IOS and required for Android/Fire TV.
+        Recommended for iOS and required for Android/Fire TV.
       default: ""
     title:
       name: Notification Title (Optional)
@@ -131,7 +131,7 @@ blueprint:
           custom_value: true
     alert_once:
       name: Alert Once (Optional)
-      description: Only the first notification for each event will play a sound. Updates, including new thumbnails will be silent. IOS users who use Critical Notifications above will still hear default critical sounds for updates.
+      description: Only the first notification for each event will play a sound. Updates, including new thumbnails will be silent. iOS users who use Critical Notifications above will still hear default critical sounds for updates.
       default: false
       selector:
         boolean:
@@ -184,7 +184,7 @@ blueprint:
             - "mdi:{{'account-outline' if label == 'Person' else 'dog' if label == 'Dog' else 'cat' if label == 'Cat' else 'car' if label == 'Car' else 'home-assistant'}}"
           custom_value: true
     sound:
-      name: Notification Sound - IOS only (Optional)
+      name: Notification Sound - iOS only (Optional)
       description: You can specify a soud file on your device that will play for the notifications. You will need to import the sound file into home assistant.
       default: default
       selector:
@@ -194,8 +194,8 @@ blueprint:
             - none
           custom_value: true
     ios_live_view:
-      name: Live View - IOS only (Optional)
-      description: Attach a live view to the notification for IOS devices
+      name: Live View - iOS only (Optional)
+      description: Attach a live view to the notification for iOS devices
       default: false
       selector:
         boolean:
@@ -885,7 +885,7 @@ action:
                                   Last Zones: {{last_zones}}, 
                                   Current zones: {{entered_zones}}, 
                                   sublabel: {{sub_label}},
-                                  IOS sound: {{update if not critical else 'yes due critical notifications'}}, 
+                                  iOS sound: {{update if not critical else 'yes due critical notifications'}}, 
                                   Android Sound: {{'disabled by alert once' if alert_once else 'enabled'}}, 
                                 Triggers: 
                                   New Snapshot: {{new_snapshot}}, 
