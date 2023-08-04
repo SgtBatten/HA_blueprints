@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.1g)
+  name: Frigate Notifications (0.12.0.1h)
   description: |
     ## Frigate Notifications
 
@@ -278,6 +278,12 @@ blueprint:
       selector:
         entity:
           domain: camera
+    android_auto:
+      name: Android Auto
+      description: Show the notification on Android Auto if the recieving device is connected.
+      default: false
+      selector:
+        boolean:
     sticky:
       name: Sticky - Android only (Optional)
       description: |
@@ -704,6 +710,7 @@ variables:
   alert_once: !input alert_once
   update_thumbnail: !input update_thumbnail
   ios_live_view: !input ios_live_view
+  android_auto: !input android_auto
   group: !input notify_group
   group_target: "{{ group | lower | regex_replace('^notify\.', '') | replace(' ','_') }}"
   zone_only: !input zone_filter
@@ -814,6 +821,7 @@ action:
                             initial delay: {{initial_delay}}s, 
                             color: {{color}}, 
                             sound: {{sound}}, 
+                            android_auto: {{android_auto}}. 
                             Channel: {{channel}}, 
                             Sticky: {{sticky}}, 
                             Title: {{title}}, 
@@ -888,6 +896,7 @@ action:
                               notification_icon: "{{icon}}"
                               sticky: "{{sticky}}"
                               channel: "{{'alarm_stream' if critical else channel}}"
+                              car_ui: "{{android_auto}}"
                               # iOS Specific
                               subtitle: "{{subtitle}}"
                               url: "{{tap_action}}"
@@ -930,6 +939,7 @@ action:
                                 notification_icon: "{{icon}}"
                                 sticky: "{{sticky}}"
                                 channel: "{{'alarm_stream' if critical else channel}}"
+                                car_ui: "{{android_auto}}"
                                 # Android/Fire TV
                                 image:
                                   url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
@@ -982,6 +992,7 @@ action:
                             notification_icon: "{{icon}}"
                             sticky: "{{sticky}}"
                             channel: "{{'alarm_stream' if critical else channel}}"
+                            car_ui: "{{android_auto}}"
                             # Android/Fire TV
                             subtitle: "{{subtitle}}"
                             fontsize: "{{tv_size}}"
@@ -1123,6 +1134,7 @@ action:
                                     notification_icon: "{{icon}}"
                                     sticky: "{{sticky}}"
                                     channel: "{{'alarm_stream' if critical else channel}}"
+                                    car_ui: "{{android_auto}}"
                                     # iOS Specific
                                     subtitle: "{{subtitle}}"
                                     url: "{{tap_action}}"
@@ -1166,6 +1178,7 @@ action:
                                       notification_icon: "{{icon}}"
                                       sticky: "{{sticky}}"
                                       channel: "{{'alarm_stream' if critical else channel}}"
+                                      car_ui: "{{android_auto}}"
                                       # Android/Fire TV
                                       image:
                                         url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
@@ -1220,6 +1233,7 @@ action:
                                   notification_icon: "{{icon}}"
                                   sticky: "{{sticky}}"
                                   channel: "{{'alarm_stream' if critical else channel}}"
+                                  car_ui: "{{android_auto}}"
                                   # Android/Fire TV
                                   fontsize: "{{tv_size}}"
                                   position: "{{tv_position}}"
