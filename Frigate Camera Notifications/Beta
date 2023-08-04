@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.1h)
+  name: Frigate Notifications (0.12.0.1i)
   description: |
     ## Frigate Notifications
 
@@ -23,6 +23,7 @@ blueprint:
       - Easily select the camera entity or mobile device using a drop down menu.
       - Send notifications to an Android or iOS mobile device or a TV.
         - or a group containing any combination of the above.
+        - for TV Alerts, you need to install and configure https://www.home-assistant.io/integrations/nfandroidtv/
       - Configure the title and message of the notification. 
       - Dynamically handle things like object type, zones and face detection from doubletake.
       - Automatically handle some common errors like case matching and bad urls etc.
@@ -57,7 +58,8 @@ blueprint:
       - Video for iOS sent 5 seconds after the event ends 
       - Set custom entity for iOS live view
       - Set Icons for Action Buttons on iOS
-      - Strip _1 _2 and _3 from camera entities (trial feedback needed)
+      - Strip _1 _2 etc from camera entities (trial feedback needed)
+      - Android Auto option
 
     [1]: https://companion.home-assistant.io/docs/notifications/notifications-basic#sending-notifications-to-multiple-devices
     [2]: https://blakeblackshear.github.io/frigate/configuration/cameras#zones
