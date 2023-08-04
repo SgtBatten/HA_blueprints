@@ -999,7 +999,7 @@ action:
                             entity_id: "{{ios_live_view}}"
                             # Support SMTP
                             images: 
-                              - "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
+                              - "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
                             # Actions
                             actions:
                               - action: URI
@@ -1240,7 +1240,7 @@ action:
                                   entity_id: "{{ios_live_view}}"
                                   # Support SMTP
                                   images: 
-                                    - "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
+                                    - "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
                                   # Actions
                                   actions:
                                     - action: URI
