@@ -998,7 +998,7 @@ action:
                                   - url: "{{video}}"
                                     caption: "{{message}}"
                                 photo:
-                                  - url: "{{attachment if not video else ''}}"
+                                  - url: "{{base_url + attachment if not video else ''}}"
                                     caption: "{{message if not video else ''}}"
                     default:
                       - service: "notify.{{ group_target }}"
@@ -1255,7 +1255,7 @@ action:
                                         - url: "{{video}}"
                                           caption: "{{message}}"
                                       photo:
-                                        - url: "{{attachment if not video else '' }}"
+                                        - url: "{{base_url + attachment if not video else '' }}"
                                           caption: "{{message if not video else '' }}"
                           default:
                             - service: "notify.{{ group_target }}"
