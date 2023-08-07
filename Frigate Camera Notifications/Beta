@@ -711,6 +711,7 @@ trigger:
     value_template: "{{ value_json['after']['camera'] | lower | replace('-','_') }}/{{ value_json['type']}}"
     id: frigate-event
 variables:
+  id: "{{ trigger.payload_json['after']['id'] }}"
   input_camera: !input camera
   camera: "{{ input_camera | replace('camera.', '') }}"
   camera_name: "{{ camera | replace('_', ' ') | title }}"
@@ -782,7 +783,6 @@ action:
         sequence:
           - variables:
               event: "{{ trigger.payload_json }}"
-              id: "{{ trigger.payload_json['after']['id'] }}"
               object: "{{ trigger.payload_json['after']['label'] }}"
               label: "{{ object | title }}"
               # Dynamic Variables per event
