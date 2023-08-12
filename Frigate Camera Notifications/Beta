@@ -986,7 +986,7 @@ action:
                             color: "{{color}}"
                             # Android Specific
                             subject: "{{subtitle}}"
-                            image: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
+                            image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
                             video: "{{video}}"
                             clickAction: "{{tap_action}}"
                             ttl: 0
@@ -1226,7 +1226,7 @@ action:
                                   color: "{{color}}"
                                   # Android Specific
                                   subject: "{{subtitle}}"
-                                  image: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
+                                  image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
                                   video: "{{video}}"
                                   clickAction: "{{tap_action}}"
                                   ttl: 0
