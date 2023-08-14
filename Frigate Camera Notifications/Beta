@@ -96,10 +96,10 @@ blueprint:
 
         Note: If the group contains both mobile devices and TVs, the TV will not display the snapshot unless 'TV notifications' to true, however this will stop android phones recieving thumbnails.
       default: ""
-    notify_telegram_group:
-      name: Telegram Group (Optional)
+    notify_telegram_chat_id:
+      name: Telegram Chat ID (Optional)
       description: |
-        The name of the telegram notify service to send notifications to.
+        The chat ID to send telegram notifications to.
         If set, this will override individual devices and groups above. Note: TV (far below) must be set to false.
       default: ""
     base_url:
@@ -726,7 +726,7 @@ variables:
   ios_live_view: !input ios_live_view
   group: !input notify_group
   group_target: "{{ group | lower | replace('notify.', '') | replace(' ','_') }}"
-  telegram: !input notify_telegram_group
+  telegram: !input notify_telegram_chat_id
   telegram_target: "{{ telegram | lower | replace('notify.', '') | replace(' ','_') }}"
   zone_only: !input zone_filter
   input_zones: !input zones
@@ -987,19 +987,11 @@ action:
                                     icon: "{{icon_3}}"
                                     destructive: true
                       - conditions: "{{ telegram | length > 0 }}"
-                        sequence:
-                          - service: "notify.{{ telegram_target }}"
-                            data:
-                              title: "{{title}}"
-                              message: "{{message}}"
-                              data:
-                                message_tag: "{{ id }}"
-                                video:
-                                  - url: "{{video}}"
-                                    caption: "{{message}}"
-                                photo:
-                                  - url: "{{base_url + attachment if not video else ''}}"
-                                    caption: "{{message if not video else ''}}"
+                        - service: telegram_bot.send_photo
+                          data:
+                            target: "{{telegram}}"
+                            caption: "{{message}}"
+                            url: "{{base_url + attachment }}"
                     default:
                       - service: "notify.{{ group_target }}"
                         data:
@@ -1244,19 +1236,22 @@ action:
                                           destructive: true
                             - conditions: "{{ telegram | length > 0 }}"
                               sequence:
-                                - service: "notify.{{ telegram_target }}"
-                                  data:
-                                    title: "{{title}}"
-                                    message: "{{message}}"
-                                    data:
-                                      message_tag: "{{ id }}"
-                                      disable_notification: "{{ alert_once}}"
-                                      video:
-                                        - url: "{{video}}"
+                                - choose:
+                                  - conditions: 
+                                    - "{{ event['type'] == 'end' or repeat.index == max_updates }}"
+                                    - "{{ video | length > 0 }}"
+                                    sequence:
+                                      - service: telegram_bot.send_video
+                                        data:
+                                          target: "{{telegram}}"
                                           caption: "{{message}}"
-                                      photo:
-                                        - url: "{{base_url + attachment if not video else '' }}"
-                                          caption: "{{message if not video else '' }}"
+                                          url: "{{base_url + video if video else ''}}"
+                                  default:
+                                    - service: telegram_bot.send_photo
+                                      data:
+                                        target: "{{telegram}}"
+                                        caption: "{{message}}"
+                                        url: "{{base_url + attachment }}"
                           default:
                             - service: "notify.{{ group_target }}"
                               data:
