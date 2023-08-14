@@ -987,11 +987,12 @@ action:
                                     icon: "{{icon_3}}"
                                     destructive: true
                       - conditions: "{{ telegram | length > 0 }}"
-                        - service: telegram_bot.send_photo
-                          data:
-                            target: "{{telegram}}"
-                            caption: "{{message}}"
-                            url: "{{base_url + attachment }}"
+                        sequence:
+                          - service: telegram_bot.send_photo
+                            data:
+                              target: "{{telegram}}"
+                              caption: "{{message}}"
+                              url: "{{base_url + attachment }}"
                     default:
                       - service: "notify.{{ group_target }}"
                         data:
