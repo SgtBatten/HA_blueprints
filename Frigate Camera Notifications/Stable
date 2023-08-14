@@ -901,7 +901,7 @@ action:
                                   multi-zone filter: {{'OFF' if not zone_only or not zone_multi else 'ON'}} - {{'PASS' if not zone_only or not zone_multi or ( entered_zones|length and zones and zones |reject('in', entered_zones) |list |length == 0 ) else 'FAIL'}}, 
                                   state filter TEST: {{'ON' if state_only else 'OFF'}} - {{'PASS' if state_true else 'FAIL'}}
 
-                                  image: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
+                                  image: "/api/frigate/notifications/{{id}}/{{attachment}}.jpg"
                 - alias: "Notify on loitering or significant change"
                   choose:
                     - conditions: "{{ loitering or (not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
