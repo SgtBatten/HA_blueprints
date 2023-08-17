@@ -830,7 +830,7 @@ action:
                             Update Thumbnails: {{update_thumbnail}}, 
                             attachment: {{attachment}}
                             Video: {{video}}, 
-                            Target: {{'Telegram: ' + telegram_target if telegram else 'group (input/formatted): ' + group + '/' + group_target + ', ' if group else 'Mobile Device'}}
+                            Target: {{'Telegram,  ' if telegram else 'group (input/formatted): ' + group + '/' + group_target + ', ' if group else 'Mobile Device, '}}
                             cooldown: {{cooldown}}s, 
                             loiter timer: {{loiter_timer}}s, 
                             initial delay: {{initial_delay}}s, 
