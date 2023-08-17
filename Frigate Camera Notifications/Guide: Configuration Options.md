@@ -54,7 +54,7 @@ If you run [multiple instances](https://docs.frigate.video/integrations/home-ass
 | Name | Variable | Description |
 | -----------| ---------- | -------- |
 | Camera Name | {{camera}} | The formatted (friendly) name of the camera |
-| Confidence | {{ event['after']['top_score'] \|int(0) }} | The percentage indicating the frigate confidence value |
+| Confidence | {{ event['after']['top_score'] \|float(0) }} | The value indicating the frigate confidence value |
 | Object | {{label}} | The Object type - replaced by persons name if double take face match is correctly configured  |
 | Time | {{event['before']['start_time']\|timestamp_custom('%H:%M')}} | The event start time |
 
