@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.1j)
+  name: Frigate Notifications (0.12.0.1k)
   description: |
     ## Frigate Notifications
 
@@ -1005,7 +1005,7 @@ action:
                             # iOS Specific
                             url: "{{tap_action}}"
                             attachment:
-                              url: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
+                              url: "{{base_ur}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
                             push:
                               sound: "{{sound}}"
                               interruption-level: "{{ iif(critical, 'critical', 'active') }}"
@@ -1246,7 +1246,7 @@ action:
                                   subtitle: "{{subtitle}}"
                                   url: "{{tap_action}}"
                                   attachment:
-                                    url: "/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment + '.jpg'}}"
+                                    url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment + '.jpg'}}"
                                   push:
                                     sound: "{{ iif(update, 'none', sound) }}"
                                     interruption-level: "{{ iif(critical, 'critical', 'active') }}"
