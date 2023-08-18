@@ -1013,7 +1013,7 @@ action:
                             # iOS Specific
                             url: "{{tap_action}}"
                             attachment:
-                              url: "{{base_ur}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
+                              url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
                             push:
                               sound: "{{sound}}"
                               interruption-level: "{{ iif(critical, 'critical', 'active') }}"
