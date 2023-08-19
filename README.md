@@ -56,15 +56,15 @@ Minimum iOS Version: 15.0
   - You can customise the color of the notification
   - Made the Action buttons customisable so you can link to anything of choice.
   - Fix issue if user does not cleanup the yaml after removing object filter
-  - Added customisable Notification Icon. (Unsure if it works on IOS)
-  - Added customisable sound for IOS. 
+  - Added customisable Notification Icon. (Unsure if it works on iOS)
+  - Added customisable sound for iOS. 
   - You can disable the notifications at certain times (Time Filter)
   - You can choose to have the notifications sent as critical only at certain times (different method to the time filter to test preferences)
   - Notify Android/Fire TV devices using https://www.home-assistant.io/integrations/nfandroidtv/
   - Handle camera names with hyphens in frigate.yaml
   - Replace {{label}} in title and message of the notification with a persons name if double-take face match is detected.
   - You can customise the Tap Action
-  - Live View on IOS
+  - Live View on iOS
   - Handle capitilisation in lists (state Filter, Object filter etc) properly
   - Choose to atatch thumbnail or snapshot to the notification
   - Debug option - prints parameters to the Home Assistant logbook
