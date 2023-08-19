@@ -609,12 +609,6 @@ blueprint:
       name: Action Button 3 icon - iOS Only
       description: Customise the Icon on the third Action Button. Only the iOS SFSymbols library is supported, not mdi:icons. e.g sfsymbols:bell
       default: ""
-    custom_action:
-      name: Custom Action
-      description: completely customisable action that you can trigger with the Custom Action buttons above.
-      selector:
-        action: {}
-      default: []
     tv:
       name: TV Notification (Optional)
       description: |
@@ -701,11 +695,6 @@ trigger:
     event_data:
       action: "silence-{{ camera }}"
     id: silence
-  - platform: event
-    event_type: mobile_app_notification_action
-    event_data:
-      action: "custom-{{ camera }}"
-    id: custom
   - platform: mqtt
     topic: "{{mqtt_topic}}"
     payload: "{{ camera }}/new"
@@ -770,11 +759,6 @@ action:
           - service: automation.turn_on
             target:
               entity_id: "{{ this.entity_id }}"
-      - alias: "Custom Action"
-        conditions:
-          - condition: trigger
-            id: custom
-        sequence: !input 'custom_action'
       - alias: "Frigate Event"
         conditions:
           - condition: trigger
