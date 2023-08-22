@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.1k)
+  name: Frigate Notifications (0.12.0.1l)
   description: |
     ## Frigate Notifications
 
@@ -58,8 +58,9 @@ blueprint:
       - Video for iOS sent 5 seconds after the event ends 
       - Set custom entity for iOS live view
       - Set Icons for Action Buttons on iOS
-      - Strip _1 _2 etc from camera entities (trial feedback needed)
+      - Strip trailing underscores and numbers from camera name (will break automation for anyone whos frigate cam ends in _x)
       - Android Auto option
+      - customise grouping on mobile devices
 
     [1]: https://companion.home-assistant.io/docs/notifications/notifications-basic#sending-notifications-to-multiple-devices
     [2]: https://blakeblackshear.github.io/frigate/configuration/cameras#zones
@@ -76,7 +77,7 @@ blueprint:
       description: |
         Select the camera entity that will trigger notifications. 
         If you do not see cameras listed in the drop down, check you have the frigate integration installed.
-        
+
         Note: The automation relies the frigate camera name matching the entity id in Home Assistant. It will automatically strip '_x' from the end of the entity id where x=1, 2 or 3.
       selector:
         entity:
@@ -263,6 +264,10 @@ blueprint:
             - mdi:cctv
             - "mdi:{{'account-outline' if label == 'Person' else 'dog' if label == 'Dog' else 'cat' if label == 'Cat' else 'car' if label == 'Car' else 'home-assistant'}}"
           custom_value: true
+    group:
+      name: Group
+      description: The group name that will determine if notifications are grouped on your mobile device. If you want notifications grouped by camera, ensure it contains {{camera}}
+      default: "{{camera}}-frigate-notification{{'-loitering' if loitering}}"
     sound:
       name: Notification Sound - iOS only (Optional)
       description: You can specify a soud file on your device that will play for the notifications. You will need to import the sound file into home assistant.
@@ -713,8 +718,8 @@ variables:
   update_thumbnail: !input update_thumbnail
   ios_live_view: !input ios_live_view
   android_auto: !input android_auto
-  group: !input notify_group
-  group_target: "{{ group | lower | regex_replace('^notify\\.', '') | replace(' ','_') }}"
+  notify_group: !input notify_group
+  group_target: "{{ notify_group | lower | regex_replace('^notify\\.', '') | replace(' ','_') }}"
   zone_only: !input zone_filter
   input_zones: !input zones
   zones: "{{ input_zones | list | lower }}"
@@ -776,6 +781,7 @@ action:
               initial_home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
               entered_zones: "{{ trigger.payload_json['after']['entered_zones'] |lower}}"
               zone_multi_filter: "{{zone_only and zone_multi and entered_zones|length and zones and zones |reject('in', entered_zones) |list |length == 0 }}"
+              loitering: false
               # Customisation of text
               title: !input title
               message: !input message
@@ -794,6 +800,7 @@ action:
               critical_input: !input critical
               critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
               icon: !input icon
+              group: !input group
               channel: !input channel
               video: !input video
           - alias: "Debug: write to Log"
@@ -817,13 +824,14 @@ action:
                             alert once: {{alert_once}}, 
                             Update Thumbnails: {{update_thumbnail}}, 
                             Video: {{video}}, 
-                            Target: {{'group (input/formatted): ' + group + '/' + group_target + ', ' if group else 'Mobile Device'}}
+                            Target: {{'group (input/formatted): ' + notify_group + '/' + group_target + ', ' if notify_group else 'Mobile Device'}}
                             cooldown: {{cooldown}}s, 
                             loiter timer: {{loiter_timer}}s, 
                             initial delay: {{initial_delay}}s, 
                             color: {{color}}, 
                             sound: {{sound}}, 
-                            android_auto: {{android_auto}}. 
+                            android_auto: {{android_auto}}, 
+                            Group: {{group}}, 
                             Channel: {{channel}}, 
                             Sticky: {{sticky}}, 
                             Title: {{title}}, 
@@ -886,7 +894,7 @@ action:
                             message: "{{message}}"
                             data:
                               tag: "{{ id }}"
-                              group: "{{ camera }}-frigate-notification"
+                              group: "{{ group }}"
                               color: "{{color}}"
                               # Android Specific
                               subject: "{{subtitle}}"
@@ -931,7 +939,7 @@ action:
                               message: "{{message}}"
                               data:
                                 tag: "{{ id }}"
-                                group: "{{ camera }}-frigate-notification"
+                                group: "{{ group }}"
                                 color: "{{color}}"
                                 # Android Specific
                                 subject: "{{subtitle}}"
@@ -1123,7 +1131,7 @@ action:
                                   message: "{{message}}"
                                   data:
                                     tag: "{{ id }}{{'-loitering' if loitering}}"
-                                    group: "{{ camera }}-frigate-notification{{'-loitering' if loitering}}"
+                                    group: "{{ group }}"
                                     color: "{{color}}"
                                     # Android Specific
                                     subject: "{{subtitle}}"
@@ -1169,7 +1177,7 @@ action:
                                     message: "{{message}}"
                                     data:
                                       tag: "{{ id }}{{'-loitering' if loitering}}"
-                                      group: "{{ camera }}-frigate-notification{{'-loitering' if loitering}}"
+                                      group: "{{ group }}"
                                       color: "{{color}}"
                                       # Android Specific
                                       subject: "{{subtitle}}"
@@ -1222,7 +1230,7 @@ action:
                                 message: "{{message}}"
                                 data:
                                   tag: "{{ id }}{{'-loitering' if loitering}}"
-                                  group: "{{ camera }}-frigate-notification{{'-loitering' if loitering}}"
+                                  group: "{{ group }}"
                                   color: "{{color}}"
                                   # Android Specific
                                   subject: "{{subtitle}}"
