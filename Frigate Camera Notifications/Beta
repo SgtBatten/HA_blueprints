@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.1l)
+  name: Frigate Notifications (0.12.0.1m)
   description: |
     ## Frigate Notifications
 
@@ -197,7 +197,7 @@ blueprint:
             - label: None
               value: ""
             - label: Clip
-              value: "/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
+              value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
     color:
       name: Notification Color - Android/TV only (Optional)
       description: Set the color of the notification on your Android mobile device or TV.
@@ -898,7 +898,7 @@ action:
                               color: "{{color}}"
                               # Android Specific
                               subject: "{{subtitle}}"
-                              image: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
+                              image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
                               video: "{{video}}"
                               clickAction: "{{tap_action}}"
                               ttl: 0
@@ -911,7 +911,7 @@ action:
                               subtitle: "{{subtitle}}"
                               url: "{{tap_action}}"
                               attachment:
-                                url: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
+                                url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
                               push:
                                 sound: "{{sound}}"
                                 interruption-level: "{{ iif(critical, 'critical', 'active') }}"
@@ -963,7 +963,7 @@ action:
                                 subtitle: "{{subtitle}}"
                                 url: "{{tap_action}}"
                                 attachment:
-                                  url: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
+                                  url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
                                 push:
                                   sound: "{{sound}}"
                                   interruption-level: "{{ iif(critical, 'critical', 'active') }}"
@@ -1135,7 +1135,7 @@ action:
                                     color: "{{color}}"
                                     # Android Specific
                                     subject: "{{subtitle}}"
-                                    image: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
+                                    image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
                                     video: "{{video}}"
                                     clickAction: "{{tap_action}}"
                                     ttl: 0
@@ -1149,7 +1149,7 @@ action:
                                     subtitle: "{{subtitle}}"
                                     url: "{{tap_action}}"
                                     attachment:
-                                      url: "/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment + '.jpg'}}"
+                                      url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment + '.jpg'}}"
                                     push:
                                       sound: "{{ iif(update, 'none', sound) }}"
                                       interruption-level: "{{ iif(critical, 'critical', 'active') }}"
@@ -1203,7 +1203,7 @@ action:
                                       subtitle: "{{subtitle}}"
                                       url: "{{tap_action}}"
                                       attachment:
-                                        url: "/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment + '.jpg'}}"
+                                        url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment + '.jpg'}}"
                                       push:
                                         sound: "{{ iif(update, 'none', sound) }}"
                                         interruption-level: "{{ iif(critical, 'critical', 'active') }}"
