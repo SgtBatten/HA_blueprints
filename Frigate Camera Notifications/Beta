@@ -138,9 +138,9 @@ blueprint:
             - label: "Short with a timestamp HH:MM"
               value: "{{ label }} detected - {{ camera_name }} at {{event['after']['start_time']|timestamp_custom('%H:%M')}}"
             - label: "Long:      e.g A Person was detected on the Side camera in the driveway."
-              value: "A {{ label }} {{ 'is loitering' if loitering else 'was detected' }} on the {{ camera_name }} camera{% if entered_zones %} in the {{ entered_zones | join(', ') | replace('_',' ') }}{% endif %}."
+              value: "A {{ label }} {{ 'is loitering' if loitering else 'was detected' }} on the {{ camera_name }} camera{% if enteredzones %} in the {{ enteredzones | join(', ') | replace('_',' ') }}{% endif %}."
             - label: "Long with a timestamp HH:MM"
-              value: "A {{ label }} {{ 'is loitering' if loitering else 'was detected' }} on the {{ camera_name }} camera{% if entered_zones %} in the {{ entered_zones | join(', ') | replace('_',' ') }}{% endif %} at {{event['after']['start_time']|timestamp_custom('%H:%M')}}."
+              value: "A {{ label }} {{ 'is loitering' if loitering else 'was detected' }} on the {{ camera_name }} camera{% if enteredzones %} in the {{ enteredzones | join(', ') | replace('_',' ') }}{% endif %} at {{event['after']['start_time']|timestamp_custom('%H:%M')}}."
           custom_value: true
     subtitle:
       name: Subtitle
@@ -779,8 +779,8 @@ action:
               label: "{{ object | title }}"
               # Dynamic Variables per event
               initial_home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
-              entered_zones: "{{ trigger.payload_json['after']['entered_zones']}}"
-              zone_multi_filter: "{{zone_only and zone_multi and entered_zones|length and zones and zones |reject('in', entered_zones) |list |length == 0 }}"
+              enteredzones: "{{ trigger.payload_json['after']['entered_zones']}}"
+              zone_multi_filter: "{{zone_only and zone_multi and enteredzones|length and zones and zones |reject('in', enteredzones) |list |length == 0 }}"
               # Customisation of text
               title: !input title
               message: !input message
@@ -851,8 +851,8 @@ action:
                               zone filter toggle on: {{zone_only}}, 
                               Multi Zone toggle on: {{zone_multi}}, 
                               Required zones: {{input_zones}}, 
-                              Entered Zones: {{entered_zones}}, 
-                              Zone Filter TEST: {{'PASS (Multi)' if zone_multi_filter else 'PASS' if ( not zone_only or not zone_multi and zones|select('in', entered_zones)|list|length ) else 'FAIL (Multi)' if zone_multi else 'FAIL' }}, 
+                              Entered Zones: {{enteredzones}}, 
+                              Zone Filter TEST: {{'PASS (Multi)' if zone_multi_filter else 'PASS' if ( not zone_only or not zone_multi and zones|select('in', enteredzones)|list|length ) else 'FAIL (Multi)' if zone_multi else 'FAIL' }}, 
                             Required objects TEST: 
                               Input: {{input_labels}}, 
                               TEST: {{'PASS' if not labels|length or object in labels else 'FAIL'}}
@@ -879,7 +879,7 @@ action:
           - alias: "Notify on new object"
             choose:
               - conditions:
-                  - "{{ not zone_only or (not zone_multi and zones|select('in', entered_zones)|list|length > 0) or (zone_multi and entered_zones|length > 0 and zones |reject('in', entered_zones) |list |length == 0) }}"
+                  - "{{ not zone_only or (not zone_multi and zones|select('in', enteredzones)|list|length > 0) or (zone_multi and enteredzones|length > 0 and zones |reject('in', enteredzones) |list |length == 0) }}"
                   - "{{ not initial_home }}"
                   - "{{ not state_only or states(input_entity) in states_filter }}"
                   - "{{ custom_filter }}"
@@ -1050,12 +1050,12 @@ action:
                     home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
                     presence_changed: "{{ presence_entity != '' and as_datetime(event['before']['frame_time']) < states[presence_entity].last_changed }}"
                     last_zones: "{{ event['before']['entered_zones'] |lower}}"
-                    entered_zones: "{{ event['after']['entered_zones'] |lower}}"
-                    zone_filter: "{{ not zone_only or zones|select('in', entered_zones)|list|length > 0 }}"
-                    zone_multi_filter: "{{not zone_only or not zone_multi or ( entered_zones|list|length > 0 and zones and zones|reject('in', entered_zones)|list|length == 0 ) }}"
+                    enteredzones: "{{ event['after']['entered_zones'] |lower}}"
+                    zone_filter: "{{ not zone_only or zones|select('in', enteredzones)|list|length > 0 }}"
+                    zone_multi_filter: "{{not zone_only or not zone_multi or ( enteredzones|list|length > 0 and zones and zones|reject('in', enteredzones)|list|length == 0 ) }}"
                     stationary_moved: "{{ event['after']['position_changes'] > event['before']['position_changes'] }}"
-                    zone_only_changed: "{{ zone_only and (entered_zones|length > 0 and not last_zones|length) }}"
-                    entered_zones_changed: "{{ zones|length > 0 and (zones|select('in', entered_zones)|list|length > 0 and not zones|select('in', last_zones)|list|length) }}"
+                    zone_only_changed: "{{ zone_only and (enteredzones|length > 0 and not last_zones|length) }}"
+                    entered_zones_changed: "{{ zones|length > 0 and (zones|select('in', enteredzones)|list|length > 0 and not zones|select('in', last_zones)|list|length) }}"
                     state_true: "{{ not state_only or states(input_entity) in states_filter }}"
                     sub_label: "{{ event['after']['sub_label']}}"
                     sub_label_changed: "{{ sub_label != event['before']['sub_label'] }}"
@@ -1096,7 +1096,7 @@ action:
                               DEBUG (in loop): 
                                 Info: 
                                   Last Zones: {{last_zones}}, 
-                                  Current zones: {{entered_zones}}, 
+                                  Current zones: {{enteredzones}}, 
                                   sublabel: {{sub_label}}, 
                                   iOS sound: {{update if not critical else 'yes due critical notifications'}}, 
                                   Android Sound: {{'disabled by alert once' if alert_once else 'enabled'}}, 
@@ -1114,7 +1114,7 @@ action:
                                     or 
                                   Presence Entity not home: {{'ON' if presence_entity != '' else 'OFF'}} - {{'PASS' if not home else 'FAIL'}}, 
                                   zone filter TEST: {{'ON' if zone_only else 'OFF'}} - {{'PASS' if zone_filter else 'FAIL'}}, 
-                                  multi-zone filter: {{'OFF' if not zone_only or not zone_multi else 'ON'}} - {{'PASS' if not zone_only or not zone_multi or ( entered_zones|length and zones and zones |reject('in', entered_zones) |list |length == 0 ) else 'FAIL'}}, 
+                                  multi-zone filter: {{'OFF' if not zone_only or not zone_multi else 'ON'}} - {{'PASS' if not zone_only or not zone_multi or ( enteredzones|length and zones and zones |reject('in', enteredzones) |list |length == 0 ) else 'FAIL'}}, 
                                   state filter TEST: {{'ON' if state_only else 'OFF'}} - {{'PASS' if state_true else 'FAIL'}}
                                   Custom Filter: {{'PASS' if custom_filter else 'FAIL'}}
                                   image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
