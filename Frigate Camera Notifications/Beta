@@ -619,19 +619,19 @@ blueprint:
       default: ""
     custom_action_manual:
       name: Custom Action (Manual Trigger)
-      description: completely customisable action that you can trigger with the Custom Action buttons in the notification. Select Custom Action on any action button above.
+      description: Customisable action that you can trigger with the Custom Action buttons in the notification. Select Custom Action on any Action Button above.
       selector:
         action: {}
       default: []
     custom_action_auto:
       name: Custom Action (Auto Trigger)
-      description: completely customisable action that will trigger on the initial notification (subject to the all other notification conditions).
+      description: Customisable action that will trigger on the initial notification (subject to the all other notification conditions).
       selector:
         action: {}
       default: []
     custom_action_auto_multi:
       name: Custom Action (Auto Trigger in Loop)
-      description: completely customisable action that will trigger all on subsequent notifications (subject to the all other notification conditions)
+      description: Customisable action that will trigger all on subsequent notifications (subject to the all other notification conditions). If you want it to also trigger on the initial notification you need to enter it in both input fields.
       selector:
         action: {}
       default: []
