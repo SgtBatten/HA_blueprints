@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.1k)
+  name: Frigate Notifications (0.12.0.1k) custom_action
   description: |
     ## Frigate Notifications
 
@@ -76,7 +76,7 @@ blueprint:
       description: |
         Select the camera entity that will trigger notifications. 
         If you do not see cameras listed in the drop down, check you have the frigate integration installed.
-        
+
         Note: The automation relies the frigate camera name matching the entity id in Home Assistant. It will automatically strip '_x' from the end of the entity id where x=1, 2 or 3.
       selector:
         entity:
@@ -504,6 +504,8 @@ blueprint:
               value: /ccab4aaf_frigate-proxy/dashboard
             - label: Open Reolink App (Android)
               value: app://com.mcu.reolink
+            - label: Custom Action (Manual Trigger)
+              value: custom-{{ camera }}
           custom_value: true
     button_1:
       name: Action Button 1 Text
@@ -534,6 +536,8 @@ blueprint:
               value: /ccab4aaf_frigate-proxy/dashboard
             - label: Open Reolink App (Android)
               value: app://com.mcu.reolink
+            - label: Custom Action (Manual Trigger)
+              value: custom-{{ camera }}
           custom_value: true
     icon_1:
       name: Action Button 1 icon - iOS Only
@@ -568,6 +572,8 @@ blueprint:
               value: /ccab4aaf_frigate-proxy/dashboard
             - label: Open Reolink App (Android)
               value: app://com.mcu.reolink
+            - label: Custom Action (Manual Trigger)
+              value: custom-{{ camera }}
           custom_value: true
     icon_2:
       name: Action Button 2 icon - iOS Only
@@ -604,14 +610,28 @@ blueprint:
               value: /ccab4aaf_frigate-proxy/dashboard
             - label: Open Reolink App (Android)
               value: app://com.mcu.reolink
+            - label: Custom Action (Manual Trigger)
+              value: custom-{{ camera }}
           custom_value: true
     icon_3:
       name: Action Button 3 icon - iOS Only
       description: Customise the Icon on the third Action Button. Only the iOS SFSymbols library is supported, not mdi:icons. e.g sfsymbols:bell
       default: ""
-    custom_action:
-      name: Custom Action
+    custom_action_manual:
+      name: Custom Action (Manual Trigger)
       description: completely customisable action that you can trigger with the Custom Action buttons above.
+      selector:
+        action: {}
+      default: []
+    custom_action_auto:
+      name: Custom Action (Auto Trigger)
+      description: completely customisable action that will trigger on the initial notification.
+      selector:
+        action: {}
+      default: []
+    custom_action_auto_multi:
+      name: Custom Action (Auto Trigger in Loop)
+      description: completely customisable action that will trigger all on subsequent notifications.
       selector:
         action: {}
       default: []
@@ -770,11 +790,11 @@ action:
           - service: automation.turn_on
             target:
               entity_id: "{{ this.entity_id }}"
-      - alias: "Custom Action"
+      - alias: "Custom Action Manual"
         conditions:
           - condition: trigger
             id: custom
-        sequence: !input 'custom_action'
+        sequence: !input "custom_action_manual"
       - alias: "Frigate Event"
         conditions:
           - condition: trigger
@@ -885,6 +905,14 @@ action:
                 sequence:
                   - delay:
                       seconds: "{{initial_delay}}"
+          - alias: "Custom Action Auto"
+            choose:
+              - conditions:
+                  - "{{ custom_action_auto |length}}"
+                  - "{{ not zone_only or (not zone_multi and zones|select('in', entered_zones)|list|length > 0) or (zone_multi and entered_zones|length > 0 and zones |reject('in', entered_zones) |list |length == 0) }}"
+                  - "{{ not initial_home }}"
+                  - "{{ not state_only or states(input_entity) in states_filter }}"
+                sequence: !input "custom_action_auto"
           - alias: "Notify on new object"
             choose:
               - conditions:
@@ -1125,6 +1153,12 @@ action:
                                   multi-zone filter: {{'OFF' if not zone_only or not zone_multi else 'ON'}} - {{'PASS' if not zone_only or not zone_multi or ( entered_zones|length and zones and zones |reject('in', entered_zones) |list |length == 0 ) else 'FAIL'}}, 
                                   state filter TEST: {{'ON' if state_only else 'OFF'}} - {{'PASS' if state_true else 'FAIL'}}
                                   image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
+                - alias: "Custom Action Auto Multi"
+                  choose:
+                    - conditions:
+                        - "{{ custom_action_auto_multi |length }}"
+                        - "{{ loitering or (not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
+                      sequence: !input "custom_action_auto_multi"
                 - alias: "Notify on loitering or significant change"
                   choose:
                     - conditions: "{{ loitering or (not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
