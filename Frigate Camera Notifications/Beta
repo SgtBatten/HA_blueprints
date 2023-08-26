@@ -151,7 +151,7 @@ blueprint:
       name: Critical Notification (Optional)
       description: |
         Send as a critical notification to the mobile device. This will ignore silent/vibrate modes.
-        You can choose to limit crtical notifications to certain times using a template (some examples provided but you can enter your own as long as it outputs true or false)
+        You can choose to limit critical notifications to certain times using a template (some examples provided but you can enter your own as long as it outputs true or false)
       default: "false"
       selector:
         select:
