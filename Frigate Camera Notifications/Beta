@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.1n)
+  name: Frigate Notifications (0.12.0.1o)
   description: |
     ## Frigate Notifications
 
@@ -61,7 +61,7 @@ blueprint:
       - Strip trailing underscores and numbers from camera name (will break automation for anyone whos frigate cam ends in _x)
       - Android Auto option
       - customise grouping on mobile devices
-      - bounding box and crop options
+      - bounding box and crop options for attachment
 
     [1]: https://companion.home-assistant.io/docs/notifications/notifications-basic#sending-notifications-to-multiple-devices
     [2]: https://blakeblackshear.github.io/frigate/configuration/cameras#zones
@@ -79,7 +79,7 @@ blueprint:
         Select the camera entity that will trigger notifications. 
         If you do not see cameras listed in the drop down, check you have the frigate integration installed.
 
-        Note: The automation relies the frigate camera name matching the entity id in Home Assistant. It will automatically strip '_x' from the end of the entity id where x=1, 2 or 3.
+        Note: The automation relies the frigate camera name matching the entity id in Home Assistant. It will automatically strip '_x' from the end of the entity id where x is a number.
       selector:
         entity:
           integration: frigate
@@ -174,7 +174,7 @@ blueprint:
         Choose which image to attach to the notification.
 
         Note: TVs will always get sent the snapshot if TV is true
-      default: thumbnail
+      default: thumbnail.jpg
       selector:
         select:
           options:
@@ -727,7 +727,7 @@ variables:
   ios_live_view: !input ios_live_view
   android_auto: !input android_auto
   notify_group: !input notify_group
-  group_target: "{{ notify_group | lower | regex_replace('^notify\\.', '') | replace(' ','_') }}"
+  notify_group_target: "{{ notify_group | lower | regex_replace('^notify\\.', '') | replace(' ','_') }}"
   zone_only: !input zone_filter
   input_zones: !input zones
   zones: "{{ input_zones | list | lower }}"
@@ -832,7 +832,7 @@ action:
                             alert once: {{alert_once}}, 
                             Update Thumbnails: {{update_thumbnail}}, 
                             Video: {{video}}, 
-                            Target: {{'group (input/formatted): ' + notify_group + '/' + group_target + ', ' if notify_group else 'Mobile Device'}}
+                            Target: {{'group (input/formatted): ' + notify_group + '/' + notify_group_target + ', ' if notify_group else 'Mobile Device'}}
                             cooldown: {{cooldown}}s, 
                             loiter timer: {{loiter_timer}}s, 
                             initial delay: {{initial_delay}}s, 
@@ -893,7 +893,7 @@ action:
                   - "{{ not state_only or states(input_entity) in states_filter }}"
                 sequence:
                   - choose:
-                      - conditions: "{{ not group_target }}"
+                      - conditions: "{{ not notify_group_target }}"
                         sequence:
                           - device_id: !input notify_device
                             domain: mobile_app
@@ -941,7 +941,7 @@ action:
                                   destructive: true
                       - conditions: "{{ tv }}"
                         sequence:
-                          - service: "notify.{{ group_target }}"
+                          - service: "notify.{{ notify_group_target }}"
                             data:
                               title: "{{title}}"
                               message: "{{message}}"
@@ -992,7 +992,7 @@ action:
                                     icon: "{{icon_3}}"
                                     destructive: true
                     default:
-                      - service: "notify.{{ group_target }}"
+                      - service: "notify.{{ notify_group_target }}"
                         data:
                           title: "{{title}}"
                           message: "{{message}}"
@@ -1122,7 +1122,7 @@ action:
                                     or 
                                   Presence Entity not home: {{'ON' if presence_entity != '' else 'OFF'}} - {{'PASS' if not home else 'FAIL'}}, 
                                   zone filter TEST: {{'ON' if zone_only else 'OFF'}} - {{'PASS' if zone_filter else 'FAIL'}}, 
-                                  multi-zone filter: {{'OFF' if not zone_only or not zone_multi else 'ON'}} - {{'PASS' if not zone_only or not zone_multi or ( enteredzones|length and zones and zones |reject('in', entered_zones) |list |length == 0 ) else 'FAIL'}}, 
+                                  multi-zone filter: {{'OFF' if not zone_only or not zone_multi else 'ON'}} - {{'PASS' if not zone_only or not zone_multi or ( enteredzones|length and zones and zones |reject('in', enteredzones) |list |length == 0 ) else 'FAIL'}}, 
                                   state filter TEST: {{'ON' if state_only else 'OFF'}} - {{'PASS' if state_true else 'FAIL'}}
                                   image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                 - alias: "Notify on loitering or significant change"
@@ -1130,7 +1130,7 @@ action:
                     - conditions: "{{ loitering or (not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
                       sequence:
                         - choose:
-                            - conditions: "{{ not group_target }}"
+                            - conditions: "{{ not notify_group_target }}"
                               sequence:
                                 - device_id: !input notify_device
                                   domain: mobile_app
@@ -1179,7 +1179,7 @@ action:
                                         destructive: true
                             - conditions: "{{ tv }}"
                               sequence:
-                                - service: "notify.{{ group_target }}"
+                                - service: "notify.{{ notify_group_target }}"
                                   data:
                                     title: "{{title}}"
                                     message: "{{message}}"
@@ -1232,7 +1232,7 @@ action:
                                           icon: "{{icon_3}}"
                                           destructive: true
                           default:
-                            - service: "notify.{{ group_target }}"
+                            - service: "notify.{{ notify_group_target }}"
                               data:
                                 title: "{{title}}"
                                 message: "{{message}}"
