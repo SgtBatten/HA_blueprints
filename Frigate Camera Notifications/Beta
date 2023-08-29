@@ -832,6 +832,7 @@ action:
               icon: !input icon
               channel: !input channel
               video: !input video
+              custom_action_auto: !input custom_action_auto
           - alias: "Debug: write to Log"
             choose:
               - conditions:
@@ -908,7 +909,7 @@ action:
           - alias: "Custom Action Auto"
             choose:
               - conditions:
-                  - "{{ custom_action_auto |length}}"
+                  - "{{ custom_action_auto |length > 0 }}"
                   - "{{ not zone_only or (not zone_multi and zones|select('in', entered_zones)|list|length > 0) or (zone_multi and entered_zones|length > 0 and zones |reject('in', entered_zones) |list |length == 0) }}"
                   - "{{ not initial_home }}"
                   - "{{ not state_only or states(input_entity) in states_filter }}"
@@ -1110,6 +1111,7 @@ action:
                       {%else%}
                         {{message}}
                       {%endif%}
+                    custom_action_auto_multi: !input custom_action_auto_multi
                 - alias: "Update thumbnail at end of event"
                   choose:
                     - conditions:
@@ -1156,7 +1158,7 @@ action:
                 - alias: "Custom Action Auto Multi"
                   choose:
                     - conditions:
-                        - "{{ custom_action_auto_multi |length }}"
+                        - "{{ custom_action_auto_multi | length > 0 }}"
                         - "{{ loitering or (not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
                       sequence: !input "custom_action_auto_multi"
                 - alias: "Notify on loitering or significant change"
