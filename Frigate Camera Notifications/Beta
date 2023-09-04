@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.1o)
+  name: Frigate Notifications (0.12.0.1p)
   description: |
     ## Frigate Notifications
 
@@ -1021,7 +1021,7 @@ action:
                             # iOS Specific
                             url: "{{tap_action}}"
                             attachment:
-                              url: "{{base_ur}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                              url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                             push:
                               sound: "{{sound}}"
                               interruption-level: "{{ iif(critical, 'critical', 'active') }}"
