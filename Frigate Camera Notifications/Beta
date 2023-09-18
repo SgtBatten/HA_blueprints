@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.1p)
+  name: Frigate Notifications (0.12.0.1q)
   description: |
     ## Frigate Notifications
 
@@ -60,6 +60,7 @@ blueprint:
       - Set Icons for Action Buttons on iOS
       - Strip trailing underscores and numbers from camera name (will break automation for anyone whos frigate cam ends in _x)
       - Android Auto option
+      - Custom Filter
       - customise grouping on mobile devices
       - bounding box and crop options for attachment
 
@@ -322,7 +323,7 @@ blueprint:
     zones:
       name: Required Zones (Optional - Enabled Above)
       description: |
-        Enter the name of one zone at a time. Include underscores as per your frigate config.
+        Enter the name of one zone at a time. It must be lowercase and include underscores as per your frigate config.
         By default any zone is acceptable. if you desire ALL listed zones to be entered before getting a notification, enable the multi toggle below.
       default: []
       selector:
@@ -453,6 +454,10 @@ blueprint:
           max: 86400
           min: 0
           unit_of_measurement: seconds
+    custom_filter:
+      name: Custom Filter (Optional - Advanced)
+      description: A filter that must result in true or false but can be templated as necessary. You will need to ensure it is enclosed with appropriate \"quotes\" and \{\{brackets\}\}.
+      default: true
     silence_timer:
       name: Silence New Object Notifications (Optional)
       description: |
@@ -730,7 +735,7 @@ variables:
   notify_group_target: "{{ notify_group | lower | regex_replace('^notify\\.', '') | replace(' ','_') }}"
   zone_only: !input zone_filter
   input_zones: !input zones
-  zones: "{{ input_zones | list | lower }}"
+  zones: "{{ input_zones }}"
   zone_multi: !input zone_multi
   input_labels: !input labels
   labels: "{{ input_labels | list | lower }}"
@@ -787,7 +792,7 @@ action:
               label: "{{ object | title }}"
               # Dynamic Variables per event
               initial_home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
-              enteredzones: "{{ trigger.payload_json['after']['entered_zones'] |lower}}"
+              enteredzones: "{{ trigger.payload_json['after']['entered_zones']}}"
               zone_multi_filter: "{{zone_only and zone_multi and enteredzones|length and zones and zones |reject('in', enteredzones) |list |length == 0 }}"
               loitering: false
               # Customisation of text
@@ -807,6 +812,7 @@ action:
               # other things that can be templated and might need info from the event
               critical_input: !input critical
               critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
+              custom_filter: !input custom_filter
               icon: !input icon
               group: !input group
               channel: !input channel
@@ -875,6 +881,7 @@ action:
                               state filter entity: {{input_entity}}, 
                               required states: {{input_states}}, 
                               State Filter TEST: {{'PASS' if not state_only or states(input_entity) in states_filter else 'FAIL' }},
+                            Custom Filter: {{custom_filter}},
           - alias: "Notifications enabled for object label"
             condition: template
             value_template: "{{ not labels|length or object in labels }}"
@@ -891,6 +898,7 @@ action:
                   - "{{ not zone_only or (not zone_multi and zones|select('in', enteredzones)|list|length > 0) or (zone_multi and enteredzones|length > 0 and zones |reject('in', enteredzones) |list |length == 0) }}"
                   - "{{ not initial_home }}"
                   - "{{ not state_only or states(input_entity) in states_filter }}"
+                  - "{{ custom_filter }}"
                 sequence:
                   - choose:
                       - conditions: "{{ not notify_group_target }}"
@@ -1123,11 +1131,12 @@ action:
                                   Presence Entity not home: {{'ON' if presence_entity != '' else 'OFF'}} - {{'PASS' if not home else 'FAIL'}}, 
                                   zone filter TEST: {{'ON' if zone_only else 'OFF'}} - {{'PASS' if zone_filter else 'FAIL'}}, 
                                   multi-zone filter: {{'OFF' if not zone_only or not zone_multi else 'ON'}} - {{'PASS' if not zone_only or not zone_multi or ( enteredzones|length and zones and zones |reject('in', enteredzones) |list |length == 0 ) else 'FAIL'}}, 
-                                  state filter TEST: {{'ON' if state_only else 'OFF'}} - {{'PASS' if state_true else 'FAIL'}}
+                                  state filter TEST: {{'ON' if state_only else 'OFF'}} - {{'PASS' if state_true else 'FAIL'}}, 
+                                  Custom Filter: {{'ON' if custom_filter != '' else 'OFF'}} - {{'PASS' if custom_filter else 'FAIL'}}, 
                                   image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                 - alias: "Notify on loitering or significant change"
                   choose:
-                    - conditions: "{{ loitering or (not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
+                    - conditions: "{{ loitering or (custom_filter and not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
                       sequence:
                         - choose:
                             - conditions: "{{ not notify_group_target }}"
