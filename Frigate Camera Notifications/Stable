@@ -119,7 +119,7 @@ blueprint:
       description: |
         Send as a critical notification to the mobile device.
         Sometimes notifications (particularly on android) are delayed, this will resolve this.
-        You can choose to limit crtical notifications to certain times using a template (two examples provided but you can enter your own as long as it outputs true or false)
+        You can choose to limit critical notifications to certain times using a template (two examples provided but you can enter your own as long as it outputs true or false)
       default: "false"
       selector:
         select:
