@@ -458,6 +458,13 @@ blueprint:
       name: Custom Filter (Optional - Advanced)
       description: A filter that must result in true or false but can be templated as necessary. You will need to ensure it is enclosed with appropriate \"quotes\" and \{\{brackets\}\}.
       default: true
+    bypass_condition:
+      name: bypas_condition (Optional - Advanced)
+      description: |
+          Bypass the conditions in the update loop. Write a template that is true at the desired moment. You will need to ensure it is enclosed with appropriate \"quotes\" and \{\{brackets\}\}.
+          
+          E.g you want to notify on a specific trigger such as a doorbell being pressed. Create a template that is true for only a few seconds after the doorbell is pressed.
+      default: false
     silence_timer:
       name: Silence New Object Notifications (Optional)
       description: |
@@ -1118,6 +1125,7 @@ action:
                     update: "{{ alert_once or (new_snapshot and not loitering and not presence_changed and not zone_only_changed and not entered_zones_changed and not sub_label_changed) }}"
                     critical_input: !input critical
                     critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
+                    bypass_condition: !input bypass_condition
                     title: >
                       {% if sub_label %} 
                         {{title | replace('A Person', sub_label|title) | replace('Person', sub_label|title)}}
@@ -1168,6 +1176,8 @@ action:
                                   sublabel changed: {{sub_label_changed}}, 
                                 Conditions: 
                                   Loitering: {{loitering}}
+                                    or
+                                  Bypass: {{bypass_condition}}
                                     or 
                                   Presence Entity not home: {{'ON' if presence_entity != '' else 'OFF'}} - {{'PASS' if not home else 'FAIL'}}, 
                                   zone filter TEST: {{'ON' if zone_only else 'OFF'}} - {{'PASS' if zone_filter else 'FAIL'}}, 
@@ -1183,7 +1193,7 @@ action:
                       sequence: !input "custom_action_auto_multi"
                 - alias: "Notify on loitering or significant change"
                   choose:
-                    - conditions: "{{ loitering or (custom_filter and not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
+                    - conditions: "{{ loitering or bypass_condition or (custom_filter and not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
                       sequence:
                         - choose:
                             - conditions: "{{ not notify_group_target }}"
