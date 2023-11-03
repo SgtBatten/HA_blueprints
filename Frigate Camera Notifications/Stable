@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.1)
+  name: Frigate Notifications (0.12.0.2)
   description: |
     ## Frigate Notifications
 
@@ -71,7 +71,7 @@ blueprint:
     notify_device:
       name: Mobile Device
       description: Select a device that runs the official Home Assistant app to receive notifications. If you wish to notify a group of devices or and Android/Fire TV use the field below to override this selection. This can be left blank in that case
-      default: false
+      default: ""
       selector:
         device:
           integration: mobile_app
