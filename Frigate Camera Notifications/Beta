@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.1r)
+  name: Frigate Notifications (0.12.0.1s)
   description: |
     ## Frigate Notifications
 
@@ -928,7 +928,7 @@ action:
             choose:
               - conditions:
                   - "{{ custom_action_auto |length > 0 }}"
-                  - "{{ not zone_only or (not zone_multi and zones|select('in', entered_zones)|list|length > 0) or (zone_multi and entered_zones|length > 0 and zones |reject('in', entered_zones) |list |length == 0) }}"
+                  - "{{ not zone_only or (not zone_multi and zones|select('in', enteredzones)|list|length > 0) or (zone_multi and enteredzones|length > 0 and zones |reject('in', enteredzones) |list |length == 0) }}"
                   - "{{ not initial_home }}"
                   - "{{ not state_only or states(input_entity) in states_filter }}"
                 sequence: !input "custom_action_auto"
