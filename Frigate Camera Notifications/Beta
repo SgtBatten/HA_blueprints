@@ -17,7 +17,7 @@ blueprint:
 
     ### Required entities:
       - Frigate Camera Name
-      - Mobile App Device **or** the name of a Notification Group or TV
+      - Mobile App Device **and if send to a group** the name of a Notification Group or TV
 
     ### Features:
       - Easily select the camera entity or mobile device using a drop down menu.
@@ -88,7 +88,9 @@ blueprint:
           device_class: camera
     notify_device:
       name: Mobile Device
-      description: Select a device that runs the official Home Assistant app to receive notifications. If you wish to notify a group of devices or and Android/Fire TV use the field below to override this selection. This can be left blank in that case
+      description: Select a device that runs the official Home Assistant Companion app to receive notifications. If you wish to notify a group of devices or and Android/Fire TV use the field below to override this selection.
+
+      <b>Note: this field is required for notifications, even you want to notify a group (see next option Notification Group)!</b>
       default: false
       selector:
         device:
