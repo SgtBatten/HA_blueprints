@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.11.0.16d)
+  name: Frigate Notifications (0.12.0.3)
   description: |
     ## Frigate Notifications
 
@@ -17,22 +17,24 @@ blueprint:
 
     ### Required entities:
       - Frigate Camera Name
-      - Mobile App Device **or** the name of a Notification Group or TV
+      - Mobile Device (Running HA Companion App)
 
     ### Features:
       - Easily select the camera entity or mobile device using a drop down menu.
-      - Send notifications to an Android or IOS mobile device or a TV.
+      - Send notifications to an Android or iOS mobile device or a TV.
         - or a group containing any combination of the above.
+        - for TV Alerts, you need to install and configure https://www.home-assistant.io/integrations/nfandroidtv/
       - Configure the title and message of the notification. 
       - Dynamically handle things like object type, zones and face detection from doubletake.
       - Automatically handle some common errors like case matching and bad urls etc.
       - Optionally send the notification as a critical alert. (Critical)
-      - Optionally limit the playing of audio for secondary notification updates, and on IOS, customise the sound. (Alert Once)
+      - Optionally limit the playing of audio for secondary notification updates, and on iOS, customise the sound. (Alert Once)
       - Choose whether or not to update the notification with new thumbnails as they become available.
       - Customise the notification colour and icon.
-      - Optionally send a live view to IOS.
+      - Optionally send a live view to iOS.
       - Configure custom notification channels on Android.
       - Specify which [zones][2] to be notified about. (Zone Filter)
+        - Choose between enforcing all required zones simultaneously or any one zone
       - Specify what type of [objects][3] to be notified about. (Object Filter)
       - Disable notifications if a presence entity or group is "home". (Presence Filter)
       - Limit notifications based on the state of another entity. (State Filter)
@@ -44,14 +46,23 @@ blueprint:
       - Configure 3 action buttons to open almost anything (defaults are: View Clip, View Snapshot and Silence New Notifications)
       - Configure the size, transparency, position and duration of TV notifications.
       - Debug option to help troubleshooting
+      - Support for multiple Frigate instances by specifying the ClientID and MQTT topic
+      - Optional delay to the initial notification to see if it resolves the no attached image issue.
+      - Live view on iOS
+      - Android option: Sticky as per https://community.home-assistant.io/t/frigate-mobile-app-notifications/311091/1043
 
     ### Beta Changes:
-      - Support for multiple Frigate instances by specifying the ClientID and MQTT topic
-      - Android options: Sticky and Channel as per https://community.home-assistant.io/t/frigate-mobile-app-notifications/311091/1043
-      - Handle capitilisation in inputs properly
-      - Handle trailing slash in base urls properly
-      - Choose between enforcing all required zones simultaneously or any one zone
       - Add 10s delay to final notification update to ensure frigate has time to save snapshot edits (crop, bounding box etc) if update thumbnail is enabled. 
+      - Add Video (gif) option to Android which will be sent 5 seconds after the event ends.
+      - Subtitle support
+      - Video for iOS sent 5 seconds after the event ends 
+      - Set custom entity for iOS live view
+      - Set Icons for Action Buttons on iOS
+      - Strip trailing underscores and numbers from camera name (will break automation for anyone whos frigate cam ends in _x)
+      - Android Auto option
+      - Custom Filter
+      - customise grouping on mobile devices
+      - bounding box and crop options for attachment
 
     [1]: https://companion.home-assistant.io/docs/notifications/notifications-basic#sending-notifications-to-multiple-devices
     [2]: https://blakeblackshear.github.io/frigate/configuration/cameras#zones
@@ -68,7 +79,8 @@ blueprint:
       description: |
         Select the camera entity that will trigger notifications. 
         If you do not see cameras listed in the drop down, check you have the frigate integration installed.
-        Note: The automation relies on this matching your frigate config (by default it does).
+
+        Note: The automation relies the frigate camera name matching the entity id in Home Assistant. It will automatically strip '_x' from the end of the entity id where x is a number.
       selector:
         entity:
           integration: frigate
@@ -76,7 +88,7 @@ blueprint:
           device_class: camera
     notify_device:
       name: Mobile Device
-      description: Select a device that runs the official Home Assistant app to receive notifications. If you wish to notify a group of devices or and Android/Fire TV use the field below to override this selection. This can be left blank in that case
+      description: Select a device that runs the official Home Assistant app to receive notifications. If you wish to notify a group of devices or and Android/Fire TV use the field below to override this selection. This will be ignored in that case but it still required.
       default: false
       selector:
         device:
@@ -93,7 +105,7 @@ blueprint:
       name: Base URL (Optional)
       description: |
         The external url for your Home Assistant instance. 
-        Recommended for IOS and required for Android/Fire TV.
+        Recommended for iOS and required for Android/Fire TV.
       default: ""
     mqtt_topic:
       name: MQTT Topic (Advanced)
@@ -125,15 +137,22 @@ blueprint:
               value: "A {{ label }} {{ 'is loitering' if loitering else 'was detected' }} on the {{ camera_name }} camera."
             - label: "Short:     e.g Person detected - Side"
               value: "{{ label }} detected - {{ camera_name }}"
+            - label: "Short with a timestamp HH:MM"
+              value: "{{ label }} detected - {{ camera_name }} at {{event['after']['start_time']|timestamp_custom('%H:%M')}}"
             - label: "Long:      e.g A Person was detected on the Side camera in the driveway."
-              value: "A {{ label }} {{ 'is loitering' if loitering else 'was detected' }} on the {{ camera_name }} camera{{ ' in the ' + entered_zones if entered_zones else '.'}}"
+              value: "A {{ label }} {{ 'is loitering' if loitering else 'was detected' }} on the {{ camera_name }} camera{% if enteredzones %} in the {{ enteredzones | join(', ') | replace('_',' ') }}{% endif %}."
+            - label: "Long with a timestamp HH:MM"
+              value: "A {{ label }} {{ 'is loitering' if loitering else 'was detected' }} on the {{ camera_name }} camera{% if enteredzones %} in the {{ enteredzones | join(', ') | replace('_',' ') }}{% endif %} at {{event['after']['start_time']|timestamp_custom('%H:%M')}}."
           custom_value: true
+    subtitle:
+      name: Subtitle
+      description: A secondary heading you can use in your notifications.
+      default: ""
     critical:
       name: Critical Notification (Optional)
       description: |
-        Send as a critical notification to the mobile device.
-        Sometimes notifications (particularly on android) are delayed, this will resolve this.
-        You can choose to limit crtical notifications to certain times using a template (two examples provided but you can enter your own as long as it outputs true or false)
+        Send as a critical notification to the mobile device. This will ignore silent/vibrate modes.
+        You can choose to limit critical notifications to certain times using a template (some examples provided but you can enter your own as long as it outputs true or false)
       default: "false"
       selector:
         select:
@@ -142,10 +161,11 @@ blueprint:
             - "true"
             - "{{'false' if now().hour in [8,9,10,11,12,13,14,15,16,17,18] else 'true'}}"
             - "{{'true' if is_state('sun.sun', 'above_horizon') else 'false' }}"
+            - "{{ event['after']['top_score'] |float(0) > 0.8 }}"
           custom_value: true
     alert_once:
       name: Alert Once (Optional)
-      description: Only the first notification for each event will play a sound. Updates, including new thumbnails will be silent. IOS users who use Critical Notifications above will still hear default critical sounds for updates.
+      description: Only the first notification for each event will play a sound. Updates, including new thumbnails will be silent. iOS users who use Critical Notifications above will still hear default critical sounds for updates.
       default: false
       selector:
         boolean:
@@ -155,36 +175,93 @@ blueprint:
         Choose which image to attach to the notification.
 
         Note: TVs will always get sent the snapshot if TV is true
-      default: thumbnail
+      default: thumbnail.jpg
       selector:
         select:
           options:
             - label: Thumbnail
-              value: thumbnail
+              value: thumbnail.jpg
             - label: Snapshot
-              value: snapshot
+              value: snapshot.jpg
+            - label: Snapshot with bounding box
+              value: snapshot.jpg?bbox=1
+            - label: Snapshot cropped
+              value: snapshot.jpg?crop=1
+            - label: Snapshot cropped with bounding box
+              value: snapshot.jpg?bbox=1&crop=1
+          mode: dropdown
     update_thumbnail:
-      name: Update Attachment (Optional)
+      name: Update Image (Optional)
       description: Update the notification if a new "better" image is available.
       default: false
       selector:
         boolean:
-    color:
-      name: Notification Color (Optional)
-      description: Set the color of the notification on your mobile device or TV.
-      default: grey
+    video:
+      name: Video (Optional)
+      description: You can optionally attach the clip to the notification which will replace the thumbnail/snapshot above if available.
+      default: ""
       selector:
         select:
           options:
-            - grey
-            - black
-            - indigo
-            - green
-            - red
-            - cyan
-            - teal
-            - amber
-            - pink
+            - label: None
+              value: ""
+            - label: Clip
+              value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
+    color:
+      name: Notification Color - Android/TV only (Optional)
+      description: Set the color of the notification on your Android mobile device or TV.
+      default: "#03a9f4"
+      selector:
+        select:
+          options:
+            - label: Primary (Steelblue)
+              value: "#03a9f4"
+            - label: Red
+              value: "#f44336"
+            - label: Pink
+              value: "#e91e63"
+            - label: Purple
+              value: "#926bc7"
+            - label: Deep Purple
+              value: "#6e41ab"
+            - label: Indigo
+              value: "#3f51b5"
+            - label: Blue
+              value: "#2196f3"
+            - label: Light Blue
+              value: "#03a9f4"
+            - label: Cyan
+              value: "#00bcd4"
+            - label: Teal
+              value: "#009688"
+            - label: Green
+              value: "#4caf50"
+            - label: Light Green
+              value: "#8bc34a"
+            - label: Lime
+              value: "#cddc39"
+            - label: Yellow
+              value: "#ffeb3b"
+            - label: Amber
+              value: "#ffc107"
+            - label: Orange
+              value: "#ff9800"
+            - label: Deep Orange
+              value: "#ff5722"
+            - label: Brown
+              value: "#795548"
+            - label: Light Grey
+              value: "#bdbdbd"
+            - label: Grey
+              value: "#9e9e9e"
+            - label: Dark Grey
+              value: "#606060"
+            - label: Blue Grey
+              value: "#607d8b"
+            - label: Black
+              value: "#000000"
+            - label: White
+              value: "#ffffff"
     icon:
       name: Notification Icon (Optional)
       description: Change the icon that displays on the notification. You can enter a single icon or create a template like the example given in the dropdown. You must include 'mdi:' in the icon name.
@@ -196,8 +273,12 @@ blueprint:
             - mdi:cctv
             - "mdi:{{'account-outline' if label == 'Person' else 'dog' if label == 'Dog' else 'cat' if label == 'Cat' else 'car' if label == 'Car' else 'home-assistant'}}"
           custom_value: true
+    group:
+      name: Group
+      description: The group name that will determine if notifications are grouped on your mobile device. If you want notifications grouped by camera, ensure it contains {{camera}}
+      default: "{{camera}}-frigate-notification{{'-loitering' if loitering}}"
     sound:
-      name: Notification Sound - IOS only (Optional)
+      name: Notification Sound - iOS only (Optional)
       description: You can specify a soud file on your device that will play for the notifications. You will need to import the sound file into home assistant.
       default: default
       selector:
@@ -207,17 +288,22 @@ blueprint:
             - none
           custom_value: true
     ios_live_view:
-      name: Live View - IOS only (Optional)
-      description: Attach a live view to the notification for IOS devices
+      name: Live View Entity - iOS only (Optional)
+      description: Attach a live view from the selected entity to the notification for iOS devices.
+      default: ""
+      selector:
+        entity:
+          domain: camera
+    android_auto:
+      name: Android Auto
+      description: Show the notification on Android Auto if the recieving device is connected.
       default: false
       selector:
         boolean:
     sticky:
       name: Sticky - Android only (Optional)
       description: |
-        When enabled, the notification will stay active on the device after interacting with it and remain there until cleared.
-
-        Not convinced this is necessary, the notification is already sticky unless swiped away or silence new notifications button is pressed.
+        When enabled, the notification will stay active on the device after tapping it and remain there until cleared.
       default: false
       selector:
         boolean:
@@ -237,10 +323,8 @@ blueprint:
     zones:
       name: Required Zones (Optional - Enabled Above)
       description: |
-        Enter the name of one zone at a time. Include underscores as per your frigate config.
+        Enter the name of one zone at a time. It must be lowercase and include underscores as per your frigate config.
         By default any zone is acceptable. if you desire ALL listed zones to be entered before getting a notification, enable the multi toggle below.
-
-        Note: If the text entry is glitching (dissapearing every few seconds) select one of the examples, then edit in yaml mode.
       default: []
       selector:
         select:
@@ -254,7 +338,7 @@ blueprint:
           custom_value: true
     zone_multi:
       name: Multi Zone (Optional)
-      description: Require all zones specified above to be entered, instead of any listed zone
+      description: Require all zones specified above to be entered, instead of any listed zone. Zone Filter must be enabled also.
       default: false
       selector:
         boolean:
@@ -262,8 +346,6 @@ blueprint:
       name: Object Filter (Optional)
       description: |
         Enter or select one object at a time.
-
-        Note: If the text entry is glitching (dissapearing every few seconds) select one of the examples, then edit in yaml mode.
       default: ""
       selector:
         select:
@@ -298,12 +380,6 @@ blueprint:
       default: ""
       selector:
         entity:
-    # state_filter_states_test:
-    #   name: State Filter States TEST (Optional)
-    #   description: Enter the states that the above entity must be in, one at a time.
-    #   selector:
-    #     state:
-    #       entity_id: !input state_entity
     state_filter_states:
       name: State Filter States (Optional)
       description: Enter the states that the above entity must be in, one at a time.
@@ -375,9 +451,13 @@ blueprint:
       default: 30
       selector:
         number:
-          max: 300
+          max: 86400
           min: 0
           unit_of_measurement: seconds
+    custom_filter:
+      name: Custom Filter (Optional - Advanced)
+      description: A filter that must result in true or false but can be templated as necessary. You will need to ensure it is enclosed with appropriate \"quotes\" and \{\{brackets\}\}.
+      default: true
     silence_timer:
       name: Silence New Object Notifications (Optional)
       description: |
@@ -386,7 +466,7 @@ blueprint:
       default: 30
       selector:
         number:
-          max: 300
+          max: 3600
           min: 0
           unit_of_measurement: minutes
     loiter_timer:
@@ -397,17 +477,29 @@ blueprint:
       default: 0
       selector:
         number:
-          max: 300
+          max: 3600
           min: 0
           unit_of_measurement: minutes
+    initial_delay:
+      name: Delay initial notification (Optional)
+      description: |
+        How long to delay the first notification for each event. 
+
+        Use this if you DO NOT use "update image" and are experiencing notifications without attached images. Start with small numbers.
+      default: 0
+      selector:
+        number:
+          max: 15
+          min: 0
+          unit_of_measurement: seconds
     tap_action:
       name: Tap Action URL
       description: |
         # Action Buttons and URLs
 
-        The url to open when tapping on the notification. Some presets are provided, you can also set you own. 
+        The url to open when tapping on the notification. Some presets are provided, you can also set you own by typing in the box. 
 
-        These 7 options define the text and urls associated with the three action buttons at the bottom of the notification.
+        These options define the text and urls associated with the three action buttons at the bottom of the notification.
       default: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
       selector:
         select:
@@ -417,17 +509,21 @@ blueprint:
             - label: View Snapshot
               value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
             - label: View Stream
-              value: "{{base_url}}/api/camera_proxy_stream/camera.{{trigger.payload_json['after']['camera']}}?token={{state_attr( 'camera.' ~ camera, 'access_token')}}"
+              value: "{{base_url}}/api/camera_proxy_stream/camera.{{trigger.payload_json['after']['camera'] | lower | replace('-','_')}}?token={{state_attr( 'camera.' ~ camera, 'access_token')}}"
             - label: Open Home Assistant (web)
               value: "{{base_url}}/lovelace"
             - label: Open Home Assistant (app)
               value: /lovelace
             - label: Open Frigate
               value: /ccab4aaf_frigate/dashboard
+            - label: Open Frigate (Full Access)
+              value: /ccab4aaf_frigate-fa/dashboard
             - label: Open Frigate (proxy)
               value: /ccab4aaf_frigate-proxy/dashboard
             - label: Open Reolink App (Android)
               value: app://com.mcu.reolink
+            - label: Custom Action (Manual Trigger)
+              value: custom-{{ camera }}
           custom_value: true
     button_1:
       name: Action Button 1 Text
@@ -445,10 +541,26 @@ blueprint:
             - label: View Snapshot
               value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
             - label: View Stream
-              value: "{{base_url}}/api/camera_proxy_stream/camera.{{trigger.payload_json['after']['camera']}}?token={{state_attr( 'camera.' ~ camera, 'access_token')}}"
-            - label: Open Home Assistant
+              value: "{{base_url}}/api/camera_proxy_stream/camera.{{trigger.payload_json['after']['camera'] | lower | replace('-','_')}}?token={{state_attr( 'camera.' ~ camera, 'access_token')}}"
+            - label: Open Home Assistant (web)
               value: "{{base_url}}/lovelace"
+            - label: Open Home Assistant (app)
+              value: /lovelace
+            - label: Open Frigate
+              value: /ccab4aaf_frigate/dashboard
+            - label: Open Frigate (Full Access)
+              value: /ccab4aaf_frigate-fa/dashboard
+            - label: Open Frigate (proxy)
+              value: /ccab4aaf_frigate-proxy/dashboard
+            - label: Open Reolink App (Android)
+              value: app://com.mcu.reolink
+            - label: Custom Action (Manual Trigger)
+              value: custom-{{ camera }}
           custom_value: true
+    icon_1:
+      name: Action Button 1 icon - iOS Only
+      description: Customise the Icon on the first Action Button. Only the iOS SFSymbols library is supported, not mdi:icons. e.g sfsymbols:bell
+      default: ""
     button_2:
       name: Action Button 2 Text
       description: "The text used on the second Action button at the bottom of the notification. Set the URL below."
@@ -465,18 +577,34 @@ blueprint:
             - label: View Snapshot
               value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
             - label: View Stream
-              value: "{{base_url}}/api/camera_proxy_stream/camera.{{trigger.payload_json['after']['camera']}}?token={{state_attr( 'camera.' ~ camera, 'access_token')}}"
-            - label: Open Home Assistant
+              value: "{{base_url}}/api/camera_proxy_stream/camera.{{trigger.payload_json['after']['camera'] | lower | replace('-','_')}}?token={{state_attr( 'camera.' ~ camera, 'access_token')}}"
+            - label: Open Home Assistant (web)
               value: "{{base_url}}/lovelace"
+            - label: Open Home Assistant (app)
+              value: /lovelace
+            - label: Open Frigate
+              value: /ccab4aaf_frigate/dashboard
+            - label: Open Frigate (Full Access)
+              value: /ccab4aaf_frigate-fa/dashboard
+            - label: Open Frigate (proxy)
+              value: /ccab4aaf_frigate-proxy/dashboard
+            - label: Open Reolink App (Android)
+              value: app://com.mcu.reolink
+            - label: Custom Action (Manual Trigger)
+              value: custom-{{ camera }}
           custom_value: true
+    icon_2:
+      name: Action Button 2 icon - iOS Only
+      description: Customise the Icon on the second Action Button. Only the iOS SFSymbols library is supported, not mdi:icons. e.g sfsymbols:bell
+      default: ""
     button_3:
       name: Action Button 3 Text
       description: "The text used on the third Action button at the bottom of the notification. Set the URL below."
       default: "Silence New Notifications"
     url_3:
       name: Action Button 3 URL
-      description: Customise what happens when you press the second Action Button. Select from one of the preconfigured options or enter your own custom URL."
-      default: Silence New Notifications
+      description: Customise what happens when you press the third Action Button. Select from one of the preconfigured options or enter your own custom URL.
+      default: silence-{{ camera }}
       selector:
         select:
           options:
@@ -487,10 +615,44 @@ blueprint:
             - label: View Snapshot
               value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
             - label: View Stream
-              value: "{{base_url}}/api/camera_proxy_stream/camera.{{trigger.payload_json['after']['camera']}}?token={{state_attr( 'camera.' ~ camera, 'access_token')}}"
-            - label: Open Home Assistant
+              value: "{{base_url}}/api/camera_proxy_stream/camera.{{trigger.payload_json['after']['camera'] | lower | replace('-','_')}}?token={{state_attr( 'camera.' ~ camera, 'access_token')}}"
+            - label: Open Home Assistant (web)
               value: "{{base_url}}/lovelace"
+            - label: Open Home Assistant (app)
+              value: /lovelace
+            - label: Open Frigate
+              value: /ccab4aaf_frigate/dashboard
+            - label: Open Frigate (Full Access)
+              value: /ccab4aaf_frigate-fa/dashboard
+            - label: Open Frigate (proxy)
+              value: /ccab4aaf_frigate-proxy/dashboard
+            - label: Open Reolink App (Android)
+              value: app://com.mcu.reolink
+            - label: Custom Action (Manual Trigger)
+              value: custom-{{ camera }}
           custom_value: true
+    icon_3:
+      name: Action Button 3 icon - iOS Only
+      description: Customise the Icon on the third Action Button. Only the iOS SFSymbols library is supported, not mdi:icons. e.g sfsymbols:bell
+      default: ""
+    custom_action_manual:
+      name: Custom Action (Manual Trigger)
+      description: Customisable action that you can trigger with the Custom Action buttons in the notification. Select Custom Action on any Action Button above.
+      selector:
+        action: {}
+      default: []
+    custom_action_auto:
+      name: Custom Action (Auto Trigger)
+      description: Customisable action that will trigger on the initial notification (subject to the all other notification conditions).
+      selector:
+        action: {}
+      default: []
+    custom_action_auto_multi:
+      name: Custom Action (Auto Trigger in Loop)
+      description: Customisable action that will trigger all on subsequent notifications (subject to the all other notification conditions). If you want it to also trigger on the initial notification you need to enter it in both input fields.
+      selector:
+        action: {}
+      default: []
     tv:
       name: TV Notification (Optional)
       description: |
@@ -533,9 +695,14 @@ blueprint:
       name: TV Notification Duration (Optional)
       description: The duration (in seconds) the notification will display on your TV.
       default: 10
+      selector:
+        number:
+          max: 300
+          min: 0
+          unit_of_measurement: seconds
     tv_transparency:
       name: TV notification Transaparency (Optional)
-      description: Set the transparency of the notificaiton on your TV.
+      description: Set the transparency of the notification on your TV.
       default: 0%
       selector:
         select:
@@ -564,7 +731,7 @@ blueprint:
 mode: parallel
 trigger_variables:
   input_camera: !input camera
-  camera: "{{ input_camera | replace('camera.', '') }}"
+  camera: "{{ input_camera | regex_replace('^camera\\.|_\\d+$', '') }}"
   mqtt_topic: !input mqtt_topic
 trigger:
   - platform: event
@@ -579,23 +746,22 @@ trigger:
     id: frigate-event
 variables:
   input_camera: !input camera
-  camera: "{{ input_camera | replace('camera.', '') }}"
+  camera: "{{ input_camera | regex_replace('^camera\\.', '') }}"
   camera_name: "{{ camera | replace('_', ' ') | title }}"
   input_base_url: !input base_url
   base_url: "{{ input_base_url.rstrip('/')}}"
   input_client_id: !input client_id
   client_id: "{{input_client_id if not input_client_id else '/' + input_client_id if '/' not in input_client_id else input_client_id }}"
   attachment: !input attachment
-  critical_input: !input critical
-  critical: "{{ true if critical_input == 'true' else false }}"
   alert_once: !input alert_once
   update_thumbnail: !input update_thumbnail
   ios_live_view: !input ios_live_view
-  group: !input notify_group
-  group_target: "{{ group | lower | replace('notify.', '') | replace(' ','_') }}"
+  android_auto: !input android_auto
+  notify_group: !input notify_group
+  notify_group_target: "{{ notify_group | lower | regex_replace('^notify\\.', '') | replace(' ','_') }}"
   zone_only: !input zone_filter
   input_zones: !input zones
-  zones: "{{ input_zones | list | lower }}"
+  zones: "{{ input_zones }}"
   zone_multi: !input zone_multi
   input_labels: !input labels
   labels: "{{ input_labels | list | lower }}"
@@ -604,6 +770,7 @@ variables:
   cooldown: !input cooldown
   loitering: false
   loiter_timer: !input loiter_timer
+  initial_delay: !input initial_delay
   fps: "{{ states('sensor.' + camera + '_camera_fps')|int(5) }}"
   state_only: !input state_filter
   input_entity: !input state_entity
@@ -636,6 +803,11 @@ action:
           - service: automation.turn_on
             target:
               entity_id: "{{ this.entity_id }}"
+      - alias: "Custom Action Manual"
+        conditions:
+          - condition: trigger
+            id: custom
+        sequence: !input "custom_action_manual"
       - alias: "Frigate Event"
         conditions:
           - condition: trigger
@@ -645,16 +817,19 @@ action:
           - "{{ not disable_times|length or not now().hour in disable_times|map('int')|list }}"
         sequence:
           - variables:
+              event: "{{ trigger.payload_json }}"
               id: "{{ trigger.payload_json['after']['id'] }}"
               object: "{{ trigger.payload_json['after']['label'] }}"
               label: "{{ object | title }}"
               # Dynamic Variables per event
               initial_home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
-              initial_entered_zones: "{{ trigger.payload_json['after']['entered_zones'] |lower}}"
-              zone_multi_filter: "{{zone_only and zone_multi and initial_entered_zones|length and zones and zones |reject('in', initial_entered_zones) |list |length == 0 }}"
+              enteredzones: "{{ trigger.payload_json['after']['entered_zones']}}"
+              zone_multi_filter: "{{zone_only and zone_multi and enteredzones|length and zones and zones |reject('in', enteredzones) |list |length == 0 }}"
+              loitering: false
               # Customisation of text
               title: !input title
               message: !input message
+              subtitle: !input subtitle
               tap_action: !input tap_action
               button_1: !input button_1
               button_2: !input button_2
@@ -662,8 +837,18 @@ action:
               url_1: !input url_1
               url_2: !input url_2
               url_3: !input url_3
+              icon_1: !input icon_1
+              icon_2: !input icon_2
+              icon_3: !input icon_3
+              # other things that can be templated and might need info from the event
+              critical_input: !input critical
+              critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
+              custom_filter: !input custom_filter
               icon: !input icon
+              group: !input group
               channel: !input channel
+              video: !input video
+              custom_action_auto: !input custom_action_auto
           - alias: "Debug: write to Log"
             choose:
               - conditions:
@@ -684,19 +869,26 @@ action:
                             critical: {{critical}}, 
                             alert once: {{alert_once}}, 
                             Update Thumbnails: {{update_thumbnail}}, 
-                            Target: {{'group (input/formatted): ' + group + '/' + group_target + ', ' if group else 'Mobile Device'}}
+                            Video: {{video}}, 
+                            Target: {{'group (input/formatted): ' + notify_group + '/' + notify_group_target + ', ' if notify_group else 'Mobile Device'}}
                             cooldown: {{cooldown}}s, 
-                            loiter timer: {{loiter_timer}}s,
+                            loiter timer: {{loiter_timer}}s, 
+                            initial delay: {{initial_delay}}s, 
                             color: {{color}}, 
-                            sound: {{sound}},
+                            sound: {{sound}}, 
+                            android_auto: {{android_auto}}, 
+                            Group: {{group}}, 
+                            Channel: {{channel}}, 
+                            Sticky: {{sticky}}, 
                             Title: {{title}}, 
                             Message: {{message}},
+                            Subtitle: {{subtitle}}, 
                             tap_action: {{tap_action}}, 
-                            button 1 Text/URL: {{iif(button_1, button_1, 'unset')}} ({{url_1}}), 
-                            button 2 Text/URL: {{button_2}} ({{url_2}}), 
-                            button 3 Text/URL: {{button_3}} ({{url_3}}), 
+                            button 1 Text/URL/Icon: {{iif(button_1, button_1, 'unset')}} ({{url_1}}) {{icon_1}}, 
+                            button 2 Text/URL/Icon: {{button_2}} ({{url_2}}) {{icon_2}}, 
+                            button 3 Text/URL/Icon: {{button_3}} ({{url_3}}) {{icon_3}}, 
                             icon: {{icon}}
-                            tv: {{tv}}, 
+                            tv: {{ tv }}, 
                             tv_position: {{tv_position}}, 
                             tv_size: {{tv_size}}, 
                             tv_duration: {{tv_duration}}, 
@@ -707,8 +899,8 @@ action:
                               zone filter toggle on: {{zone_only}}, 
                               Multi Zone toggle on: {{zone_multi}}, 
                               Required zones: {{input_zones}}, 
-                              Entered Zones: {{initial_entered_zones}}, 
-                              Zone Filter TEST: {{'PASS (Multi)' if zone_multi_filter else 'PASS' if ( not zone_only or not zone_multi and zones|select('in', initial_entered_zones)|list|length ) else 'FAIL (Multi)' if zone_multi else 'FAIL' }}, 
+                              Entered Zones: {{enteredzones}}, 
+                              Zone Filter TEST: {{'PASS (Multi)' if zone_multi_filter else 'PASS' if ( not zone_only or not zone_multi and zones|select('in', enteredzones)|list|length ) else 'FAIL (Multi)' if zone_multi else 'FAIL' }}, 
                             Required objects TEST: 
                               Input: {{input_labels}}, 
                               TEST: {{'PASS' if not labels|length or object in labels else 'FAIL'}}
@@ -721,18 +913,35 @@ action:
                               state filter entity: {{input_entity}}, 
                               required states: {{input_states}}, 
                               State Filter TEST: {{'PASS' if not state_only or states(input_entity) in states_filter else 'FAIL' }},
+                            Custom Filter: {{custom_filter}},
           - alias: "Notifications enabled for object label"
             condition: template
             value_template: "{{ not labels|length or object in labels }}"
+          - alias: "Delay for image"
+            choose:
+              - conditions:
+                  - "{{initial_delay > 0}}"
+                sequence:
+                  - delay:
+                      seconds: "{{initial_delay}}"
+          - alias: "Custom Action Auto"
+            choose:
+              - conditions:
+                  - "{{ custom_action_auto |length > 0 }}"
+                  - "{{ not zone_only or (not zone_multi and zones|select('in', enteredzones)|list|length > 0) or (zone_multi and enteredzones|length > 0 and zones |reject('in', enteredzones) |list |length == 0) }}"
+                  - "{{ not initial_home }}"
+                  - "{{ not state_only or states(input_entity) in states_filter }}"
+                sequence: !input "custom_action_auto"
           - alias: "Notify on new object"
             choose:
               - conditions:
-                  - "{{ not zone_only or (not zone_multi and zones|select('in', initial_entered_zones)|list|length > 0) or (zone_multi and initial_entered_zones|length > 0 and zones |reject('in', initial_entered_zones) |list |length == 0) }}"
+                  - "{{ not zone_only or (not zone_multi and zones|select('in', enteredzones)|list|length > 0) or (zone_multi and enteredzones|length > 0 and zones |reject('in', enteredzones) |list |length == 0) }}"
                   - "{{ not initial_home }}"
                   - "{{ not state_only or states(input_entity) in states_filter }}"
+                  - "{{ custom_filter }}"
                 sequence:
                   - choose:
-                      - conditions: "{{ not group_target }}"
+                      - conditions: "{{ not notify_group_target }}"
                         sequence:
                           - device_id: !input notify_device
                             domain: mobile_app
@@ -741,53 +950,62 @@ action:
                             message: "{{message}}"
                             data:
                               tag: "{{ id }}"
-                              group: "{{ camera }}-frigate-notification"
+                              group: "{{ group }}"
                               color: "{{color}}"
                               # Android Specific
-                              image: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
+                              subject: "{{subtitle}}"
+                              image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android"
+                              video: "{{video}}"
                               clickAction: "{{tap_action}}"
-                              ttl: "{{ iif(critical, 0, 3600000) }}"
-                              priority: "{{ iif(critical, 'high', 'normal') }}"
+                              ttl: 0
+                              priority: high
                               notification_icon: "{{icon}}"
                               sticky: "{{sticky}}"
-                              channel: "{{channel}}"
+                              channel: "{{'alarm_stream' if critical else channel}}"
+                              car_ui: "{{android_auto}}"
                               # iOS Specific
+                              subtitle: "{{subtitle}}"
                               url: "{{tap_action}}"
                               attachment:
-                                url: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
+                                url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                               push:
                                 sound: "{{sound}}"
                                 interruption-level: "{{ iif(critical, 'critical', 'active') }}"
-                              entity_id: "{{ iif(ios_live_view, input_camera, '' ) }}"
+                              entity_id: "{{ios_live_view}}"
                               # Actions
                               actions:
                                 - action: URI
                                   title: "{{button_1}}"
                                   uri: "{{url_1}}"
+                                  icon: "{{icon_1}}"
                                 - action: URI
                                   title: "{{button_2}}"
                                   uri: "{{url_2}}"
+                                  icon: "{{icon_2}}"
                                 - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
                                   title: "{{button_3}}"
                                   uri: "{{url_3}}"
+                                  icon: "{{icon_3}}"
                                   destructive: true
                       - conditions: "{{ tv }}"
                         sequence:
-                          - service: "notify.{{ group_target }}"
+                          - service: "notify.{{ notify_group_target }}"
                             data:
                               title: "{{title}}"
                               message: "{{message}}"
                               data:
                                 tag: "{{ id }}"
-                                group: "{{ camera }}-frigate-notification"
+                                group: "{{ group }}"
                                 color: "{{color}}"
                                 # Android Specific
+                                subject: "{{subtitle}}"
                                 clickAction: "{{tap_action}}"
-                                ttl: "{{ iif(critical, 0, 3600000) }}"
-                                priority: "{{ iif(critical, 'high', 'normal') }}"
+                                ttl: 0
+                                priority: high
                                 notification_icon: "{{icon}}"
                                 sticky: "{{sticky}}"
-                                channel: "{{channel}}"
+                                channel: "{{'alarm_stream' if critical else channel}}"
+                                car_ui: "{{android_auto}}"
                                 # Android/Fire TV
                                 image:
                                   url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
@@ -798,27 +1016,31 @@ action:
                                 interrupt: "{{tv_interrupt}}"
                                 timeout: 30
                                 # iOS Specific
+                                subtitle: "{{subtitle}}"
                                 url: "{{tap_action}}"
                                 attachment:
-                                  url: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
+                                  url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                                 push:
                                   sound: "{{sound}}"
                                   interruption-level: "{{ iif(critical, 'critical', 'active') }}"
-                                entity_id: "{{ iif(ios_live_view, input_camera, '' ) }}"
+                                entity_id: "{{ios_live_view}}"
                                 # Actions
                                 actions:
                                   - action: URI
                                     title: "{{button_1}}"
                                     uri: "{{url_1}}"
+                                    icon: "{{icon_1}}"
                                   - action: URI
                                     title: "{{button_2}}"
                                     uri: "{{url_2}}"
+                                    icon: "{{icon_2}}"
                                   - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
                                     title: "{{button_3}}"
                                     uri: "{{url_3}}"
+                                    icon: "{{icon_3}}"
                                     destructive: true
                     default:
-                      - service: "notify.{{ group_target }}"
+                      - service: "notify.{{ notify_group_target }}"
                         data:
                           title: "{{title}}"
                           message: "{{message}}"
@@ -827,14 +1049,18 @@ action:
                             group: "{{ camera }}-frigate-notification{{'-loitering' if loitering}}"
                             color: "{{color}}"
                             # Android Specific
-                            image: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
+                            subject: "{{subtitle}}"
+                            image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android"
+                            video: "{{video}}"
                             clickAction: "{{tap_action}}"
-                            ttl: "{{ iif(critical, 0, 3600000) }}"
-                            priority: "{{ iif(critical, 'high', 'normal') }}"
+                            ttl: 0
+                            priority: high
                             notification_icon: "{{icon}}"
                             sticky: "{{sticky}}"
-                            channel: "{{channel}}"
+                            channel: "{{'alarm_stream' if critical else channel}}"
+                            car_ui: "{{android_auto}}"
                             # Android/Fire TV
+                            subtitle: "{{subtitle}}"
                             fontsize: "{{tv_size}}"
                             position: "{{tv_position}}"
                             duration: "{{tv_duration}}"
@@ -843,22 +1069,25 @@ action:
                             # iOS Specific
                             url: "{{tap_action}}"
                             attachment:
-                              url: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
+                              url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                             push:
                               sound: "{{sound}}"
                               interruption-level: "{{ iif(critical, 'critical', 'active') }}"
-                            entity_id: "{{ iif(ios_live_view, input_camera, '' ) }}"
+                            entity_id: "{{ios_live_view}}"
                             # Actions
                             actions:
                               - action: URI
                                 title: "{{button_1}}"
                                 uri: "{{url_1}}"
+                                icon: "{{icon_1}}"
                               - action: URI
                                 title: "{{button_2}}"
                                 uri: "{{url_2}}"
+                                icon: "{{icon_2}}"
                               - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
                                 title: "{{button_3}}"
                                 uri: "{{url_3}}"
+                                icon: "{{icon_3}}"
                                 destructive: true
           - repeat:
               sequence:
@@ -877,16 +1106,29 @@ action:
                     home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
                     presence_changed: "{{ presence_entity != '' and as_datetime(event['before']['frame_time']) < states[presence_entity].last_changed }}"
                     last_zones: "{{ event['before']['entered_zones'] |lower}}"
-                    entered_zones: "{{ event['after']['entered_zones'] |lower}}"
-                    zone_filter: "{{ not zone_only or zones|select('in', entered_zones)|list|length > 0 }}"
-                    zone_multi_filter: "{{not zone_only or not zone_multi or ( entered_zones|list|length > 0 and zones and zones|reject('in', entered_zones)|list|length == 0 ) }}"
+                    enteredzones: "{{ event['after']['entered_zones'] |lower}}"
+                    zone_filter: "{{ not zone_only or zones|select('in', enteredzones)|list|length > 0 }}"
+                    zone_multi_filter: "{{not zone_only or not zone_multi or ( enteredzones|list|length > 0 and zones and zones|reject('in', enteredzones)|list|length == 0 ) }}"
                     stationary_moved: "{{ event['after']['position_changes'] > event['before']['position_changes'] }}"
-                    zone_only_changed: "{{ zone_only and (entered_zones|length > 0 and not last_zones|length) }}"
-                    entered_zones_changed: "{{ zones|length > 0 and (zones|select('in', entered_zones)|list|length > 0 and not zones|select('in', last_zones)|list|length) }}"
+                    zone_only_changed: "{{ zone_only and (enteredzones|length > 0 and not last_zones|length) }}"
+                    entered_zones_changed: "{{ zones|length > 0 and (zones|select('in', enteredzones)|list|length > 0 and not zones|select('in', last_zones)|list|length) }}"
                     state_true: "{{ not state_only or states(input_entity) in states_filter }}"
-                    sub_label: "{{ event['after']['sub_label']}}"
-                    sub_label_changed: "{{ sub_label != event['before']['sub_label'] }}"
+                    sub_label: >
+                      {% if event['after']['sub_label'] %} 
+                        {{event['after']['sub_label'][0]}}
+                      {%else%}
+                        {{event['after']['sub_label']}}
+                      {%endif%}
+                    sub_label_before: >
+                      {% if event['before']['sub_label'] %} 
+                        {{event['before']['sub_label'][0]}}
+                      {%else%}
+                        {{event['before']['sub_label']}}
+                      {%endif%}
+                    sub_label_changed: "{{ sub_label != sub_label_before }}"
                     update: "{{ alert_once or (new_snapshot and not loitering and not presence_changed and not zone_only_changed and not entered_zones_changed and not sub_label_changed) }}"
+                    critical_input: !input critical
+                    critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
                     title: >
                       {% if sub_label %} 
                         {{title | replace('A Person', sub_label|title) | replace('Person', sub_label|title)}}
@@ -899,15 +1141,15 @@ action:
                       {%else%}
                         {{message}}
                       {%endif%}
+                    custom_action_auto_multi: !input custom_action_auto_multi
                 - alias: "Update thumbnail at end of event"
                   choose:
                     - conditions:
                         - "{{wait.trigger.payload_json['type'] == 'end' }}"
-                        - "{{attachment == 'snapshot'}}"
-                        - "{{update_thumbnail}}"
+                        - "{{('snapshot' in attachment and update_thumbnail) or video|length > 0}}"
                       sequence:
                         - delay:
-                            seconds: 10
+                            seconds: 5
                         - variables:
                             new_snapshot: "{{update_thumbnail}}"
                 - alias: "Debug: write to Log"
@@ -922,10 +1164,13 @@ action:
                               DEBUG (in loop): 
                                 Info: 
                                   Last Zones: {{last_zones}}, 
-                                  Current zones: {{entered_zones}}, 
-                                  sublabel: {{sub_label}},
-                                  IOS sound: {{update if not critical else 'yes due critical notifications'}}, 
+                                  Current zones: {{enteredzones}}, 
+                                  sublabel: {{sub_label}}, 
+                                  iOS sound: {{update if not critical else 'yes due critical notifications'}}, 
                                   Android Sound: {{'disabled by alert once' if alert_once else 'enabled'}}, 
+                                  iOS url: /api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}
+                                  video: "{{video}}"
+                                  critical: {{critical}}, 
                                 Triggers: 
                                   New Snapshot: {{new_snapshot}}, 
                                   Presence Changed: {{presence_changed}}, 
@@ -937,16 +1182,22 @@ action:
                                     or 
                                   Presence Entity not home: {{'ON' if presence_entity != '' else 'OFF'}} - {{'PASS' if not home else 'FAIL'}}, 
                                   zone filter TEST: {{'ON' if zone_only else 'OFF'}} - {{'PASS' if zone_filter else 'FAIL'}}, 
-                                  multi-zone filter: {{'OFF' if not zone_only or not zone_multi else 'ON'}} - {{'PASS' if not zone_only or not zone_multi or ( entered_zones|length and zones and zones |reject('in', entered_zones) |list |length == 0 ) else 'FAIL'}}, 
-                                  state filter TEST: {{'ON' if state_only else 'OFF'}} - {{'PASS' if state_true else 'FAIL'}}
-
-                                  image: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
+                                  multi-zone filter: {{'OFF' if not zone_only or not zone_multi else 'ON'}} - {{'PASS' if not zone_only or not zone_multi or ( enteredzones|length and zones and zones |reject('in', enteredzones) |list |length == 0 ) else 'FAIL'}}, 
+                                  state filter TEST: {{'ON' if state_only else 'OFF'}} - {{'PASS' if state_true else 'FAIL'}}, 
+                                  Custom Filter: {{'ON' if custom_filter != '' else 'OFF'}} - {{'PASS' if custom_filter else 'FAIL'}}, 
+                                  image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                - alias: "Custom Action Auto Multi"
+                  choose:
+                    - conditions:
+                        - "{{ custom_action_auto_multi | length > 0 }}"
+                        - "{{ loitering or (not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
+                      sequence: !input "custom_action_auto_multi"
                 - alias: "Notify on loitering or significant change"
                   choose:
-                    - conditions: "{{ loitering or (not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
+                    - conditions: "{{ loitering or (custom_filter and not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
                       sequence:
                         - choose:
-                            - conditions: "{{ not group_target }}"
+                            - conditions: "{{ not notify_group_target }}"
                               sequence:
                                 - device_id: !input notify_device
                                   domain: mobile_app
@@ -955,58 +1206,68 @@ action:
                                   message: "{{message}}"
                                   data:
                                     tag: "{{ id }}{{'-loitering' if loitering}}"
-                                    group: "{{ camera }}-frigate-notification{{'-loitering' if loitering}}"
+                                    group: "{{ group }}"
                                     color: "{{color}}"
                                     # Android Specific
-                                    image: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
+                                    subject: "{{subtitle}}"
+                                    image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android"
+                                    video: "{{video}}"
                                     clickAction: "{{tap_action}}"
-                                    ttl: "{{ iif(critical, 0, 3600000) }}"
-                                    priority: "{{ iif(critical, 'high', 'normal') }}"
+                                    ttl: 0
+                                    priority: high
                                     alert_once: "{{ alert_once }}"
                                     notification_icon: "{{icon}}"
                                     sticky: "{{sticky}}"
-                                    channel: "{{channel}}"
+                                    channel: "{{'alarm_stream' if critical else channel}}"
+                                    car_ui: "{{android_auto}}"
                                     # iOS Specific
+                                    subtitle: "{{subtitle}}"
                                     url: "{{tap_action}}"
                                     attachment:
-                                      url: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
+                                      url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
                                     push:
                                       sound: "{{ iif(update, 'none', sound) }}"
                                       interruption-level: "{{ iif(critical, 'critical', 'active') }}"
-                                    entity_id: "{{ iif(ios_live_view, input_camera, '' ) }}"
+                                    entity_id: "{{ios_live_view}}"
                                     # Actions
                                     actions:
                                       - action: URI
                                         title: "{{button_1}}"
                                         uri: "{{url_1}}"
+                                        icon: "{{icon_1}}"
                                       - action: URI
                                         title: "{{button_2}}"
                                         uri: "{{url_2}}"
+                                        icon: "{{icon_2}}"
                                       - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
                                         title: "{{button_3}}"
                                         uri: "{{url_3}}"
+                                        icon: "{{icon_3}}"
                                         destructive: true
                             - conditions: "{{ tv }}"
                               sequence:
-                                - service: "notify.{{ group_target }}"
+                                - service: "notify.{{ notify_group_target }}"
                                   data:
                                     title: "{{title}}"
                                     message: "{{message}}"
                                     data:
                                       tag: "{{ id }}{{'-loitering' if loitering}}"
-                                      group: "{{ camera }}-frigate-notification{{'-loitering' if loitering}}"
+                                      group: "{{ group }}"
                                       color: "{{color}}"
                                       # Android Specific
+                                      subject: "{{subtitle}}"
                                       clickAction: "{{tap_action}}"
-                                      ttl: "{{ iif(critical, 0, 3600000) }}"
-                                      priority: "{{ iif(critical, 'high', 'normal') }}"
+                                      ttl: 0
+                                      priority: high
                                       alert_once: "{{ alert_once }}"
                                       notification_icon: "{{icon}}"
                                       sticky: "{{sticky}}"
-                                      channel: "{{channel}}"
+                                      channel: "{{'alarm_stream' if critical else channel}}"
+                                      car_ui: "{{android_auto}}"
                                       # Android/Fire TV
                                       image:
                                         url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
+                                      video: "{{video}}"
                                       fontsize: "{{tv_size}}"
                                       position: "{{tv_position}}"
                                       duration: "{{tv_duration}}"
@@ -1014,43 +1275,50 @@ action:
                                       interrupt: "{{tv_interrupt}}"
                                       timeout: 30
                                       # iOS Specific
+                                      subtitle: "{{subtitle}}"
                                       url: "{{tap_action}}"
                                       attachment:
-                                        url: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
+                                        url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
                                       push:
                                         sound: "{{ iif(update, 'none', sound) }}"
                                         interruption-level: "{{ iif(critical, 'critical', 'active') }}"
-                                      entity_id: "{{ iif(ios_live_view, input_camera, '' ) }}"
+                                      entity_id: "{{ios_live_view}}"
                                       # Actions
                                       actions:
                                         - action: URI
                                           title: "{{button_1}}"
                                           uri: "{{url_1}}"
+                                          icon: "{{icon_1}}"
                                         - action: URI
                                           title: "{{button_2}}"
                                           uri: "{{url_2}}"
+                                          icon: "{{icon_2}}"
                                         - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
                                           title: "{{button_3}}"
                                           uri: "{{url_3}}"
+                                          icon: "{{icon_3}}"
                                           destructive: true
                           default:
-                            - service: "notify.{{ group_target }}"
+                            - service: "notify.{{ notify_group_target }}"
                               data:
                                 title: "{{title}}"
                                 message: "{{message}}"
                                 data:
                                   tag: "{{ id }}{{'-loitering' if loitering}}"
-                                  group: "{{ camera }}-frigate-notification{{'-loitering' if loitering}}"
+                                  group: "{{ group }}"
                                   color: "{{color}}"
                                   # Android Specific
-                                  image: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg?format=android"
+                                  subject: "{{subtitle}}"
+                                  image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android"
+                                  video: "{{video}}"
                                   clickAction: "{{tap_action}}"
-                                  ttl: "{{ iif(critical, 0, 3600000) }}"
-                                  priority: "{{ iif(critical, 'high', 'normal') }}"
+                                  ttl: 0
+                                  priority: high
                                   alert_once: "{{ alert_once }}"
                                   notification_icon: "{{icon}}"
                                   sticky: "{{sticky}}"
-                                  channel: "{{channel}}"
+                                  channel: "{{'alarm_stream' if critical else channel}}"
+                                  car_ui: "{{android_auto}}"
                                   # Android/Fire TV
                                   fontsize: "{{tv_size}}"
                                   position: "{{tv_position}}"
@@ -1058,23 +1326,27 @@ action:
                                   transparency: "{{tv_transparency}}"
                                   interrupt: "{{tv_interrupt}}"
                                   # iOS Specific
+                                  subtitle: "{{subtitle}}"
                                   url: "{{tap_action}}"
                                   attachment:
-                                    url: "/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}.jpg"
+                                    url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
                                   push:
                                     sound: "{{ iif(update, 'none', sound) }}"
                                     interruption-level: "{{ iif(critical, 'critical', 'active') }}"
-                                  entity_id: "{{ iif(ios_live_view, input_camera, '' ) }}"
+                                  entity_id: "{{ios_live_view}}"
                                   # Actions
                                   actions:
                                     - action: URI
                                       title: "{{button_1}}"
                                       uri: "{{url_1}}"
+                                      icon: "{{icon_1}}"
                                     - action: URI
                                       title: "{{button_2}}"
                                       uri: "{{url_2}}"
+                                      icon: "{{icon_2}}"
                                     - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
                                       title: "{{button_3}}"
                                       uri: "{{url_3}}"
+                                      icon: "{{icon_3}}"
                                       destructive: true
               until: "{{ not wait.trigger or wait.trigger.payload_json['type'] == 'end' }}"
