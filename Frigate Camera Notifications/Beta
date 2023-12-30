@@ -459,7 +459,7 @@ blueprint:
       description: A filter that must result in true or false but can be templated as necessary. You will need to ensure it is enclosed with appropriate \"quotes\" and \{\{brackets\}\}.
       default: true
     bypass_condition:
-      name: bypas_condition (Optional - Advanced)
+      name: Bypass Condition (Optional - Advanced)
       description: |
           Bypass the conditions in the update loop. Write a template that is true at the desired moment. You will need to ensure it is enclosed with appropriate \"quotes\" and \{\{brackets\}\}.
           
