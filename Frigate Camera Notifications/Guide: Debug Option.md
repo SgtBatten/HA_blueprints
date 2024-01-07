@@ -4,6 +4,14 @@ The blueprint contains a toggle to enable some debug output. To enable it, scrol
 
 ![image](https://github.com/SgtBatten/HA_blueprints/assets/24822223/afcec28a-680a-42b0-9979-c32dc234a5e1)
 
+Note you can increase the number of stored traces by adding this to the beginning or end of the automation while editing it in yaml mode:
+
+```
+trace:
+  stored_traces: 40
+```
+
+
 Now, after the automation is trigger we will be able to find the debug output in the trace. 
 
 First go the the automation and select traces in the top right. 
