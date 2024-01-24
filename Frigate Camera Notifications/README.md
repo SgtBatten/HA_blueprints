@@ -55,7 +55,7 @@ With this blueprint, you may send the notification to multiple devices by leavin
 ### Beta Changes:
 - Support for multiple Frigate instances by specifying the [ClientID](https://github.com/SgtBatten/HA_blueprints/blob/doc_updates/Frigate%20Camera%20Notifications/Guide:%20Configuration%20Options.md#client-id) and [MQTT topic](https://github.com/SgtBatten/HA_blueprints/blob/doc_updates/Frigate%20Camera%20Notifications/Guide:%20Configuration%20Options.md#mqtt-topic)
 - Android options: Sticky and Channel as per https://community.home-assistant.io/t/frigate-mobile-app-notifications/311091/1043
-- Handle capitilisation in inputs properly
+- Handle capitalisation in inputs properly
 - Handle trailing slash in base urls properly
 - [Choose between enforcing all required zones simultaneously or any one zone](https://github.com/SgtBatten/HA_blueprints/blob/doc_updates/Frigate%20Camera%20Notifications/Guide:%20Configuration%20Options.md#multi-zone)
 - Add 10s delay to final notification update to ensure frigate has time to save snapshot edits (crop, bounding box etc) if [update attachment](https://github.com/SgtBatten/HA_blueprints/blob/doc_updates/Frigate%20Camera%20Notifications/Guide:%20Configuration%20Options.md#update-attachment) is enabled. 

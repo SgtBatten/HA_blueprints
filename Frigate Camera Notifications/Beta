@@ -58,7 +58,7 @@ blueprint:
       - Video for iOS sent 5 seconds after the event ends 
       - Set custom entity for iOS live view
       - Set Icons for Action Buttons on iOS
-      - Strip trailing underscores and numbers from camera name (will break automation for anyone whos frigate cam ends in _x)
+      - Strip trailing underscores and numbers from camera name (will break automation for anyone whose frigate cam ends in _x)
       - Android Auto option
       - Custom Filter
       - customise grouping on mobile devices
@@ -99,7 +99,7 @@ blueprint:
         The name of the group or individual TV to send notifications to.
         If set, this will override individual devices above.
 
-        Note: If the group contains both mobile devices and TVs, the TV will not display the snapshot unless 'TV notifications' to true, however this will stop android phones recieving thumbnails.
+        Note: If the group contains both mobile devices and TVs, the TV will not display the snapshot unless 'TV notifications' to true, however this will stop android phones receiving thumbnails.
       default: ""
     base_url:
       name: Base URL (Optional)
@@ -279,7 +279,7 @@ blueprint:
       default: "{{camera}}-frigate-notification{{'-loitering' if loitering}}"
     sound:
       name: Notification Sound - iOS only (Optional)
-      description: You can specify a soud file on your device that will play for the notifications. You will need to import the sound file into home assistant.
+      description: You can specify a sound file on your device that will play for the notifications. You will need to import the sound file into home assistant.
       default: default
       selector:
         select:
@@ -296,7 +296,7 @@ blueprint:
           domain: camera
     android_auto:
       name: Android Auto
-      description: Show the notification on Android Auto if the recieving device is connected.
+      description: Show the notification on Android Auto if the receiving device is connected.
       default: false
       selector:
         boolean:
@@ -309,7 +309,7 @@ blueprint:
         boolean:
     channel:
       name: Notification Channel - Android only (Optional)
-      description: Create a new channel for notifications to allow custom notification sounds, vibration patterns and overide of Do Not Disturb mode. Configured directly on the device.
+      description: Create a new channel for notifications to allow custom notification sounds, vibration patterns and override of Do Not Disturb mode. Configured directly on the device.
       default: ""
     zone_filter:
       name: Zone Filter on/off (Optional)
@@ -701,7 +701,7 @@ blueprint:
           min: 0
           unit_of_measurement: seconds
     tv_transparency:
-      name: TV notification Transaparency (Optional)
+      name: TV notification Transparency (Optional)
       description: Set the transparency of the notification on your TV.
       default: 0%
       selector:
@@ -724,7 +724,7 @@ blueprint:
       description: |
         # DEBUG
 
-        Enable to send debug messsages to the home assistant logbook.
+        Enable to send debug messages to the home assistant logbook.
       default: false
       selector:
         boolean:
