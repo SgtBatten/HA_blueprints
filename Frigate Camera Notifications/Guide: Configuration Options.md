@@ -122,7 +122,7 @@ If you run [multiple instances](https://docs.frigate.video/integrations/home-ass
 
 ### Transparency
 
-### Interupt
+### Interrupt
 
 ## Troubleshooting
 
