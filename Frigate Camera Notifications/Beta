@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.3)
+  name: Frigate Notifications (0.12.0.3a)
   description: |
     ## Frigate Notifications
 
@@ -967,7 +967,8 @@ action:
                               subtitle: "{{subtitle}}"
                               url: "{{tap_action}}"
                               attachment:
-                                url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                                url: >-
+                                  {{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}
                               push:
                                 sound: "{{sound}}"
                                 interruption-level: "{{ iif(critical, 'critical', 'active') }}"
@@ -1019,7 +1020,8 @@ action:
                                 subtitle: "{{subtitle}}"
                                 url: "{{tap_action}}"
                                 attachment:
-                                  url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                                  url: >-
+                                    {{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}
                                 push:
                                   sound: "{{sound}}"
                                   interruption-level: "{{ iif(critical, 'critical', 'active') }}"
@@ -1069,7 +1071,8 @@ action:
                             # iOS Specific
                             url: "{{tap_action}}"
                             attachment:
-                              url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                              url: >-
+                                {{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}
                             push:
                               sound: "{{sound}}"
                               interruption-level: "{{ iif(critical, 'critical', 'active') }}"
@@ -1224,7 +1227,8 @@ action:
                                     subtitle: "{{subtitle}}"
                                     url: "{{tap_action}}"
                                     attachment:
-                                      url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
+                                      url: >-
+                                        {{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}
                                     push:
                                       sound: "{{ iif(update, 'none', sound) }}"
                                       interruption-level: "{{ iif(critical, 'critical', 'active') }}"
@@ -1278,7 +1282,8 @@ action:
                                       subtitle: "{{subtitle}}"
                                       url: "{{tap_action}}"
                                       attachment:
-                                        url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
+                                        url: >-
+                                          {{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}
                                       push:
                                         sound: "{{ iif(update, 'none', sound) }}"
                                         interruption-level: "{{ iif(critical, 'critical', 'active') }}"
@@ -1329,7 +1334,8 @@ action:
                                   subtitle: "{{subtitle}}"
                                   url: "{{tap_action}}"
                                   attachment:
-                                    url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
+                                    url: >-
+                                      {{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}
                                   push:
                                     sound: "{{ iif(update, 'none', sound) }}"
                                     interruption-level: "{{ iif(critical, 'critical', 'active') }}"
