@@ -17,7 +17,9 @@ You must use one of them, but if both are filled out, the latter will be used.
 
 #### Mobile Device
 
-This field is filtered to only display devices with the Home assistant companion App installed. If you do not see your mobile device here, you need to install the app on the device.
+This input is mandatory, even if you intend to notify a seperate group.
+
+This field is filtered to only display devices with the Home assistant companion App installed. If you do not see your mobile device here, you need to install the app on the device. 
 
 #### Notification Group or Android/Fire TV
 
@@ -26,6 +28,8 @@ Rather than sending to a single mobile device, this option allows you to send th
 Groups can contain a mix of Android, IOS and TV devices. No restrictions. 
 
 Valid inputs are the full service e.g `notify.android_tv`, the entity id without the domain e.g `android_tv` and the friendly name of the group or tv if it matches the entity id e.g `Android TV`.
+
+This will override the device input.
 
 ### Base URL 
 
@@ -57,6 +61,7 @@ If you run [multiple instances](https://docs.frigate.video/integrations/home-ass
 | Confidence | {{ event['after']['top_score'] \|float(0) }} | The value indicating the frigate confidence value |
 | Object | {{label}} | The Object type - replaced by persons name if double take face match is correctly configured  |
 | Time | {{event['before']['start_time']\|timestamp_custom('%H:%M')}} | The event start time |
+| Zones (Entered) | {{enteredzones}} or formatted like: <br>{% if enteredzones %} in the {{ enteredzones \| join(', ') \| replace('_',' ') }}{% endif %}| The dictionary containing all entered zones. |
 
 ### Critical
 
