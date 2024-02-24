@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.3)
+  name: Frigate Notifications (0.12.0.3b)
   description: |
     ## Frigate Notifications
 
@@ -144,6 +144,15 @@ blueprint:
             - label: "Long with a timestamp HH:MM"
               value: "A {{ label }} {{ 'is loitering' if loitering else 'was detected' }} on the {{ camera_name }} camera{% if enteredzones %} in the {{ enteredzones | join(', ') | replace('_',' ') }}{% endif %} at {{event['after']['start_time']|timestamp_custom('%H:%M')}}."
           custom_value: true
+    update_sub_label:
+      name: Update Sub Label (Advanced)
+      description: |
+        Update the title and/or message with the matched face name and trigger a notification update. 
+
+        Requires face detection to be configured (Advanced). Requires Title and/or Message to contain 'A Person' or 'A {{ label }}'
+      default: true
+      selector:
+        boolean:
     subtitle:
       name: Subtitle
       description: A secondary heading you can use in your notifications.
@@ -750,6 +759,7 @@ variables:
   camera_name: "{{ camera | replace('_', ' ') | title }}"
   input_base_url: !input base_url
   base_url: "{{ input_base_url.rstrip('/')}}"
+  update_sub_label: !input update_sub_label
   input_client_id: !input client_id
   client_id: "{{input_client_id if not input_client_id else '/' + input_client_id if '/' not in input_client_id else input_client_id }}"
   attachment: !input attachment
@@ -913,7 +923,7 @@ action:
                               state filter entity: {{input_entity}}, 
                               required states: {{input_states}}, 
                               State Filter TEST: {{'PASS' if not state_only or states(input_entity) in states_filter else 'FAIL' }},
-                            Custom Filter: {{custom_filter}},
+                            Custom Filter: {{custom_filter}}
           - alias: "Notifications enabled for object label"
             condition: template
             value_template: "{{ not labels|length or object in labels }}"
@@ -1102,16 +1112,16 @@ action:
                 - variables:
                     event: "{{ wait.trigger.payload_json }}"
                     loitering: "{{ loiter_timer and event['before']['motionless_count']/fps/60 < loiter_timer and event['after']['motionless_count']/fps/60 >= loiter_timer }}"
-                    new_snapshot: "{{ update_thumbnail and event['before']['snapshot_time'] != event['after']['snapshot_time'] }}"
+                    new_snapshot: "{{ update_thumbnail and event['before']['snapshot']['frame_time'] != event['after']['snapshot']['frame_time'] }}"
                     home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
                     presence_changed: "{{ presence_entity != '' and as_datetime(event['before']['frame_time']) < states[presence_entity].last_changed }}"
-                    last_zones: "{{ event['before']['entered_zones'] |lower}}"
-                    enteredzones: "{{ event['after']['entered_zones'] |lower}}"
+                    last_zones: "{{ event['before']['entered_zones']|lower}}"
+                    enteredzones: "{{ event['after']['entered_zones']|lower}}"
                     zone_filter: "{{ not zone_only or zones|select('in', enteredzones)|list|length > 0 }}"
                     zone_multi_filter: "{{not zone_only or not zone_multi or ( enteredzones|list|length > 0 and zones and zones|reject('in', enteredzones)|list|length == 0 ) }}"
                     stationary_moved: "{{ event['after']['position_changes'] > event['before']['position_changes'] }}"
                     zone_only_changed: "{{ zone_only and (enteredzones|length > 0 and not last_zones|length) }}"
-                    entered_zones_changed: "{{ zones|length > 0 and (zones|select('in', enteredzones)|list|length > 0 and not zones|select('in', last_zones)|list|length) }}"
+                    entered_zones_changed: "{{ zones|length > 0 and (zones|select('in', enteredzones)|list|length > zones|select('in', last_zones)|list|length) }}"
                     state_true: "{{ not state_only or states(input_entity) in states_filter }}"
                     sub_label: >
                       {% if event['after']['sub_label'] %} 
@@ -1125,21 +1135,21 @@ action:
                       {%else%}
                         {{event['before']['sub_label']}}
                       {%endif%}
-                    sub_label_changed: "{{ sub_label != sub_label_before }}"
-                    update: "{{ alert_once or (new_snapshot and not loitering and not presence_changed and not zone_only_changed and not entered_zones_changed and not sub_label_changed) }}"
+                    sub_label_changed: "{{ update_sub_label and sub_label != sub_label_before }}"
                     critical_input: !input critical
                     critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
                     title: >
-                      {% if sub_label %} 
+                      {% if sub_label and update_sub_label %} 
                         {{title | replace('A Person', sub_label|title) | replace('Person', sub_label|title)}}
                       {%else%}
                         {{title}}
                       {%endif%}
+                    input_message: !input message
                     message: >
-                      {% if sub_label %} 
-                        {{message | replace('A Person', sub_label|title) | replace('Person', sub_label|title)}}
+                      {% if sub_label and update_sub_label %} 
+                        {{input_message | replace('A Person', sub_label|title) | replace('Person', sub_label|title)}}
                       {%else%}
-                        {{message}}
+                        {{input_message}}
                       {%endif%}
                     custom_action_auto_multi: !input custom_action_auto_multi
                 - alias: "Update thumbnail at end of event"
@@ -1162,37 +1172,56 @@ action:
                             name: Frigate Notification
                             message: |
                               DEBUG (in loop): 
+                                Send Notification: {{ loitering or (custom_filter and not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}
                                 Info: 
-                                  Last Zones: {{last_zones}}, 
-                                  Current zones: {{enteredzones}}, 
                                   sublabel: {{sub_label}}, 
-                                  iOS sound: {{update if not critical else 'yes due critical notifications'}}, 
+                                  image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                                  Title: {{title}}
+                                  message: {{message}}
+                                  iOS sound: {{'Critical' if critical else 'disabled by alert once' if alert_once else 'enabled'}}, 
                                   Android Sound: {{'disabled by alert once' if alert_once else 'enabled'}}, 
                                   iOS url: /api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}
                                   video: "{{video}}"
                                   critical: {{critical}}, 
                                 Triggers: 
-                                  New Snapshot: {{new_snapshot}}, 
+                                  New Snapshot: {{'True' if event['before']['snapshot']['frame_time'] != event['after']['snapshot']['frame_time'] else 'False'}}{{' - Disabled' if not update_thumbnail}} 
                                   Presence Changed: {{presence_changed}}, 
-                                  stationary moved: {{stationary_moved}}, 
-                                  entered zones changed: {{entered_zones_changed}}, 
-                                  sublabel changed: {{sub_label_changed}}, 
+                                  Stationary Moved: {{stationary_moved}}, 
+                                  Entered Zones Changed: {{'True' if event['before']['entered_zones'] != event['after']['entered_zones'] else 'False'}}{{' - Disabled' if not zone_only}}, 
+                                  sublabel changed: {{ sub_label != sub_label_before }}{{' - Disabled' if not update_sub_label}}, 
                                 Conditions: 
                                   Loitering: {{loitering}}
-                                    or 
-                                  Presence Entity not home: {{'ON' if presence_entity != '' else 'OFF'}} - {{'PASS' if not home else 'FAIL'}}, 
-                                  zone filter TEST: {{'ON' if zone_only else 'OFF'}} - {{'PASS' if zone_filter else 'FAIL'}}, 
-                                  multi-zone filter: {{'OFF' if not zone_only or not zone_multi else 'ON'}} - {{'PASS' if not zone_only or not zone_multi or ( enteredzones|length and zones and zones |reject('in', enteredzones) |list |length == 0 ) else 'FAIL'}}, 
-                                  state filter TEST: {{'ON' if state_only else 'OFF'}} - {{'PASS' if state_true else 'FAIL'}}, 
-                                  Custom Filter: {{'ON' if custom_filter != '' else 'OFF'}} - {{'PASS' if custom_filter else 'FAIL'}}, 
-                                  image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                                    or
+                                  Filters: 
+                                    Zones: 
+                                      Zone Filter Enabled: {{zone_only}}, 
+                                      Multi Zone Enabled: {{zone_multi}}, 
+                                      Required Zones: {{input_zones}}, 
+                                      Last Zones: {{last_zones}}, 
+                                      Entered zones: {{enteredzones|list|length}} - {{enteredzones}}, 
+                                      TEST: {{'PASS' if not zone_only or (not zone_multi and zones|select('in', enteredzones)|list|length ) else 'PASS (Multi)' if zone_only and zone_multi and zone_multi_filter else 'FAIL (Multi)' if zone_only and zone_multi else 'FAIL' }}, 
+                                    Object Filter: 
+                                      Input: {{input_labels}}, 
+                                      TEST: {{'PASS' if not labels|length or object in labels else 'FAIL'}}, 
+                                    Presence entity (not home):
+                                      Entity: {{presence_entity}}, 
+                                      TEST:  {{'PASS' if not home else 'FAIL'}}, 
+                                    Time Filter:
+                                      Disabled times: {{disable_times}}, 
+                                      TEST: {{'PASS' if now().hour not in disable_times else 'FAIL'}}
+                                    State Filter: 
+                                      state filter toggle on: {{state_only}}, 
+                                      state filter entity: {{input_entity}}, 
+                                      required states: {{input_states}}, 
+                                      TEST: {{'PASS' if state_true else 'FAIL'}}, 
+                                    Custom Filter: {{'PASS' if custom_filter else 'FAIL'}},
                 - alias: "Custom Action Auto Multi"
                   choose:
                     - conditions:
                         - "{{ custom_action_auto_multi | length > 0 }}"
                         - "{{ loitering or (not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
                       sequence: !input "custom_action_auto_multi"
-                - alias: "Notify on loitering or significant change"
+                - alias: "Update Notification"
                   choose:
                     - conditions: "{{ loitering or (custom_filter and not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
                       sequence:
@@ -1226,7 +1255,7 @@ action:
                                     attachment:
                                       url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
                                     push:
-                                      sound: "{{ iif(update, 'none', sound) }}"
+                                      sound: "{{ iif(alert_once, 'none', sound) }}"
                                       interruption-level: "{{ iif(critical, 'critical', 'active') }}"
                                     entity_id: "{{ios_live_view}}"
                                     # Actions
@@ -1280,7 +1309,7 @@ action:
                                       attachment:
                                         url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
                                       push:
-                                        sound: "{{ iif(update, 'none', sound) }}"
+                                        sound: "{{ iif(alert_once, 'none', sound) }}"
                                         interruption-level: "{{ iif(critical, 'critical', 'active') }}"
                                       entity_id: "{{ios_live_view}}"
                                       # Actions
@@ -1331,7 +1360,7 @@ action:
                                   attachment:
                                     url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
                                   push:
-                                    sound: "{{ iif(update, 'none', sound) }}"
+                                    sound: "{{ iif(alert_once, 'none', sound) }}"
                                     interruption-level: "{{ iif(critical, 'critical', 'active') }}"
                                   entity_id: "{{ios_live_view}}"
                                   # Actions
