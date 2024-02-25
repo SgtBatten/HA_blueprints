@@ -196,16 +196,14 @@ blueprint:
     volume:
       name: Volume Sound - iOS only (Optional)
       description: You can spécify a sound level between 0 and 100
-      default: "100"
+      default: 100
       selector:
-        select:
-          options:
-            - "0"
-            - "10"
-            - "25"
-            - "50"
-            - "85"
-            - "100"
+        number:
+          max: 100
+          min: 0
+          unit_of_measurement: "%"
+          step: 1
+          mode: slider
     ios_live_view:
       name: Live View - iOS only (Optional)
       description: Attach a live view to the notification for iOS devices
