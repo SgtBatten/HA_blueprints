@@ -23,7 +23,7 @@ blueprint:
       - Easily select the camera entity or mobile device using a drop down menu.
       - Send notifications to an Android or iOS mobile device or a TV.
         - or a group containing any combination of the above.
-      - Configure the title and message of the notification.
+      - Configure the title and message of the notification. 
       - Dynamically handle things like object type, zones and face detection from doubletake.
       - Automatically handle some common errors like case matching and bad urls etc.
       - Optionally send the notification as a critical alert. (Critical)
@@ -60,7 +60,7 @@ blueprint:
     camera:
       name: Frigate Camera
       description: |
-        Select the camera entity that will trigger notifications.
+        Select the camera entity that will trigger notifications. 
         If you do not see cameras listed in the drop down, check you have the frigate integration installed.
         Note: The automation relies on this matching your frigate config (by default it does).
       selector:
@@ -86,7 +86,7 @@ blueprint:
     base_url:
       name: Base URL (Optional)
       description: |
-        The external url for your Home Assistant instance.
+        The external url for your Home Assistant instance. 
         Recommended for iOS and required for Android/Fire TV.
       default: ""
     title:
@@ -193,17 +193,6 @@ blueprint:
             - default
             - none
           custom_value: true
-    volume:
-      name: Volume Sound - iOS only (Optional)
-      description: You can spécify a sound level between 0 and 100
-      default: 100
-      selector:
-        number:
-          max: 100
-          min: 0
-          unit_of_measurement: "%"
-          step: 1
-          mode: slider
     ios_live_view:
       name: Live View - iOS only (Optional)
       description: Attach a live view to the notification for iOS devices
@@ -364,7 +353,7 @@ blueprint:
     silence_timer:
       name: Silence New Object Notifications (Optional)
       description: |
-        How long to silence notifications for this camera when requested as part of the actionable notification.
+        How long to silence notifications for this camera when requested as part of the actionable notification. 
         Note: This only applies to new objects. Existing tracked objects will not be affected.
       default: 30
       selector:
@@ -388,7 +377,7 @@ blueprint:
       description: |
         # Action Buttons and URLs
 
-        The url to open when tapping on the notification. Some presets are provided, you can also set you own.
+        The url to open when tapping on the notification. Some presets are provided, you can also set you own. 
 
         These 7 options define the text and urls associated with the three action buttons at the bottom of the notification.
       default: "{{base_url}}/api/frigate/notifications/{{id}}/{{camera}}/clip.mp4"
@@ -598,8 +587,6 @@ variables:
   states_filter: "{{ input_states | list | lower }}"
   color: !input color
   sound: !input sound
-  input_volume: !input volume
-  volume: "{{ (1 * input_volume|int(100))/100 }}"
   tv: !input tv
   tv_position: !input tv_position
   tv_size: !input tv_size
@@ -661,54 +648,53 @@ action:
                     data_template:
                       name: Frigate Notification
                       message: |
-                        DEBUG:
+                        DEBUG: 
                           Info:
-                            fps: {{fps}},
-                            frigate event id: {{id}},
+                            fps: {{fps}}, 
+                            frigate event id: {{id}}, 
                             object (formatted): {{object}} ({{label}}),
-                          Config:
-                            camera(formatted): {{camera}}({{camera_name}}),
-                            Base URL: {{base_url}},
-                            critical: {{critical}},
-                            alert once: {{alert_once}},
-                            Update Thumbnails: {{update_thumbnail}},
+                          Config: 
+                            camera(formatted): {{camera}}({{camera_name}}), 
+                            Base URL: {{base_url}}, 
+                            critical: {{critical}}, 
+                            alert once: {{alert_once}}, 
+                            Update Thumbnails: {{update_thumbnail}}, 
                             Target: {{'group (input/formatted): ' + group + '/' + group_target + ', ' if group else 'Mobile Device'}}
-                            cooldown: {{cooldown}}s,
+                            cooldown: {{cooldown}}s, 
                             loiter timer: {{loiter_timer}}s,
-                            color: {{color}},
+                            color: {{color}}, 
                             sound: {{sound}},
-                            volume: {{volume}},
-                            Title: {{title}},
+                            Title: {{title}}, 
                             Message: {{message}},
-                            tap_action: {{tap_action}},
-                            button 1 Text/URL: {{iif(button_1, button_1, 'unset')}} ({{url_1}}),
-                            button 2 Text/URL: {{button_2}} ({{url_2}}),
-                            button 3 Text/URL: {{button_3}} ({{url_3}}),
+                            tap_action: {{tap_action}}, 
+                            button 1 Text/URL: {{iif(button_1, button_1, 'unset')}} ({{url_1}}), 
+                            button 2 Text/URL: {{button_2}} ({{url_2}}), 
+                            button 3 Text/URL: {{button_3}} ({{url_3}}), 
                             icon: {{icon}}
-                            tv: {{tv}},
-                            tv_position: {{tv_position}},
-                            tv_size: {{tv_size}},
-                            tv_duration: {{tv_duration}},
-                            tv_transparency: {{tv_transparency}},
-                            tv_interrupt: {{tv_interrupt}},
-                          Filters:
-                            Zones:
-                              zone filter toggle on: {{zone_only}},
-                              Multi Zone toggle on: {{zone_multi}},
-                              Required zones: {{input_zones}},
-                              Entered Zones: {{initial_entered_zones}},
-                              Zone Filter TEST: {{'PASS (Multi)' if zone_multi_filter else 'PASS' if ( not zone_only or not zone_multi and zones|select('in', initial_entered_zones)|list|length ) else 'FAIL (Multi)' if zone_multi else 'FAIL' }},
-                            Required objects TEST:
-                              Input: {{input_labels}},
+                            tv: {{tv}}, 
+                            tv_position: {{tv_position}}, 
+                            tv_size: {{tv_size}}, 
+                            tv_duration: {{tv_duration}}, 
+                            tv_transparency: {{tv_transparency}}, 
+                            tv_interrupt: {{tv_interrupt}}, 
+                          Filters: 
+                            Zones: 
+                              zone filter toggle on: {{zone_only}}, 
+                              Multi Zone toggle on: {{zone_multi}}, 
+                              Required zones: {{input_zones}}, 
+                              Entered Zones: {{initial_entered_zones}}, 
+                              Zone Filter TEST: {{'PASS (Multi)' if zone_multi_filter else 'PASS' if ( not zone_only or not zone_multi and zones|select('in', initial_entered_zones)|list|length ) else 'FAIL (Multi)' if zone_multi else 'FAIL' }}, 
+                            Required objects TEST: 
+                              Input: {{input_labels}}, 
                               TEST: {{'PASS' if not labels|length or object in labels else 'FAIL'}}
                             presence entity (not home):
                               Entity: {{presence_entity}}
-                              TEST:  {{'PASS' if not initial_home else 'FAIL'}},
-                            disabled times: {{disable_times}},
-                            State Filter:
-                              state filter toggle on: {{state_only}},
-                              state filter entity: {{input_entity}},
-                              required states: {{input_states}},
+                              TEST:  {{'PASS' if not initial_home else 'FAIL'}}, 
+                            disabled times: {{disable_times}}, 
+                            State Filter: 
+                              state filter toggle on: {{state_only}}, 
+                              state filter entity: {{input_entity}}, 
+                              required states: {{input_states}}, 
                               State Filter TEST: {{'PASS' if not state_only or states(input_entity) in states_filter else 'FAIL' }},
           - alias: "Notifications enabled for object label"
             condition: template
@@ -744,10 +730,8 @@ action:
                               attachment:
                                 url: "/api/frigate/notifications/{{id}}/{{attachment}}.jpg"
                               push:
-                                sound:
-                                  name: "{{sound}}"
-                                  volume: "{{ iif(sound == 'none', 0, volume) }}"
-                                  critical: "{{ iif(critical, 1, 0) }}"
+                                sound: "{{sound}}"
+                                interruption-level: "{{ iif(critical, 'critical', 'active') }}"
                               entity_id: "{{ iif(ios_live_view, input_camera, '' ) }}"
                               # Actions
                               actions:
@@ -791,10 +775,8 @@ action:
                                 attachment:
                                   url: "/api/frigate/notifications/{{id}}/{{attachment}}.jpg"
                                 push:
-                                  sound:
-                                    name: "{{sound}}"
-                                    volume: "{{ iif(sound == 'none', 0, volume) }}"
-                                    critical: "{{ iif(critical, 1, 0) }}"
+                                  sound: "{{sound}}"
+                                interruption-level: "{{ iif(critical, 'critical', 'active') }}"
                                 entity_id: "{{ iif(ios_live_view, input_camera, '' ) }}"
                                 # Actions
                                 actions:
@@ -835,10 +817,8 @@ action:
                             attachment:
                               url: "/api/frigate/notifications/{{id}}/{{attachment}}.jpg"
                             push:
-                              sound:
-                                name: "{{sound}}"
-                                volume: "{{ iif(sound == 'none', 0, volume) }}"
-                                critical: "{{ iif(critical, 1, 0) }}"
+                              sound: "{{sound}}"
+                              interruption-level: "{{ iif(critical, 'critical', 'active') }}"
                             entity_id: "{{ iif(ios_live_view, input_camera, '' ) }}"
                             # Actions
                             actions:
@@ -880,13 +860,13 @@ action:
                     sub_label_changed: "{{ sub_label != event['before']['sub_label'] }}"
                     update: "{{ alert_once or (new_snapshot and not loitering and not presence_changed and not zone_only_changed and not entered_zones_changed and not sub_label_changed) }}"
                     title: >
-                      {% if sub_label %}
+                      {% if sub_label %} 
                         {{title | replace('A Person', sub_label|title) | replace('Person', sub_label|title)}}
                       {%else%}
                         {{title}}
                       {%endif%}
                     message: >
-                      {% if sub_label %}
+                      {% if sub_label %} 
                         {{message | replace('A Person', sub_label|title) | replace('Person', sub_label|title)}}
                       {%else%}
                         {{message}}
@@ -900,25 +880,25 @@ action:
                           data_template:
                             name: Frigate Notification
                             message: |
-                              DEBUG (in loop):
-                                Info:
-                                  Last Zones: {{last_zones}},
-                                  Current zones: {{entered_zones}},
+                              DEBUG (in loop): 
+                                Info: 
+                                  Last Zones: {{last_zones}}, 
+                                  Current zones: {{entered_zones}}, 
                                   sublabel: {{sub_label}},
-                                  iOS sound: {{update if not critical else 'yes due critical notifications'}},
-                                  Android Sound: {{'disabled by alert once' if alert_once else 'enabled'}},
-                                Triggers:
-                                  New Snapshot: {{new_snapshot}},
-                                  Presence Changed: {{presence_changed}},
-                                  stationary moved: {{stationary_moved}},
-                                  entered zones changed: {{entered_zones_changed}},
-                                  sublabel changed: {{sub_label_changed}},
-                                Conditions:
+                                  iOS sound: {{update if not critical else 'yes due critical notifications'}}, 
+                                  Android Sound: {{'disabled by alert once' if alert_once else 'enabled'}}, 
+                                Triggers: 
+                                  New Snapshot: {{new_snapshot}}, 
+                                  Presence Changed: {{presence_changed}}, 
+                                  stationary moved: {{stationary_moved}}, 
+                                  entered zones changed: {{entered_zones_changed}}, 
+                                  sublabel changed: {{sub_label_changed}}, 
+                                Conditions: 
                                   Loitering: {{loitering}}
-                                    or
-                                  Presence Entity not home: {{'ON' if presence_entity != '' else 'OFF'}} - {{'PASS' if not home else 'FAIL'}},
-                                  zone filter TEST: {{'ON' if zone_only else 'OFF'}} - {{'PASS' if zone_filter else 'FAIL'}},
-                                  multi-zone filter: {{'OFF' if not zone_only or not zone_multi else 'ON'}} - {{'PASS' if not zone_only or not zone_multi or ( entered_zones|length and zones and zones |reject('in', entered_zones) |list |length == 0 ) else 'FAIL'}},
+                                    or 
+                                  Presence Entity not home: {{'ON' if presence_entity != '' else 'OFF'}} - {{'PASS' if not home else 'FAIL'}}, 
+                                  zone filter TEST: {{'ON' if zone_only else 'OFF'}} - {{'PASS' if zone_filter else 'FAIL'}}, 
+                                  multi-zone filter: {{'OFF' if not zone_only or not zone_multi else 'ON'}} - {{'PASS' if not zone_only or not zone_multi or ( entered_zones|length and zones and zones |reject('in', entered_zones) |list |length == 0 ) else 'FAIL'}}, 
                                   state filter TEST: {{'ON' if state_only else 'OFF'}} - {{'PASS' if state_true else 'FAIL'}}
 
                                   image: "/api/frigate/notifications/{{id}}/{{attachment}}.jpg"
@@ -951,10 +931,8 @@ action:
                                     attachment:
                                       url: "/api/frigate/notifications/{{id}}/{{attachment}}.jpg"
                                     push:
-                                      sound:
-                                        name: "{{ iif(update, 'none', sound) }}"
-                                        volume: "{{ iif((update or sound == 'none'), 0, volume) }}"
-                                        critical: "{{ iif(critical, 1, 0) }}"
+                                      sound: "{{ iif(update, 'none', sound) }}"
+                                      interruption-level: "{{ iif(critical, 'critical', 'active') }}"
                                     entity_id: "{{ iif(ios_live_view, input_camera, '' ) }}"
                                     # Actions
                                     actions:
@@ -999,10 +977,8 @@ action:
                                       attachment:
                                         url: "/api/frigate/notifications/{{id}}/{{attachment}}.jpg"
                                       push:
-                                        sound:
-                                          name: "{{ iif(update, 'none', sound) }}"
-                                          volume: "{{ iif((update or sound == 'none'), 0, volume) }}"
-                                          critical: "{{ iif(critical, 1, 0) }}"
+                                        sound: "{{ iif(update, 'none', sound) }}"
+                                      interruption-level: "{{ iif(critical, 'critical', 'active') }}"
                                       entity_id: "{{ iif(ios_live_view, input_camera, '' ) }}"
                                       # Actions
                                       actions:
@@ -1044,10 +1020,8 @@ action:
                                   attachment:
                                     url: "/api/frigate/notifications/{{id}}/{{attachment}}.jpg"
                                   push:
-                                    sound:
-                                      name: "{{ iif(update, 'none', sound) }}"
-                                      volume: "{{ iif((update or sound == 'none'), 0, volume) }}"
-                                      critical: "{{ iif(critical, 1, 0) }}"
+                                    sound: "{{ iif(update, 'none', sound) }}"
+                                    interruption-level: "{{ iif(critical, 'critical', 'active') }}"
                                   entity_id: "{{ iif(ios_live_view, input_camera, '' ) }}"
                                   # Actions
                                   actions:
