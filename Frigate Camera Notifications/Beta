@@ -296,6 +296,17 @@ blueprint:
             - default
             - none
           custom_value: true
+    volume:
+      name: Volume Sound - iOS only (Optional)
+      description: You can spécify a sound level between 0 and 100
+      default: 100
+      selector:
+        number:
+          max: 100
+          min: 0
+          unit_of_measurement: "%"
+          step: 1
+          mode: slider
     ios_live_view:
       name: Live View Entity - iOS only (Optional)
       description: Attach a live view from the selected entity to the notification for iOS devices.
@@ -788,6 +799,8 @@ variables:
   states_filter: "{{ input_states | list | lower }}"
   color: !input color
   sound: !input sound
+  input_volume: !input volume
+  volume: "{{ (1 * input_volume|int(100))/100 }}"
   sticky: !input sticky
   tv: !input tv
   tv_position: !input tv_position
@@ -979,8 +992,10 @@ action:
                               attachment:
                                 url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                               push:
-                                sound: "{{sound}}"
-                                interruption-level: "{{ iif(critical, 'critical', 'active') }}"
+                                sound:
+                                  name: "{{sound}}"
+                                  volume: "{{ iif(sound == 'none', 0, volume) }}"
+                                  critical: "{{ iif(critical, 1, 0) }}"
                               entity_id: "{{ios_live_view}}"
                               # Actions
                               actions:
@@ -1031,8 +1046,10 @@ action:
                                 attachment:
                                   url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                                 push:
-                                  sound: "{{sound}}"
-                                  interruption-level: "{{ iif(critical, 'critical', 'active') }}"
+                                  sound:
+                                    name: "{{sound}}"
+                                    volume: "{{ iif(sound == 'none', 0, volume) }}"
+                                    critical: "{{ iif(critical, 1, 0) }}"
                                 entity_id: "{{ios_live_view}}"
                                 # Actions
                                 actions:
@@ -1081,8 +1098,10 @@ action:
                             attachment:
                               url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                             push:
-                              sound: "{{sound}}"
-                              interruption-level: "{{ iif(critical, 'critical', 'active') }}"
+                              sound:
+                                name: "{{sound}}"
+                                volume: "{{ iif(sound == 'none', 0, volume) }}"
+                                critical: "{{ iif(critical, 1, 0) }}"
                             entity_id: "{{ios_live_view}}"
                             # Actions
                             actions:
@@ -1255,8 +1274,10 @@ action:
                                     attachment:
                                       url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
                                     push:
-                                      sound: "{{ iif(alert_once, 'none', sound) }}"
-                                      interruption-level: "{{ iif(critical, 'critical', 'active') }}"
+                                      sound:
+                                        name: "{{ iif(update, 'none', sound) }}"
+                                        volume: "{{ iif((update or sound == 'none'), 0, volume) }}"
+                                        critical: "{{ iif(critical, 1, 0) }}"
                                     entity_id: "{{ios_live_view}}"
                                     # Actions
                                     actions:
@@ -1309,8 +1330,10 @@ action:
                                       attachment:
                                         url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
                                       push:
-                                        sound: "{{ iif(alert_once, 'none', sound) }}"
-                                        interruption-level: "{{ iif(critical, 'critical', 'active') }}"
+                                        sound:
+                                          name: "{{ iif(update, 'none', sound) }}"
+                                          volume: "{{ iif((update or sound == 'none'), 0, volume) }}"
+                                          critical: "{{ iif(critical, 1, 0) }}"
                                       entity_id: "{{ios_live_view}}"
                                       # Actions
                                       actions:
@@ -1360,8 +1383,10 @@ action:
                                   attachment:
                                     url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
                                   push:
-                                    sound: "{{ iif(alert_once, 'none', sound) }}"
-                                    interruption-level: "{{ iif(critical, 'critical', 'active') }}"
+                                    sound:
+                                      name: "{{ iif(update, 'none', sound) }}"
+                                      volume: "{{ iif((update or sound == 'none'), 0, volume) }}"
+                                      critical: "{{ iif(critical, 1, 0) }}"
                                   entity_id: "{{ios_live_view}}"
                                   # Actions
                                   actions:
