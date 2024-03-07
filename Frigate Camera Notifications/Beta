@@ -274,11 +274,11 @@ blueprint:
     icon:
       name: Notification Icon (Optional)
       description: Change the icon that displays on the notification. You can enter a single icon or create a template like the example given in the dropdown. You must include 'mdi:' in the icon name.
-      default: mdi:frigate
+      default: mdi:homeassistant
       selector:
         select:
           options:
-            - mdi:frigate
+            - mdi:homeassistant
             - mdi:cctv
             - "mdi:{{'account-outline' if label == 'Person' else 'dog' if label == 'Dog' else 'cat' if label == 'Cat' else 'car' if label == 'Car' else 'home-assistant'}}"
           custom_value: true
