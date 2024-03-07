@@ -1,9 +1,7 @@
 name: Bug Report
 description: File a bug report
-title: "[Bug]: TitleHere"
-labels: ["bug", "triage"]
-assignees:
-  - sgtbatten
+title: "[Issue]: TitleHere"
+labels: ["triage"]
 body:
   - type: markdown
     attributes:
@@ -29,7 +27,7 @@ body:
     id: automation
     attributes:
       label: Automation Config
-      description: Please copy and paste your automation config from Home Assistant. This will be automatically formatted into code, so no need for backticks.
+      description: Please copy and paste your automation config from Home Assistant. Select Edit in YAML when viewing your automation to copy it. This will be automatically formatted into code, so no need for backticks.
       render: yaml
     validations:
       required: true
