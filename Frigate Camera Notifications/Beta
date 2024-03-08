@@ -58,7 +58,7 @@ blueprint:
       - Video for iOS sent 5 seconds after the event ends.
       - Set custom entity for iOS live view.
       - Set Icons for Action Buttons on iOS.
-      - Strip trailing underscores and numbers from the camera name. (Eill break automation for anyone whose Frigate cam ends in _x)
+      - Strip trailing underscores and numbers from the camera name. (This will break automation for anyone whose Frigate cam ends in _x)
       - Android Auto option.
       - Custom Filter.
       - Customise grouping on mobile devices.
