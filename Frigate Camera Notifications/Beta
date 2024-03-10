@@ -61,8 +61,9 @@ blueprint:
       - Strip trailing underscores and numbers from the camera name. (This will break automation for anyone whose Frigate cam ends in _x)
       - Android Auto option.
       - Custom Filter.
-      - Customise grouping on mobile devices.
+      - Customise group on mobile devices.
       - Bounding box and crop options for attachment.
+      - Set notification volume on iOS
 
     [1]: https://companion.home-assistant.io/docs/notifications/notifications-basic#sending-notifications-to-multiple-devices
     [2]: https://blakeblackshear.github.io/frigate/configuration/cameras#zones
