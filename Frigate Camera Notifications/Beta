@@ -1073,7 +1073,7 @@ action:
                           message: "{{message}}"
                           data:
                             tag: "{{ id }}{{'-loitering' if loitering}}"
-                            group: "{{ camera }}-frigate-notification{{'-loitering' if loitering}}"
+                            group: "{{ group }}"
                             color: "{{color}}"
                             # Android Specific
                             subject: "{{subtitle}}"
