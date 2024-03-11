@@ -548,7 +548,7 @@ blueprint:
           custom_value: true
     button_1:
       name: Action Button 1 Text
-      description: "The text used on the first Action button at the bottom of the notification. Set the URL below. (Default is "View Clip")
+      description: 'The text used on the first Action button at the bottom of the notification. Set the URL below. (Default is "View Clip")'
       default: "View Clip"
     url_1:
       name: Action Button 1 URL
