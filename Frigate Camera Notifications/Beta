@@ -377,6 +377,14 @@ blueprint:
       default: false
       selector:
         boolean:
+    zone_order_enforced:
+      name: Zone Order Enforced (Optional)
+      description: |
+        Combined with Multi-Zone, requires zones to be entered in the same order as their requirement. 
+        Useful for alerting on vehicles entering driveway, but ignoring vehicles leaving driving, for instance
+      default: false
+      selector:
+        boolean:
     labels:
       name: Object Filter (Optional)
       description: |
@@ -799,6 +807,7 @@ variables:
   input_zones: !input zones
   zones: "{{ input_zones }}"
   zone_multi: !input zone_multi
+  zone_order_enforced: !input zone_order_enforced
   input_labels: !input labels
   labels: "{{ input_labels | list | lower }}"
   presence_entity: !input presence_filter
@@ -863,6 +872,9 @@ action:
               initial_home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
               enteredzones: "{{ trigger.payload_json['after']['entered_zones']}}"
               zone_multi_filter: "{{zone_only and zone_multi and enteredzones|length and zones and zones |reject('in', enteredzones) |list |length == 0 }}"
+              # Fails fast if prerequisite of zone_multi_filter is false
+              # Compare the joined strings for equality is the simplest solution, due to both variables being defined in band.
+              zone_order_filter: "{{zone_multi_filter and zones | join('|') == enteredzones | join('|') if zone_order_enforced else true}}"
               loitering: false
               # Customisation of text
               title: !input title
@@ -942,7 +954,7 @@ action:
                               Multi-Zone toggle on: {{zone_multi}}, 
                               Required zones: {{input_zones}}, 
                               Entered Zones: {{enteredzones}}, 
-                              Zone Filter TEST: {{'PASS (Multi)' if zone_multi_filter else 'PASS' if ( not zone_only or not zone_multi and zones|select('in', enteredzones)|list|length ) else 'FAIL (Multi)' if zone_multi else 'FAIL' }}, 
+                              Zone Filter TEST: {{'PASS (Multi)' if zone_multi_filter and zone_order_filter else 'PASS' if ( not zone_only or not zone_multi and zones|select('in', enteredzones)|list|length ) else 'FAIL (Multi)' if zone_multi else 'FAIL' }}, 
                             Required objects TEST: 
                               Input: {{input_labels}}, 
                               TEST: {{'PASS' if not labels|length or object in labels else 'FAIL'}}
@@ -970,14 +982,14 @@ action:
             choose:
               - conditions:
                   - "{{ custom_action_auto |length > 0 }}"
-                  - "{{ not zone_only or (not zone_multi and zones|select('in', enteredzones)|list|length > 0) or (zone_multi and enteredzones|length > 0 and zones |reject('in', enteredzones) |list |length == 0) }}"
+                  - "{{ not zone_only or (not zone_multi and zones|select('in', enteredzones)|list|length > 0) or (zone_multi_filter and zone_order_filter)}}"
                   - "{{ not initial_home }}"
                   - "{{ not state_only or states(input_entity) in states_filter }}"
                 sequence: !input "custom_action_auto"
           - alias: "Notify on new object"
             choose:
               - conditions:
-                  - "{{ not zone_only or (not zone_multi and zones|select('in', enteredzones)|list|length > 0) or (zone_multi and enteredzones|length > 0 and zones |reject('in', enteredzones) |list |length == 0) }}"
+                  - "{{ not zone_only or (not zone_multi and zones|select('in', enteredzones)|list|length > 0) or (zone_multi_filter and zone_order_filter)}}"
                   - "{{ not initial_home }}"
                   - "{{ not state_only or states(input_entity) in states_filter }}"
                   - "{{ custom_filter }}"
@@ -1189,6 +1201,9 @@ action:
                     enteredzones: "{{ event['after']['entered_zones']|lower}}"
                     zone_filter: "{{ not zone_only or zones|select('in', enteredzones)|list|length > 0 }}"
                     zone_multi_filter: "{{not zone_only or not zone_multi or ( enteredzones|list|length > 0 and zones and zones|reject('in', enteredzones)|list|length == 0 ) }}"
+                    # Fails fast if prerequisite of zone_multi_filter is false
+                    # Compare the joined strings for equality is the simplest solution, due to both variables being defined in band.
+                    zone_order_filter: "{{zone_multi_filter and zones | join('|') == enteredzones | join('|') if zone_order_enforced else true}}"
                     stationary_moved: "{{ event['after']['position_changes'] > event['before']['position_changes'] }}"
                     zone_only_changed: "{{ zone_only and (enteredzones|length > 0 and not last_zones|length) }}"
                     entered_zones_changed: "{{ zones|length > 0 and (zones|select('in', enteredzones)|list|length > zones|select('in', last_zones)|list|length) }}"
@@ -1226,7 +1241,7 @@ action:
                 - alias: "Update thumbnail at end of event"
                   choose:
                     - conditions:
-                        - "{{wait.trigger.payload_json['type'] == 'end' }}"
+                        - "{{event['type'] == 'end' }}"
                         - "{{('snapshot' in attachment and update_thumbnail) or video|length > 0}}"
                       sequence:
                         - delay:
@@ -1243,7 +1258,7 @@ action:
                             name: Frigate Notification
                             message: |
                               DEBUG (in loop): 
-                                Send Notification: {{ loitering or (custom_filter and not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}
+                                Send Notification: {{ loitering or (custom_filter and not home and zone_filter and zone_multi_filter and zone_order_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}
                                 Info: 
                                   sublabel: {{sub_label}}, 
                                   image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
@@ -1251,7 +1266,7 @@ action:
                                   message: {{message}}
                                   iOS sound: {{'Critical' if critical else 'disabled by alert once' if alert_once else 'enabled'}}, 
                                   Android Sound: {{'disabled by alert once' if alert_once else 'enabled'}}, 
-                                  iOS url: /api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}
+                                  iOS url: /api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and event['type'] == 'end' else attachment }}
                                   video: "{{video}}"
                                   critical: {{critical}},
                                   tts: {{tts}} 
@@ -1271,7 +1286,7 @@ action:
                                       Required Zones: {{input_zones}}, 
                                       Last Zones: {{last_zones}}, 
                                       Entered zones: {{enteredzones|list|length}} - {{enteredzones}}, 
-                                      TEST: {{'PASS' if not zone_only or (not zone_multi and zones|select('in', enteredzones)|list|length ) else 'PASS (Multi)' if zone_only and zone_multi and zone_multi_filter else 'FAIL (Multi)' if zone_only and zone_multi else 'FAIL' }}, 
+                                      TEST: {{'PASS' if not zone_only or (not zone_multi and zones|select('in', enteredzones)|list|length ) else 'PASS (Multi)' if zone_only and zone_multi and zone_multi_filter and zone_order_filter else 'FAIL (Multi)' if zone_only and zone_multi else 'FAIL' }}, 
                                     Object Filter: 
                                       Input: {{input_labels}}, 
                                       TEST: {{'PASS' if not labels|length or object in labels else 'FAIL'}}, 
@@ -1291,11 +1306,11 @@ action:
                   choose:
                     - conditions:
                         - "{{ custom_action_auto_multi | length > 0 }}"
-                        - "{{ loitering or (not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
+                        - "{{ loitering or (not home and zone_filter and zone_multi_filter and zone_order_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
                       sequence: !input "custom_action_auto_multi"
                 - alias: "Update Notification"
                   choose:
-                    - conditions: "{{ loitering or (custom_filter and not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
+                    - conditions: "{{ loitering or (custom_filter and not home and zone_filter and zone_multi_filter and zone_order_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
                       sequence:
                         - choose:
                             - conditions: "{{ not notify_group_target }}"
@@ -1325,7 +1340,7 @@ action:
                                     subtitle: "{{subtitle}}"
                                     url: "{{tap_action}}"
                                     attachment:
-                                      url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
+                                      url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and event['type'] == 'end' else attachment }}"
                                     push:
                                       sound:
                                         name: "{{ iif(update, 'none', sound) }}"
@@ -1381,7 +1396,7 @@ action:
                                       subtitle: "{{subtitle}}"
                                       url: "{{tap_action}}"
                                       attachment:
-                                        url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
+                                        url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and event['type'] == 'end' else attachment }}"
                                       push:
                                         sound:
                                           name: "{{ iif(update, 'none', sound) }}"
@@ -1434,7 +1449,7 @@ action:
                                   subtitle: "{{subtitle}}"
                                   url: "{{tap_action}}"
                                   attachment:
-                                    url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
+                                    url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and event['type'] == 'end' else attachment }}"
                                   push:
                                     sound:
                                       name: "{{ iif(update, 'none', sound) }}"
