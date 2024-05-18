@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.3c)
+  name: Frigate Notifications (0.12.0.3d)
   description: |
     ## Frigate Notifications
 
@@ -755,16 +755,21 @@ trigger_variables:
   camera: "{{ input_camera | regex_replace('^camera\\.|_\\d+$', '') }}"
   mqtt_topic: !input mqtt_topic
 trigger:
-  - platform: event
-    event_type: mobile_app_notification_action
-    event_data:
-      action: "silence-{{ camera }}"
-    id: silence
   - platform: mqtt
     topic: "{{mqtt_topic}}"
     payload: "{{ camera }}/new"
     value_template: "{{ value_json['after']['camera'] | lower | replace('-','_') }}/{{ value_json['type']}}"
     id: frigate-event
+  - platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: "silence-{{ camera }}"
+    id: silence
+  - platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: "custom-{{ camera }}"
+    id: custom
 variables:
   input_camera: !input camera
   camera: "{{ input_camera | regex_replace('^camera\\.', '') }}"
