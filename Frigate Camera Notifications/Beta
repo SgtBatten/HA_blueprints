@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.3c)
+  name: Frigate Notifications (0.12.0.4)
   description: |
     ## Frigate Notifications
 
@@ -50,20 +50,19 @@ blueprint:
       - Optional delay to the initial notification to see if it resolves the no attached image issue.
       - Live view on iOS.
       - Android option: Sticky as per https://community.home-assistant.io/t/frigate-mobile-app-notifications/311091/1043
-
-    ### Beta Changes:
-      - Add 10s delay to the final notification update to ensure Frigate has time to save snapshot edits (crop, bounding box, etc.) if "update thumbnail" is enabled. 
+      - Add 5s delay to the final notification update to ensure Frigate has time to save snapshot edits (crop, bounding box, etc.) if "update thumbnail" is enabled. 
       - Add Video (gif) option to Android which will be sent 5 seconds after the event ends.
       - Subtitle support.
       - Video for iOS sent 5 seconds after the event ends.
       - Set custom entity for iOS live view.
       - Set Icons for Action Buttons on iOS.
-      - Strip trailing underscores and numbers from the camera name. (This will break automation for anyone whose Frigate cam ends in _x)
+      - Strip trailing underscores and numbers from the camera name. (This will break automation for anyone whose Frigate cam ends in _x.)
       - Android Auto option.
       - Custom Filter.
       - Customise group on mobile devices.
       - Bounding box and crop options for attachment.
       - Set notification volume on iOS
+      - Integrates with Double Take to replace object labels with names if a face is matched.
 
     [1]: https://companion.home-assistant.io/docs/notifications/notifications-basic#sending-notifications-to-multiple-devices
     [2]: https://blakeblackshear.github.io/frigate/configuration/cameras#zones
@@ -81,7 +80,7 @@ blueprint:
         Select the camera entity that will trigger notifications. 
         If you do not see cameras listed in the drop-down, check you have the Frigate integration installed.
 
-        Note: The automation relies on the Frigate camera name matching the entity id in Home Assistant. It will automatically strip "_x" from the end of the entity id where x is a number.
+        Note: The automation relies on the Frigate camera name matching the entity id in Home Assistant. It will automatically strip "_x" from the end of the entity id where x is a number If your camera name in frigate ends in _x you need to manually edit the yaml of this automation to add it twice e.g camera.front_1_1.
       selector:
         entity:
           integration: frigate
