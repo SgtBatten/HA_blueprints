@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4a)
+  name: Frigate Notifications (0.12.0.4b)
   description: |
     ## Frigate Notifications
 
@@ -8,9 +8,9 @@ blueprint:
     With this blueprint, you may send the notification to multiple devices by leaving "Device" blank and instead use a [notification group][1].
 
     ### Software Version Requirements
-      - Minimum Home Assistant Version: 2022.2
-      - Minimum Frigate Version: 0.11.0
-      - Minimum Frigate Integration Version: 3.0.0
+      - Minimum Home Assistant Version: 2024.1
+      - Minimum Frigate Version: 0.14
+      - Minimum Frigate Integration Version: 5.0.0
         - **Note:** "Enable the unauthenticated notification event proxy" must be ticked during setup
       - An MQTT broker connected to Home Assistant and Frigate.
       - Minimum iOS Version: 15.0
@@ -41,7 +41,6 @@ blueprint:
       - Limit notifications to certain hours of the day. (Time Filter)
       - Configure a cooldown for the camera to reduce the number of notifications when back-to-back events occur.
       - Silence future notifications for a defined amount of time through actionable notifications. This is helpful in situations where you know you will be triggering detections for an extended period of time. i.e. kids playing outside.
-      - Set a loitering timer to notify you of stationary objects that remain for a set time.
       - Configure what happens when you tap the notification. (Tap Action)
       - Configure 3 action buttons to open almost anything. (defaults are: View Clip, View Snapshot, and Silence New Notifications)
       - Configure the size, transparency, position, and duration of TV notifications.
@@ -109,8 +108,8 @@ blueprint:
       default: ""
     mqtt_topic:
       name: MQTT Topic (Advanced)
-      description: The MQTT topic Frigate sends messages in.
-      default: frigate/events
+      description: The MQTT topic Frigate sends review messages in.
+      default: frigate/reviews
     client_id:
       name: Client ID (Optional-Advanced)
       description: Used to support multiple instances of Frigate. Leave blank if you don't know what to do.
@@ -127,32 +126,23 @@ blueprint:
       description: |
         The message of the notification.
         You can use variables such as {{camera_name}} and {{label}}
-        e.g., A {{ label }} {{ 'is loitering' if loitering else 'was detected' }} on the {{ camera_name }} camera.
+        e.g., A {{ label }} {{ ' was' if type == 'end' else '' }} detected on the {{ camera_name }} camera.
 
-      default: A {{ label }} {{ 'is loitering' if loitering else 'was detected' }} on the {{ camera_name }} camera.
+      default: "{{ label }} {{ ' was' if type == 'end' else '' }} detected on the {{ camera_name }} camera."
       selector:
         select:
           options:
             - label: "Default:   e.g., A Person was detected on the Side camera."
-              value: "A {{ label }} {{ 'is loitering' if loitering else 'was detected' }} on the {{ camera_name }} camera."
+              value: "A {{ label }} {{ 'was detected' }} on the {{ camera_name }} camera."
             - label: "Short:     e.g., Person detected - Side"
               value: "{{ label }} detected - {{ camera_name }}"
             - label: "Short with a timestamp HH:MM"
               value: "{{ label }} detected - {{ camera_name }} at {{event['after']['start_time']|timestamp_custom('%H:%M')}}"
             - label: "Long:      e.g., A Person was detected on the Side camera in the driveway."
-              value: "A {{ label }} {{ 'is loitering' if loitering else 'was detected' }} on the {{ camera_name }} camera{% if enteredzones %} in the {{ enteredzones | join(', ') | replace('_',' ') }}{% endif %}."
+              value: "{{ label }} {{ ' was' if type == 'end' else '' }} detected on the {{ camera_name }} camera in the {{ zones | join(', ') | replace('_', ' ' ) | title }}."
             - label: "Long with a timestamp HH:MM"
-              value: "A {{ label }} {{ 'is loitering' if loitering else 'was detected' }} on the {{ camera_name }} camera{% if enteredzones %} in the {{ enteredzones | join(', ') | replace('_',' ') }}{% endif %} at {{event['after']['start_time']|timestamp_custom('%H:%M')}}."
+              value: "{{ label }} {{ ' was' if type == 'end' else '' }} detected on the {{ camera_name }} camera in the {{ zones | join(', ') | replace('_', ' ' ) | title }} at {{event['after']['start_time']|timestamp_custom('%H:%M')}}."
           custom_value: true
-    update_sub_label:
-      name: Update Sub Label (Advanced)
-      description: |
-        Update the title and/or message with the matched face name and trigger a notification update. 
-
-        Requires face detection to be configured (Advanced). Requires Title and/or Message to contain 'A Person' or 'A {{ label }}'
-      default: true
-      selector:
-        boolean:
     subtitle:
       name: Subtitle
       description: A secondary heading you can use in your notifications.
@@ -214,6 +204,8 @@ blueprint:
           options:
             - label: None
               value: ""
+            - label: Android GIF
+              value: "{{base_url}}api/frigate{{client_id}}/notifications/{{id}}/review_preview.gif?format=ts"
             - label: Clip
               value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
     color:
@@ -285,7 +277,7 @@ blueprint:
     group:
       name: Group
       description: The group name that will determine if notifications are grouped on your mobile device. If you want notifications grouped by camera, ensure it contains {{camera}}
-      default: "{{camera}}-frigate-notification{{'-loitering' if loitering}}"
+      default: "{{camera}}-frigate-notification"
     sound:
       name: Notification Sound - iOS only (Optional)
       description: You can specify a sound file on your device that will play for the notifications. You will need to import the sound file into Home Assistant.
@@ -484,17 +476,6 @@ blueprint:
         How long to silence notifications for this camera when requested as part of the actionable notification. 
         Note: This only applies to new objects. Existing tracked objects will not be affected.
       default: 30
-      selector:
-        number:
-          max: 3600
-          min: 0
-          unit_of_measurement: minutes
-    loiter_timer:
-      name: Loitering Notifications (Optional)
-      description: >
-        Sends new loitering notification if a stationary object is detected for longer
-        than the specified time. 0 is off and will not send notifications.
-      default: 0
       selector:
         number:
           max: 3600
@@ -756,9 +737,11 @@ trigger_variables:
 trigger:
   - platform: mqtt
     topic: "{{mqtt_topic}}"
-    payload: "{{ camera }}/new"
-    value_template: "{{ value_json['after']['camera'] | lower | replace('-','_') }}/{{ value_json['type']}}"
+    payload: "new"
+    value_template: "{{ value_json['type']}}"
     id: frigate-event
+    variables:
+      objects: "{{ trigger.payload_json['after']['data']['objects'] }}"
   - platform: event
     event_type: mobile_app_notification_action
     event_data:
@@ -775,7 +758,6 @@ variables:
   camera_name: "{{ camera | replace('_', ' ') | title }}"
   input_base_url: !input base_url
   base_url: "{{ input_base_url.rstrip('/')}}"
-  update_sub_label: !input update_sub_label
   input_client_id: !input client_id
   client_id: "{{input_client_id if not input_client_id else '/' + input_client_id if '/' not in input_client_id else input_client_id }}"
   attachment: !input attachment
@@ -794,8 +776,6 @@ variables:
   presence_entity: !input presence_filter
   disable_times: !input disable_times
   cooldown: !input cooldown
-  loitering: false
-  loiter_timer: !input loiter_timer
   initial_delay: !input initial_delay
   fps: "{{ states('sensor.' + camera + '_camera_fps')|int(5) }}"
   state_only: !input state_filter
@@ -814,6 +794,13 @@ variables:
   tv_transparency: !input tv_transparency
   tv_interrupt: !input tv_interrupt
   debug: !input debug
+condition:
+  - alias: "Notifications enabled for object"
+    condition: template
+    value_template: "{{ not labels|length or labels|select('in', objects)|list|length }}"
+#  # do not proceed if desired object not detected
+#  - "{{ not labels|length or object in labels }}"
+#  - "{{camera in trigger.payload_json['after']['camera']}}"
 action:
   - choose:
       - alias: "Silence New Object Notifications"
@@ -847,13 +834,22 @@ action:
           - variables:
               event: "{{ trigger.payload_json }}"
               id: "{{ trigger.payload_json['after']['id'] }}"
-              object: "{{ trigger.payload_json['after']['label'] }}"
-              label: "{{ object | title }}"
+              objects: "{{ trigger.payload_json['after']['data']['objects'] }}"
+              label: >-
+                    {% set data = namespace(labels=[]) %} 
+                    {% for obj in objects %}
+                      {% if "-verified" in obj %}
+                      {% else %}
+                        {% set data.labels = data.labels + [obj] %}
+                      {% endif %}
+                    {% endfor %} {% set data.labels = data.labels + sub_labels %} 
+                    {{ data.labels | unique | list | sort | join(", ") | title }}{{ objects | title }}
+              sub_labels: "{{ trigger.payload_json['after']['data']['sub_labels'] }}"
+              events: "{{ trigger.payload_json['after']['data']['detections'] }}"
               # Dynamic Variables per event
               initial_home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
-              enteredzones: "{{ trigger.payload_json['after']['entered_zones']}}"
+              enteredzones: "{{ trigger.payload_json['after']['data']['zones'] }}"
               zone_multi_filter: "{{zone_only and zone_multi and enteredzones|length and zones and zones |reject('in', enteredzones) |list |length == 0 }}"
-              loitering: false
               # Customisation of text
               title: !input title
               message: !input message
@@ -890,7 +886,8 @@ action:
                           Info:
                             fps: {{fps}}, 
                             frigate event id: {{id}}{{', Frigate client ID: ' + client_id if client_id else ''}}, 
-                            object (formatted): {{object}} ({{label}}),
+                            Objects: {{label}},
+                            Sub Labels: {{sub_labels | join(', ')}}
                           Config: 
                             camera(formatted): {{camera}}({{camera_name}}), 
                             Base URL: {{base_url}}, 
@@ -900,7 +897,6 @@ action:
                             Video: {{video}}, 
                             Target: {{'group (input/formatted): ' + notify_group + '/' + notify_group_target + ', ' if notify_group else 'Mobile Device'}}
                             cooldown: {{cooldown}}s, 
-                            loiter timer: {{loiter_timer}}s, 
                             initial delay: {{initial_delay}}s, 
                             color: {{color}}, 
                             sound: {{sound}}, 
@@ -942,9 +938,6 @@ action:
                               required states: {{input_states}}, 
                               State Filter TEST: {{'PASS' if not state_only or states(input_entity) in states_filter else 'FAIL' }},
                             Custom Filter: {{custom_filter}}
-          - alias: "Notifications enabled for object label"
-            condition: template
-            value_template: "{{ not labels|length or object in labels }}"
           - alias: "Delay for image"
             choose:
               - conditions:
@@ -982,7 +975,7 @@ action:
                               color: "{{color}}"
                               # Android Specific
                               subject: "{{subtitle}}"
-                              image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android"
+                              image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{events[0]}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android"
                               video: "{{video}}"
                               clickAction: "{{tap_action}}"
                               ttl: 0
@@ -995,7 +988,7 @@ action:
                               subtitle: "{{subtitle}}"
                               url: "{{tap_action}}"
                               attachment:
-                                url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                                url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{events[0]}}/{{attachment}}"
                               push:
                                 sound:
                                   name: "{{sound}}"
@@ -1038,7 +1031,7 @@ action:
                                 car_ui: "{{android_auto}}"
                                 # Android/Fire TV
                                 image:
-                                  url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
+                                  url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{events[0]}}/snapshot.jpg"
                                 fontsize: "{{tv_size}}"
                                 position: "{{tv_position}}"
                                 duration: "{{tv_duration}}"
@@ -1049,7 +1042,7 @@ action:
                                 subtitle: "{{subtitle}}"
                                 url: "{{tap_action}}"
                                 attachment:
-                                  url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                                  url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{events[0]}}/{{attachment}}"
                                 push:
                                   sound:
                                     name: "{{sound}}"
@@ -1077,12 +1070,12 @@ action:
                           title: "{{title}}"
                           message: "{{message}}"
                           data:
-                            tag: "{{ id }}{{'-loitering' if loitering}}"
+                            tag: "{{ id }}
                             group: "{{ group }}"
                             color: "{{color}}"
                             # Android Specific
                             subject: "{{subtitle}}"
-                            image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android"
+                            image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{events[0]}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android"
                             video: "{{video}}"
                             clickAction: "{{tap_action}}"
                             ttl: 0
@@ -1101,7 +1094,7 @@ action:
                             # iOS Specific
                             url: "{{tap_action}}"
                             attachment:
-                              url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                              url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{events[0]}}/{{attachment}}"
                             push:
                               sound:
                                 name: "{{sound}}"
@@ -1135,46 +1128,19 @@ action:
                   continue_on_timeout: false
                 - variables:
                     event: "{{ wait.trigger.payload_json }}"
-                    loitering: "{{ loiter_timer and event['before']['motionless_count']/fps/60 < loiter_timer and event['after']['motionless_count']/fps/60 >= loiter_timer }}"
-                    new_snapshot: "{{ update_thumbnail and event['before']['snapshot']['frame_time'] != event['after']['snapshot']['frame_time'] }}"
                     home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
                     presence_changed: "{{ presence_entity != '' and as_datetime(event['before']['frame_time']) < states[presence_entity].last_changed }}"
-                    last_zones: "{{ event['before']['entered_zones']|lower}}"
-                    enteredzones: "{{ event['after']['entered_zones']|lower}}"
+                    last_zones: "{{ event['before']['data']['zones']|lower}}"
+                    enteredzones: "{{ event['after']['data']['zones']|lower}}"
                     zone_filter: "{{ not zone_only or zones|select('in', enteredzones)|list|length > 0 }}"
                     zone_multi_filter: "{{not zone_only or not zone_multi or ( enteredzones|list|length > 0 and zones and zones|reject('in', enteredzones)|list|length == 0 ) }}"
-                    stationary_moved: "{{ event['after']['position_changes'] > event['before']['position_changes'] }}"
                     zone_only_changed: "{{ zone_only and (enteredzones|length > 0 and not last_zones|length) }}"
                     entered_zones_changed: "{{ zones|length > 0 and (zones|select('in', enteredzones)|list|length > zones|select('in', last_zones)|list|length) }}"
                     state_true: "{{ not state_only or states(input_entity) in states_filter }}"
-                    sub_label: >
-                      {% if event['after']['sub_label'] %} 
-                        {{event['after']['sub_label'][0]}}
-                      {%else%}
-                        {{event['after']['sub_label']}}
-                      {%endif%}
-                    sub_label_before: >
-                      {% if event['before']['sub_label'] %} 
-                        {{event['before']['sub_label'][0]}}
-                      {%else%}
-                        {{event['before']['sub_label']}}
-                      {%endif%}
-                    sub_label_changed: "{{ update_sub_label and sub_label != sub_label_before }}"
                     critical_input: !input critical
                     critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
-                    title: >
-                      {% if sub_label and update_sub_label %} 
-                        {{title | replace('A Person', sub_label|title) | replace('Person', sub_label|title)}}
-                      {%else%}
-                        {{title}}
-                      {%endif%}
-                    input_message: !input message
-                    message: >
-                      {% if sub_label and update_sub_label %} 
-                        {{input_message | replace('A Person', sub_label|title) | replace('Person', sub_label|title)}}
-                      {%else%}
-                        {{input_message}}
-                      {%endif%}
+                    title: {{title}}
+                    message: !input message
                     custom_action_auto_multi: !input custom_action_auto_multi
                 - alias: "Update thumbnail at end of event"
                   choose:
@@ -1196,10 +1162,10 @@ action:
                             name: Frigate Notification
                             message: |
                               DEBUG (in loop): 
-                                Send Notification: {{ loitering or (custom_filter and not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}
+                                Send Notification: {{ custom_filter and not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or zone_only_changed or entered_zones_changed ) }}
                                 Info: 
-                                  sublabel: {{sub_label}}, 
-                                  image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                                  sublabel: {{sub_labels | join(', ')}}, 
+                                  image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{events[0]}}/{{attachment}}"
                                   Title: {{title}}
                                   message: {{message}}
                                   iOS sound: {{'Critical' if critical else 'disabled by alert once' if alert_once else 'enabled'}}, 
@@ -1208,14 +1174,9 @@ action:
                                   video: "{{video}}"
                                   critical: {{critical}}, 
                                 Triggers: 
-                                  New Snapshot: {{'True' if event['before']['snapshot']['frame_time'] != event['after']['snapshot']['frame_time'] else 'False'}}{{' - Disabled' if not update_thumbnail}} 
                                   Presence Changed: {{presence_changed}}, 
-                                  Stationary Moved: {{stationary_moved}}, 
-                                  Entered Zones Changed: {{'True' if event['before']['entered_zones'] != event['after']['entered_zones'] else 'False'}}{{' - Disabled' if not zone_only}}, 
-                                  sublabel changed: {{ sub_label != sub_label_before }}{{' - Disabled' if not update_sub_label}}, 
+                                  Entered Zones Changed: {{'True' if event['before']['data']['zones'] != event['after']['data']['zones'] else 'False'}}{{' - Disabled' if not zone_only}}, 
                                 Conditions: 
-                                  Loitering: {{loitering}}
-                                    or
                                   Filters: 
                                     Zones: 
                                       Zone Filter Enabled: {{zone_only}}, 
@@ -1243,11 +1204,11 @@ action:
                   choose:
                     - conditions:
                         - "{{ custom_action_auto_multi | length > 0 }}"
-                        - "{{ loitering or (not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
+                        - "{{ not home and zone_filter and zone_multi_filter and state_true and ( presence_changed or zone_only_changed or entered_zones_changed ) }}"
                       sequence: !input "custom_action_auto_multi"
                 - alias: "Update Notification"
                   choose:
-                    - conditions: "{{ loitering or (custom_filter and not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
+                    - conditions: "{{ custom_filter and not home and zone_filter and zone_multi_filter and state_true and ( presence_changed or zone_only_changed or entered_zones_changed ) }}"
                       sequence:
                         - choose:
                             - conditions: "{{ not notify_group_target }}"
@@ -1258,12 +1219,12 @@ action:
                                   title: "{{title}}"
                                   message: "{{message}}"
                                   data:
-                                    tag: "{{ id }}{{'-loitering' if loitering}}"
+                                    tag: "{{ id }}"
                                     group: "{{ group }}"
                                     color: "{{color}}"
                                     # Android Specific
                                     subject: "{{subtitle}}"
-                                    image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android"
+                                    image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{events[0]}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android"
                                     video: "{{video}}"
                                     clickAction: "{{tap_action}}"
                                     ttl: 0
@@ -1277,7 +1238,7 @@ action:
                                     subtitle: "{{subtitle}}"
                                     url: "{{tap_action}}"
                                     attachment:
-                                      url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
+                                      url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{events[0]}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
                                     push:
                                       sound:
                                         name: "{{ iif(update, 'none', sound) }}"
@@ -1306,7 +1267,7 @@ action:
                                     title: "{{title}}"
                                     message: "{{message}}"
                                     data:
-                                      tag: "{{ id }}{{'-loitering' if loitering}}"
+                                      tag: "{{ id }}"
                                       group: "{{ group }}"
                                       color: "{{color}}"
                                       # Android Specific
@@ -1321,7 +1282,7 @@ action:
                                       car_ui: "{{android_auto}}"
                                       # Android/Fire TV
                                       image:
-                                        url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
+                                        url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{events[0]}}/snapshot.jpg"
                                       video: "{{video}}"
                                       fontsize: "{{tv_size}}"
                                       position: "{{tv_position}}"
@@ -1333,7 +1294,7 @@ action:
                                       subtitle: "{{subtitle}}"
                                       url: "{{tap_action}}"
                                       attachment:
-                                        url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
+                                        url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{events[0]}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
                                       push:
                                         sound:
                                           name: "{{ iif(update, 'none', sound) }}"
@@ -1361,12 +1322,12 @@ action:
                                 title: "{{title}}"
                                 message: "{{message}}"
                                 data:
-                                  tag: "{{ id }}{{'-loitering' if loitering}}"
+                                  tag: "{{ id }}
                                   group: "{{ group }}"
                                   color: "{{color}}"
                                   # Android Specific
                                   subject: "{{subtitle}}"
-                                  image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android"
+                                  image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{events[0]}}/{{attachment}{{'&' if '?' in attachment else '?'}}format=android"
                                   video: "{{video}}"
                                   clickAction: "{{tap_action}}"
                                   ttl: 0
