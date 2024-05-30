@@ -365,7 +365,7 @@ blueprint:
     labels:
       name: Object Filter (Optional)
       description: |
-        Enter or select one object at a time.
+        Specify objects you wish to be notified about.  Enter or select one object at a time.
       default: ""
       selector:
         select:
