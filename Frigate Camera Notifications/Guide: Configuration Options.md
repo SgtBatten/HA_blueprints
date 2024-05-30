@@ -92,6 +92,7 @@ If you run [multiple instances](https://docs.frigate.video/integrations/home-ass
 ### Multi Zone
 
 ### Object Filter
+Select only objects that you wish to be notified for.  Enter or select one object at a time.
 
 ### Presence Filter
 
