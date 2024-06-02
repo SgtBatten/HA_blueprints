@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4d)
+  name: Frigate Notifications (0.12.0.4e)
   description: |
     ## Frigate Notifications
 
@@ -836,14 +836,14 @@ action:
               id: "{{ trigger.payload_json['after']['id'] }}"
               objects: "{{ trigger.payload_json['after']['data']['objects'] }}"
               label: >-
-                    {% set data = namespace(labels=[]) %} 
-                    {% for obj in objects %}
-                      {% if "-verified" in obj %}
-                      {% else %}
-                        {% set data.labels = data.labels + [obj] %}
-                      {% endif %}
-                    {% endfor %} {% set data.labels = data.labels + sub_labels %} 
-                    {{ data.labels | unique | list | sort | join(", ") | title }}{{ objects | title }}
+                {% set data = namespace(labels=[]) %} 
+                {% for obj in objects %}
+                  {% if "-verified" in obj %}
+                  {% else %}
+                    {% set data.labels = data.labels + [obj] %}
+                  {% endif %}
+                {% endfor %} {% set data.labels = data.labels + sub_labels %} 
+                {{ data.labels | unique | list | sort | join(", ") | title }}{{ objects | title }}
               sub_labels: "{{ trigger.payload_json['after']['data']['sub_labels'] }}"
               events: "{{ trigger.payload_json['after']['data']['detections'] }}"
               # Dynamic Variables per event
@@ -1139,7 +1139,7 @@ action:
                     state_true: "{{ not state_only or states(input_entity) in states_filter }}"
                     critical_input: !input critical
                     critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
-                    title: {{title}}
+                    title: !input title
                     message: !input message
                     custom_action_auto_multi: !input custom_action_auto_multi
                 - alias: "Update thumbnail at end of event"
