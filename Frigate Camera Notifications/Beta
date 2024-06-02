@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4c)
+  name: Frigate Notifications (0.12.0.4d)
   description: |
     ## Frigate Notifications
 
@@ -1322,12 +1322,12 @@ action:
                                 title: "{{title}}"
                                 message: "{{message}}"
                                 data:
-                                  tag: "{{ id }}
+                                  tag: "{{ id }}"
                                   group: "{{ group }}"
                                   color: "{{color}}"
                                   # Android Specific
                                   subject: "{{subtitle}}"
-                                  image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{events[0]}}/{{attachment}{{'&' if '?' in attachment else '?'}}format=android"
+                                  image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{events[0]}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android"
                                   video: "{{video}}"
                                   clickAction: "{{tap_action}}"
                                   ttl: 0
