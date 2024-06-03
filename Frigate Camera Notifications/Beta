@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4e)
+  name: Frigate Notifications (0.12.0.4f)
   description: |
     ## Frigate Notifications
 
@@ -835,6 +835,7 @@ action:
               event: "{{ trigger.payload_json }}"
               id: "{{ trigger.payload_json['after']['id'] }}"
               objects: "{{ trigger.payload_json['after']['data']['objects'] }}"
+              sub_labels: "{{ trigger.payload_json['after']['data']['sub_labels'] }}"
               label: >-
                 {% set data = namespace(labels=[]) %} 
                 {% for obj in objects %}
@@ -844,7 +845,6 @@ action:
                   {% endif %}
                 {% endfor %} {% set data.labels = data.labels + sub_labels %} 
                 {{ data.labels | unique | list | sort | join(", ") | title }}{{ objects | title }}
-              sub_labels: "{{ trigger.payload_json['after']['data']['sub_labels'] }}"
               events: "{{ trigger.payload_json['after']['data']['detections'] }}"
               # Dynamic Variables per event
               initial_home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
