@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4)
+  name: Frigate Notifications (0.12.0.3d)
   description: |
     ## Frigate Notifications
 
@@ -50,19 +50,20 @@ blueprint:
       - Optional delay to the initial notification to see if it resolves the no attached image issue.
       - Live view on iOS.
       - Android option: Sticky as per https://community.home-assistant.io/t/frigate-mobile-app-notifications/311091/1043
-      - Add 5s delay to the final notification update to ensure Frigate has time to save snapshot edits (crop, bounding box, etc.) if "update thumbnail" is enabled. 
+
+    ### Beta Changes:
+      - Add 10s delay to the final notification update to ensure Frigate has time to save snapshot edits (crop, bounding box, etc.) if "update thumbnail" is enabled. 
       - Add Video (gif) option to Android which will be sent 5 seconds after the event ends.
       - Subtitle support.
       - Video for iOS sent 5 seconds after the event ends.
       - Set custom entity for iOS live view.
       - Set Icons for Action Buttons on iOS.
-      - Strip trailing underscores and numbers from the camera name. (This will break automation for anyone whose Frigate cam ends in _x.)
+      - Strip trailing underscores and numbers from the camera name. (This will break automation for anyone whose Frigate cam ends in _x)
       - Android Auto option.
       - Custom Filter.
       - Customise group on mobile devices.
       - Bounding box and crop options for attachment.
       - Set notification volume on iOS
-      - Integrates with Double Take to replace object labels with names if a face is matched.
 
     [1]: https://companion.home-assistant.io/docs/notifications/notifications-basic#sending-notifications-to-multiple-devices
     [2]: https://blakeblackshear.github.io/frigate/configuration/cameras#zones
@@ -80,7 +81,7 @@ blueprint:
         Select the camera entity that will trigger notifications. 
         If you do not see cameras listed in the drop-down, check you have the Frigate integration installed.
 
-        Note: The automation relies on the Frigate camera name matching the entity id in Home Assistant. It will automatically strip "_x" from the end of the entity id where x is a number If your camera name in frigate ends in _x you need to manually edit the yaml of this automation to add it twice e.g camera.front_1_1.
+        Note: The automation relies on the Frigate camera name matching the entity id in Home Assistant. It will automatically strip "_x" from the end of the entity id where x is a number.
       selector:
         entity:
           integration: frigate
@@ -931,12 +932,10 @@ action:
                             Zones: 
                               zone filter toggle on: {{zone_only}}, 
                               Multi-Zone toggle on: {{zone_multi}}, 
-                              Multi-Zone-Exact on: {{zone_multi_exact_order}}, 
+                              Multi-Zone Exact Order on: {{zone_multi_exact_order}}, 
                               Required zones: {{input_zones}}, 
                               Entered Zones: {{enteredzones}}, 
-                              Multi-Zone-Filter: {{zone_multi_filter}},
-                              Multi-Zone-Filter Exact: {{zone_multi_exact_order_filter}}, 
-                              Zone Filter TEST: {{'PASS (Multi)' if zone_multi_filter else 'PASS' if ( not zone_only or not zone_multi and zones|select('in', enteredzones)|list|length ) else 'FAIL (Multi)' if zone_multi else 'FAIL' }}, 
+                              Zone Filter TEST: {{'PASS' (Exact Order)' if zone_multi_exact_order and zone_multi_exact_order_filter else 'FAIL (Exact Order)' if zone_multi_exact_order and not zone_multi_exact_order_filter else 'PASS (Multi)' if zone_multi_filter else 'PASS' if ( not zone_only or not zone_multi and zones|select('in', enteredzones)|list|length ) else 'FAIL (Multi)' if zone_multi else 'FAIL' }},
                             Required objects TEST: 
                               Input: {{input_labels}}, 
                               TEST: {{'PASS' if not labels|length or object in labels else 'FAIL'}}
@@ -964,7 +963,7 @@ action:
             choose:
               - conditions:
                   - "{{ custom_action_auto |length > 0 }}"
-                  - "{{ not zone_only or (not zone_multi and not zone_multi_exact_order and zones|select('in', enteredzones)|list|length > 0) or (zone_multi or zone_multi_exact_order and enteredzones|length > 0 and zones |reject('in', enteredzones) |list |length == 0) }}"
+                  - "{{ not zone_only or (not zone_multi and not zone_multi_ex and zones|select('in', enteredzones)|list|length > 0) or (zone_multi or zone_multi_ex and enteredzones|length > 0 and zones |reject('in', enteredzones) |list |length == 0) }}"
                   - "{{ not initial_home }}"
                   - "{{ not state_only or states(input_entity) in states_filter }}"
                 sequence: !input "custom_action_auto"
@@ -1234,9 +1233,8 @@ action:
                                       Required Zones: {{input_zones}}, 
                                       Last Zones: {{last_zones}}, 
                                       Entered zones: {{enteredzones|list|length}} - {{enteredzones}},
-                                      Multi Zone Filter: {{zone_multi_filter}},
                                       Multi Zone Filter Exact: {{zone_multi_exact_order_filter}},
-                                      TEST: {{'PASS' if not zone_only or (not zone_multi and zones|select('in', enteredzones)|list|length ) else 'PASS (Multi)' if zone_only and zone_multi and zone_multi_filter else 'FAIL (Multi)' if zone_only and zone_multi else 'FAIL' }}, 
+                                      TEST: {{'PASS' if not zone_only or (not zone_multi and not zone_multi_exact_order and zones|select('in', enteredzones)|list|length ) else 'PASS (Multi)' if zone_only and zone_multi and zone_multi_filter and not zone_multi_exact_order else 'FAIL (Multi)' if zone_only and zone_multi and not zone_multi_exact_order else 'PASS (Exact Order)' if zone_multi_exact_order and zone_multi_exact_order_filter else 'FAIL (Exact Order)' if zone_multi_exact_order else 'FAIL'}}, 
                                     Object Filter: 
                                       Input: {{input_labels}}, 
                                       TEST: {{'PASS' if not labels|length or object in labels else 'FAIL'}}, 
@@ -1256,7 +1254,7 @@ action:
                                     Home: {{home}},
                                     Zone_filter: {{zone_filter}},
                                     zone_multi_filter:{{zone_multi_filter}},
-                                    zone_multi_exact_order_filter:{{zone_multi_exact_order_filter}},
+                                    zone_multi_ex_filter:{{zone_multi_ex_filter}},
                                     state_true: {{state_true}},
                                     new_snapshot:{{new_snapshot}},
                                     presence_changed: {{presence_changed}},
@@ -1264,7 +1262,7 @@ action:
                                     zone_only_changed: {{zone_only_changed}},
                                     entered_zones_changed:{{entered_zones_changed}},
                                     sub_label_changed:{{sub_label_changed}},
-                                    Test Condition loop: "{{ loitering or (custom_filter and not home and zone_filter and (zone_multi_filter or zone_multi_exact_order_filter) and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}",
+                                    Test Condition loop: "{{ loitering or (custom_filter and not home and zone_filter and (zone_multi_filter or zone_multi_ex_filter) and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}",
                 - alias: "Custom Action Auto Multi"
                   choose:
                     - conditions:
