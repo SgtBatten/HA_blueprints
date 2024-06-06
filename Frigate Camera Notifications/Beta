@@ -217,7 +217,7 @@ blueprint:
             - label: None
               value: ""
             - label: Android GIF
-              value: "{{base_url}}api/frigate{{client_id}}/notifications/{{id}}/review_preview.gif?format=ts"
+              value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/review_preview.gif?format=ts"
             - label: Clip
               value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
     color:
