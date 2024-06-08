@@ -172,6 +172,21 @@ blueprint:
             - "{{'true' if is_state('sun.sun', 'above_horizon') else 'false' }}"
             - "{{ event['after']['top_score'] |float(0) > 0.8 }}"
           custom_value: true
+    tts:
+      name: Use TTS to override silent/dnd modes on specific phones.
+      description: |
+        Some phones (the Samsung galaxy line, in particular,) disable the ability to use `alarm_stream` as a means to bypass the current sound settings. This option allows TTS to announce the alert instead, which does bypass the sound settings.
+      default: false
+      selector:
+        boolean:
+    tts_helper:
+      name: Entity to store ids already alerted by TTS
+      description: |
+        In order for TTS to honor alert_once settings, create a text helper (/config/helpers), which will be used to store the ids for any tts alerts that have gone out. Set the maximum character count to 250 to store the latest 25 alert ids. Then select it here
+      default: ""
+      selector:
+        entity:
+          integration: input_text
     alert_once:
       name: Alert Once (Optional)
       description: Only the first notification for each event will play a sound. Updates, including new thumbnails, will be silent. iOS users who use Critical Notifications above will still hear default critical sounds for updates.
@@ -866,6 +881,8 @@ action:
               # other things that can be templated and might need info from the event
               critical_input: !input critical
               critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
+              tts: !input tts
+              tts_helper: !input tts_helper
               custom_filter: !input custom_filter
               icon: !input icon
               group: !input group
@@ -890,6 +907,8 @@ action:
                             camera(formatted): {{camera}}({{camera_name}}), 
                             Base URL: {{base_url}}, 
                             critical: {{critical}}, 
+                            tts: {{tts}} 
+                            helper: {{tts_helper if tts else 'N/A'}},
                             alert once: {{alert_once}}, 
                             Update Thumbnails: {{update_thumbnail}}, 
                             Video: {{video}}, 
@@ -1072,7 +1091,7 @@ action:
                           title: "{{title}}"
                           message: "{{message}}"
                           data:
-                            tag: "{{ id }}{{'-loitering' if loitering}}"
+                            tag: "{{ id }}"
                             group: "{{ group }}"
                             color: "{{color}}"
                             # Android Specific
@@ -1118,6 +1137,38 @@ action:
                                 uri: "{{url_3}}"
                                 icon: "{{icon_3}}"
                                 destructive: true
+
+                  - if: "{{tts and (not tts_helper or not alert_once or (tts_helper and id not in states(tts_helper)))}}"
+                    then:
+                      sequence:
+                        - choose:
+                            - conditions: "{{ not notify_group_target }}"
+                              sequence:
+                                - device_id: !input notify_device
+                                  domain: mobile_app
+                                  type: notify
+                                  message: "{{'TTS'}}"
+                                  data:
+                                    tag: "{{ id }}{{'-tts'}}"
+                                    channel: "{{'alarm_stream' if critical else channel}}"
+                                    alert_once: "{{ alert_once }}"
+                                    tts_text: "{{message}}"
+                          default:
+                            - service: "notify.{{ notify_group_target }}"
+                              data:
+                                message: "{{'TTS'}}"
+                                data:
+                                  tag: "{{ id }}{{'-tts'}}"
+                                  channel: "{{'alarm_stream' if critical else channel}}"
+                                  alert_once: "{{ alert_once }}"
+                                  tts_text: "{{message}}"
+                        - service: input_text.set_value
+                          data:
+                            value: |
+                              {% set newIds = id + '|' + states(tts_helper) %}
+                              {{ newIds[:250] }}
+                          target:
+                            entity_id: input_text.tts_notifications
           - repeat:
               sequence:
                 - wait_for_trigger:
@@ -1157,6 +1208,7 @@ action:
                     sub_label_changed: "{{ update_sub_label and sub_label != sub_label_before }}"
                     critical_input: !input critical
                     critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
+                    tts: !input tts
                     title: >
                       {% if sub_label and update_sub_label %} 
                         {{title | replace('A Person', sub_label|title) | replace('Person', sub_label|title)}}
@@ -1201,7 +1253,8 @@ action:
                                   Android Sound: {{'disabled by alert once' if alert_once else 'enabled'}}, 
                                   iOS url: /api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}
                                   video: "{{video}}"
-                                  critical: {{critical}}, 
+                                  critical: {{critical}},
+                                  tts: {{tts}} 
                                 Triggers: 
                                   New Snapshot: {{'True' if event['before']['snapshot']['frame_time'] != event['after']['snapshot']['frame_time'] else 'False'}}{{' - Disabled' if not update_thumbnail}} 
                                   Presence Changed: {{presence_changed}}, 
@@ -1403,4 +1456,37 @@ action:
                                       uri: "{{url_3}}"
                                       icon: "{{icon_3}}"
                                       destructive: true
+
+                        - if: "{{tts and (not tts_helper or not alert_once or (tts_helper and id not in states(tts_helper)))}}"
+                          then:
+                            sequence:
+                              - choose:
+                                  - conditions: "{{ not notify_group_target }}"
+                                    sequence:
+                                      - device_id: !input notify_device
+                                        domain: mobile_app
+                                        type: notify
+                                        message: "{{'TTS'}}"
+                                        data:
+                                          tag: "{{ id }}{{'-loitering-tts' if loitering}}"
+                                          channel: "{{'alarm_stream' if critical else channel}}"
+                                          alert_once: "{{ alert_once }}"
+                                          tts_text: "{{message}}"
+
+                                default:
+                                  - service: "notify.{{ notify_group_target }}"
+                                    data:
+                                      message: "{{'TTS'}}"
+                                      data:
+                                        tag: "{{ id }}{{'-loitering-tts' if loitering}}"
+                                        channel: "{{'alarm_stream' if critical else channel}}"
+                                        alert_once: "{{ alert_once }}"
+                                        tts_text: "{{message}}"
+                              - service: input_text.set_value
+                                data:
+                                  value: |
+                                    {% set newIds = id + '|' + states(tts_helper) %}
+                                    {{ newIds[:250] }}
+                                target:
+                                  entity_id: input_text.tts_notifications
               until: "{{ not wait.trigger or wait.trigger.payload_json['type'] == 'end' }}"
