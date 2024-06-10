@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4g)
+  name: Frigate Notifications (0.12.0.4h)
   description: |
     ## Frigate Notifications
 
@@ -753,8 +753,6 @@ trigger:
     payload: "{{ camera }}/{{type}}"
     value_template: "{{ value_json['after']['camera'] | lower | replace('-','_') }}/{{ value_json['after']['severity']}}"
     id: frigate-event
-    variables:
-      objects: "{{ trigger.payload_json['after']['data']['objects'] }}"
   - platform: event
     event_type: mobile_app_notification_action
     event_data:
@@ -810,6 +808,7 @@ variables:
   tv_interrupt: !input tv_interrupt
   debug: !input debug
   # Dynamic Variables per event
+  objects: "{{ trigger.payload_json['after']['data']['objects'] }}"
   initial_home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
   after_zones: "{{ trigger.payload_json['after']['data']['zones'] }}"
   zone_multi_filter: "{{zone_only and zone_multi and after_zones|length and zones and zones |reject('in', after_zones) |list |length == 0 }}"
@@ -826,7 +825,7 @@ condition:
           id: frigate-event
         - alias: "Notifications enabled for object"
           condition: template
-          value_template: "{{ not labels|length or labels|select('in', objects)|list|length }}"
+          value_template: "{{ not labels|length or labels|select('in', objects)|list|length > 0 }}"
         - "{{ not this.attributes.last_triggered or (now() - this.attributes.last_triggered).seconds > cooldown }}"
         - "{{ not disable_times|length or not now().hour in disable_times|map('int')|list }}"
         - "{{ not zone_only or (not zone_multi and zones|select('in', after_zones)|list|length > 0) or (zone_multi and after_zones|length > 0 and zones |reject('in', after_zones) |list |length == 0) }}"
