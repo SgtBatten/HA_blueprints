@@ -1033,8 +1033,9 @@ action:
                                   destructive: true
                       - conditions: "{{ tv }}"
                         sequence:
-                          - service: "notify.{{ notify_group_target }}"
+                          - service: "notify.send_message"
                             data:
+                              enity_id: "notify.{{ notify_group_target }}"
                               title: "{{title}}"
                               message: "{{message}}"
                               data:
@@ -1086,8 +1087,9 @@ action:
                                     icon: "{{icon_3}}"
                                     destructive: true
                     default:
-                      - service: "notify.{{ notify_group_target }}"
+                      - service: "notify.send_message"
                         data:
+                          enity_id:  "notify.{{ notify_group_target }}"
                           title: "{{title}}"
                           message: "{{message}}"
                           data:
@@ -1154,8 +1156,9 @@ action:
                                     alert_once: "{{ alert_once }}"
                                     tts_text: "{{message}}"
                           default:
-                            - service: "notify.{{ notify_group_target }}"
+                            - service: "notify.send_message"
                               data:
+                                enity_id:  "notify.{{ notify_group_target }}"
                                 message: "{{'TTS'}}"
                                 data:
                                   tag: "{{ id }}{{'-tts'}}"
@@ -1349,8 +1352,9 @@ action:
                                         destructive: true
                             - conditions: "{{ tv }}"
                               sequence:
-                                - service: "notify.{{ notify_group_target }}"
+                                - service: "notify.send_message"
                                   data:
+                                    enity_id:  "notify.{{ notify_group_target }}"
                                     title: "{{title}}"
                                     message: "{{message}}"
                                     data:
@@ -1404,8 +1408,9 @@ action:
                                           icon: "{{icon_3}}"
                                           destructive: true
                           default:
-                            - service: "notify.{{ notify_group_target }}"
+                            - service: "notify.send_message"
                               data:
+                                enity_id:  "notify.{{ notify_group_target }}"
                                 title: "{{title}}"
                                 message: "{{message}}"
                                 data:
@@ -1474,8 +1479,9 @@ action:
                                           tts_text: "{{message}}"
 
                                 default:
-                                  - service: "notify.{{ notify_group_target }}"
+                                  - service: "notify.send_message"
                                     data:
+                                      enity_id:  "notify.{{ notify_group_target }}"
                                       message: "{{'TTS'}}"
                                       data:
                                         tag: "{{ id }}{{'-loitering-tts' if loitering}}"
