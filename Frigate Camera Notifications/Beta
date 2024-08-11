@@ -1,73 +1,146 @@
 blueprint:
   name: Frigate Notifications (0.12.0.4a)
-  description: "## Frigate Notifications\n\nThis blueprint will send a notification
+  description: "## Frigate Notifications
+
+This blueprint will send a notification
     to your device when a Frigate event for the selected camera is fired. The notification
     will initially include the thumbnail of the detection, but include an actionable
-    notification allowing you to view the clip and snapshot.\n\nWith this blueprint,
+    notification allowing you to view the clip and snapshot.
+
+With this blueprint,
     you may send the notification to multiple devices by leaving \"Device\" blank
-    and instead use a [notification group][1].\n\n### Software Version Requirements\n
-    \ - Minimum Home Assistant Version: 2022.2\n  - Minimum Frigate Version: 0.11.0\n
-    \ - Minimum Frigate Integration Version: 3.0.0\n    - **Note:** \"Enable the unauthenticated
-    notification event proxy\" must be ticked during setup\n  - An MQTT broker connected
-    to Home Assistant and Frigate.\n  - Minimum iOS Version: 15.0\n\n### Required
-    entities:\n  - Frigate Camera Name\n  - Mobile Device (Running HA Companion App)\n\n###
-    Features:\n  - Easily select the camera entity or mobile device using a drop-down
-    menu.\n  - Send notifications to an Android or iOS mobile device or a TV.\n    -
-    or a group containing any combination of the above.\n    - for TV Alerts, you
-    need to install and configure https://www.home-assistant.io/integrations/nfandroidtv/\n
-    \ - Configure the title and message of the notification. \n  - Dynamically handle
-    things like object type, zones, and face detection from doubletake.\n  - Automatically
-    handle some common errors like case matching and bad URLs etc.\n  - Optionally
-    send the notification as a critical alert. (Critical)\n  - Optionally limit playing
+    and instead use a [notification group][1].
+
+### Software Version Requirements
+
+    \ - Minimum Home Assistant Version: 2022.2
+  - Minimum Frigate Version: 0.11.0
+
+    \ - Minimum Frigate Integration Version: 3.0.0
+    - **Note:** \"Enable the unauthenticated
+    notification event proxy\" must be ticked during setup
+  - An MQTT broker connected
+    to Home Assistant and Frigate.
+  - Minimum iOS Version: 15.0
+
+### Required
+    entities:
+  - Frigate Camera Name
+  - Mobile Device (Running HA Companion App)
+
+###
+    Features:
+  - Easily select the camera entity or mobile device using a drop-down
+    menu.
+  - Send notifications to an Android or iOS mobile device or a TV.
+    -
+    or a group containing any combination of the above.
+    - for TV Alerts, you
+    need to install and configure https://www.home-assistant.io/integrations/nfandroidtv/
+
+    \ - Configure the title and message of the notification. 
+  - Dynamically handle
+    things like object type, zones, and face detection from doubletake.
+  - Automatically
+    handle some common errors like case matching and bad URLs etc.
+  - Optionally
+    send the notification as a critical alert. (Critical)
+  - Optionally limit playing
     audio for secondary notification updates, and on iOS, customise the sound. (Alert
-    Once)\n  - Choose whether or not to update the notification with new thumbnails
-    as they become available.\n  - Customise the notification colour and icon.\n  -
-    Optionally send a live view to iOS.\n  - Configure custom notification channels
-    on Android.\n  - Specify which [zones][2] to be notified about. (Zone Filter)\n
-    \   - Choose between enforcing all required zones simultaneously or any one zone.\n
-    \ - Specify what type of [objects][3] to be notified about. (Object Filter)\n
+    Once)
+  - Choose whether or not to update the notification with new thumbnails
+    as they become available.
+  - Customise the notification colour and icon.
+  -
+    Optionally send a live view to iOS.
+  - Configure custom notification channels
+    on Android.
+  - Specify which [zones][2] to be notified about. (Zone Filter)
+
+    \   - Choose between enforcing all required zones simultaneously or any one zone.
+
+    \ - Specify what type of [objects][3] to be notified about. (Object Filter)
+
     \ - Disable notifications if a presence entity or group is \"home\". (Presence
-    Filter)\n  - Limit notifications based on the state of another entity. (State
-    Filter)\n  - Limit notifications to certain hours of the day. (Time Filter)\n
+    Filter)
+  - Limit notifications based on the state of another entity. (State
+    Filter)
+  - Limit notifications to certain hours of the day. (Time Filter)
+
     \ - Configure a cooldown for the camera to reduce the number of notifications
-    when back-to-back events occur.\n  - Silence future notifications for a defined
+    when back-to-back events occur.
+  - Silence future notifications for a defined
     amount of time through actionable notifications. This is helpful in situations
     where you know you will be triggering detections for an extended period of time.
-    i.e. kids playing outside.\n  - Set a loitering timer to notify you of stationary
-    objects that remain for a set time.\n  - Configure what happens when you tap the
-    notification. (Tap Action)\n  - Configure 3 action buttons to open almost anything.
-    (defaults are: View Clip, View Snapshot, and Silence New Notifications)\n  - Configure
-    the size, transparency, position, and duration of TV notifications.\n  - Debug
-    option to help with troubleshooting.\n  - Support for multiple Frigate instances
-    by specifying the ClientID and MQTT topic.\n  - Optional delay to the initial
-    notification to see if it resolves the no attached image issue.\n  - Live view
-    on iOS.\n  - Android option: Sticky as per https://community.home-assistant.io/t/frigate-mobile-app-notifications/311091/1043\n
+    i.e. kids playing outside.
+  - Set a loitering timer to notify you of stationary
+    objects that remain for a set time.
+  - Configure what happens when you tap the
+    notification. (Tap Action)
+  - Configure 3 action buttons to open almost anything.
+    (defaults are: View Clip, View Snapshot, and Silence New Notifications)
+  - Configure
+    the size, transparency, position, and duration of TV notifications.
+  - Debug
+    option to help with troubleshooting.
+  - Support for multiple Frigate instances
+    by specifying the ClientID and MQTT topic.
+  - Optional delay to the initial
+    notification to see if it resolves the no attached image issue.
+  - Live view
+    on iOS.
+  - Android option: Sticky as per https://community.home-assistant.io/t/frigate-mobile-app-notifications/311091/1043
+
     \ - Add 5s delay to the final notification update to ensure Frigate has time to
     save snapshot edits (crop, bounding box, etc.) if \"update thumbnail\" is enabled.
-    \n  - Add Video (gif) option to Android which will be sent 5 seconds after the
-    event ends.\n  - Subtitle support.\n  - Video for iOS sent 5 seconds after the
-    event ends.\n  - Set custom entity for iOS live view.\n  - Set Icons for Action
-    Buttons on iOS.\n  - Strip trailing underscores and numbers from the camera name.
-    (This will break automation for anyone whose Frigate cam ends in _x.)\n  - Android
-    Auto option.\n  - Custom Filter.\n  - Customise group on mobile devices.\n  -
-    Bounding box and crop options for attachment.\n  - Set notification volume on
-    iOS\n  - Integrates with Double Take to replace object labels with names if a
-    face is matched.\n\n[1]: https://companion.home-assistant.io/docs/notifications/notifications-basic#sending-notifications-to-multiple-devices\n[2]:
-    https://blakeblackshear.github.io/frigate/configuration/cameras#zones\n[3]: https://blakeblackshear.github.io/frigate/configuration/objects\n\n##
-    Support\nGo to https://github.com/SgtBatten/HA_blueprints to report bugs, request
-    new features, or get support with your configuration.\n"
+    
+  - Add Video (gif) option to Android which will be sent 5 seconds after the
+    event ends.
+  - Subtitle support.
+  - Video for iOS sent 5 seconds after the
+    event ends.
+  - Set custom entity for iOS live view.
+  - Set Icons for Action
+    Buttons on iOS.
+  - Strip trailing underscores and numbers from the camera name.
+    (This will break automation for anyone whose Frigate cam ends in _x.)
+  - Android
+    Auto option.
+  - Custom Filter.
+  - Customise group on mobile devices.
+  -
+    Bounding box and crop options for attachment.
+  - Set notification volume on
+    iOS
+  - Integrates with Double Take to replace object labels with names if a
+    face is matched.
+
+[1]: https://companion.home-assistant.io/docs/notifications/notifications-basic#sending-notifications-to-multiple-devices
+[2]:
+    https://blakeblackshear.github.io/frigate/configuration/cameras#zones
+[3]: https://blakeblackshear.github.io/frigate/configuration/objects
+
+##
+    Support
+Go to https://github.com/SgtBatten/HA_blueprints to report bugs, request
+    new features, or get support with your configuration.
+"
   domain: automation
   source_url: https://github.com/SgtBatten/HA_blueprints/blob/main/Frigate%20Camera%20Notifications/Beta
   input:
     camera:
       name: Frigate Camera
-      description: "Select the camera entity that will trigger notifications. \nIf
+      description: "Select the camera entity that will trigger notifications. 
+If
         you do not see cameras listed in the drop-down, check you have the Frigate
-        integration installed.\n\nNote: The automation relies on the Frigate camera
+        integration installed.
+
+Note: The automation relies on the Frigate camera
         name matching the entity id in Home Assistant. It will automatically strip
         \"_x\" from the end of the entity id where x is a number If your camera name
         in frigate ends in _x you need to manually edit the yaml of this automation
-        to add it twice e.g camera.front_1_1.\n"
+        to add it twice e.g camera.front_1_1.
+"
       selector:
         entity:
           integration: frigate
@@ -102,8 +175,10 @@ blueprint:
       default: ''
     base_url:
       name: Base URL (Optional)
-      description: "The external URL for your Home Assistant instance. \nRecommended
-        for iOS and required for Android/Fire TV.\n"
+      description: "The external URL for your Home Assistant instance. 
+Recommended
+        for iOS and required for Android/Fire TV.
+"
       default: ''
     mqtt_topic:
       name: MQTT Topic (Advanced)
@@ -160,9 +235,12 @@ blueprint:
     update_sub_label:
       name: Update Sub Label (Advanced)
       description: "Update the title and/or message with the matched face name and
-        trigger a notification update. \n\nRequires face detection to be configured
+        trigger a notification update. 
+
+Requires face detection to be configured
         (Advanced). Requires Title and/or Message to contain 'A Person' or 'A {{ label
-        }}'\n"
+        }}'
+"
       default: true
       selector:
         boolean: {}
@@ -586,8 +664,10 @@ blueprint:
     silence_timer:
       name: Silence New Object Notifications (Optional)
       description: "How long to silence notifications for this camera when requested
-        as part of the actionable notification. \nNote: This only applies to new objects.
-        Existing tracked objects will not be affected.\n"
+        as part of the actionable notification. 
+Note: This only applies to new objects.
+        Existing tracked objects will not be affected.
+"
       default: 30
       selector:
         number:
@@ -612,9 +692,12 @@ blueprint:
           step: 1.0
     initial_delay:
       name: Delay initial notification (Optional)
-      description: "How long to delay the first notification for each event. \n\nUse
+      description: "How long to delay the first notification for each event. 
+
+Use
         this if you DO NOT use \"update image\" and are experiencing notifications
-        without attached images. Start with small numbers.\n"
+        without attached images. Start with small numbers.
+"
       default: 0
       selector:
         number:
@@ -625,10 +708,15 @@ blueprint:
           step: 1.0
     tap_action:
       name: Tap Action URL
-      description: "# Action Buttons and URLs\n\nThe URL to open when tapping on the
+      description: "# Action Buttons and URLs
+
+The URL to open when tapping on the
         notification. Some presets are provided, you can also set your own by typing
-        in the box. \n\nThese options define the text and URLs associated with the
-        three action buttons at the bottom of the notification.\n"
+        in the box. 
+
+These options define the text and URLs associated with the
+        three action buttons at the bottom of the notification.
+"
       default: '{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4'
       selector:
         select:
@@ -1047,40 +1135,98 @@ action:
         - service: logbook.log
           data_template:
             name: Frigate Notification
-            message: "DEBUG: \n  Info:\n    fps: {{fps}}, \n    frigate event id:
+            message: "DEBUG: 
+  Info:
+    fps: {{fps}}, 
+    frigate event id:
               {{id}}{{', Frigate client ID: ' + client_id if client_id else ''}},
-              \n    object (formatted): {{object}} ({{label}}),\n  Config: \n    camera(formatted):
-              {{camera}}({{camera_name}}), \n    Base URL: {{base_url}}, \n    critical:
-              {{critical}}, \n    tts: {{tts}} \n    helper: {{tts_helper if tts else
-              'N/A'}},\n    alert once: {{alert_once}}, \n    Update Thumbnails: {{update_thumbnail}},
-              \n    Video: {{video}}, \n    Target: {{'group (input/formatted): '
+              
+    object (formatted): {{object}} ({{label}}),
+  Config: 
+    camera(formatted):
+              {{camera}}({{camera_name}}), 
+    Base URL: {{base_url}}, 
+    critical:
+              {{critical}}, 
+    tts: {{tts}} 
+    helper: {{tts_helper if tts else
+              'N/A'}},
+    alert once: {{alert_once}}, 
+    Update Thumbnails: {{update_thumbnail}},
+              
+    Video: {{video}}, 
+    Target: {{'group (input/formatted): '
               + notify_group + '/' + notify_group_target + ', ' if notify_group else
-              'Mobile Device'}}\n    cooldown: {{cooldown}}s, \n    loiter timer:
-              {{loiter_timer}}s, \n    initial delay: {{initial_delay}}s, \n    color:
-              {{color}}, \n    sound: {{sound}}, \n    android_auto: {{android_auto}},
-              \n    Group: {{group}}, \n    Channel: {{channel}}, \n    Sticky: {{sticky}},
-              \n    Title: {{title}}, \n    Message: {{message}},\n    Subtitle: {{subtitle}},
-              \n    tap_action: {{tap_action}}, \n    button 1 Text/URL/Icon: {{iif(button_1,
-              button_1, 'unset')}} ({{url_1}}) {{icon_1}}, \n    button 2 Text/URL/Icon:
-              {{button_2}} ({{url_2}}) {{icon_2}}, \n    button 3 Text/URL/Icon: {{button_3}}
-              ({{url_3}}) {{icon_3}}, \n    icon: {{icon}}\n    tv: {{ tv }}, \n    tv_position:
-              {{tv_position}}, \n    tv_size: {{tv_size}}, \n    tv_duration: {{tv_duration}},
-              \n    tv_transparency: {{tv_transparency}}, \n    tv_interrupt: {{tv_interrupt}},
-              \n  Filters: \n    Zones: \n      zone filter toggle on: {{zone_only}},
-              \n      Multi-Zone toggle on: {{zone_multi}}, \n      Required zones:
-              {{input_zones}}, \n      Entered Zones: {{enteredzones}}, \n      Zone
+              'Mobile Device'}}
+    cooldown: {{cooldown}}s, 
+    loiter timer:
+              {{loiter_timer}}s, 
+    initial delay: {{initial_delay}}s, 
+    color:
+              {{color}}, 
+    sound: {{sound}}, 
+    android_auto: {{android_auto}},
+              
+    Group: {{group}}, 
+    Channel: {{channel}}, 
+    Sticky: {{sticky}},
+              
+    Title: {{title}}, 
+    Message: {{message}},
+    Subtitle: {{subtitle}},
+              
+    tap_action: {{tap_action}}, 
+    button 1 Text/URL/Icon: {{iif(button_1,
+              button_1, 'unset')}} ({{url_1}}) {{icon_1}}, 
+    button 2 Text/URL/Icon:
+              {{button_2}} ({{url_2}}) {{icon_2}}, 
+    button 3 Text/URL/Icon: {{button_3}}
+              ({{url_3}}) {{icon_3}}, 
+    icon: {{icon}}
+    tv: {{ tv }}, 
+    tv_position:
+              {{tv_position}}, 
+    tv_size: {{tv_size}}, 
+    tv_duration: {{tv_duration}},
+              
+    tv_transparency: {{tv_transparency}}, 
+    tv_interrupt: {{tv_interrupt}},
+              
+  Filters: 
+    Zones: 
+      zone filter toggle on: {{zone_only}},
+              
+      Multi-Zone toggle on: {{zone_multi}}, 
+      Required zones:
+              {{input_zones}}, 
+      Entered Zones: {{enteredzones}}, 
+      Zone
               Filter TEST: {{'PASS (Multi)' if zone_multi_filter else 'PASS' if (
               not zone_only or not zone_multi and zones|select('in', enteredzones)|list|length
-              ) else 'FAIL (Multi)' if zone_multi else 'FAIL' }}, \n    Required objects
-              TEST: \n      Input: {{input_labels}}, \n      TEST: {{'PASS' if not
-              labels|length or object in labels else 'FAIL'}}\n    presence entity
-              (not home):\n      Entity: {{presence_entity}}\n      TEST:  {{'PASS'
-              if not initial_home else 'FAIL'}}, \n    disabled times: {{disable_times}},
-              \n    State Filter: \n      state filter toggle on: {{state_only}},
-              \n      state filter entity: {{input_entity}}, \n      required states:
-              {{input_states}}, \n      State Filter TEST: {{'PASS' if not state_only
-              or states(input_entity) in states_filter else 'FAIL' }},\n    Custom
-              Filter: {{custom_filter}}\n"
+              ) else 'FAIL (Multi)' if zone_multi else 'FAIL' }}, 
+    Required objects
+              TEST: 
+      Input: {{input_labels}}, 
+      TEST: {{'PASS' if not
+              labels|length or object in labels else 'FAIL'}}
+    presence entity
+              (not home):
+      Entity: {{presence_entity}}
+      TEST:  {{'PASS'
+              if not initial_home else 'FAIL'}}, 
+    disabled times: {{disable_times}},
+              
+    State Filter: 
+      state filter toggle on: {{state_only}},
+              
+      state filter entity: {{input_entity}}, 
+      required states:
+              {{input_states}}, 
+      State Filter TEST: {{'PASS' if not state_only
+              or states(input_entity) in states_filter else 'FAIL' }},
+    Custom
+              Filter: {{custom_filter}}
+"
     - alias: Notifications enabled for object label
       condition: template
       value_template: '{{ not labels|length or object in labels }}'
@@ -1328,10 +1474,20 @@ action:
               }}'
             state_true: '{{ not state_only or states(input_entity) in states_filter
               }}'
-            sub_label: "{% if event['after']['sub_label'] %} \n  {{event['after']['sub_label'][0]}}\n{%else%}\n
-              \ {{event['after']['sub_label']}}\n{%endif%}\n"
-            sub_label_before: "{% if event['before']['sub_label'] %} \n  {{event['before']['sub_label'][0]}}\n{%else%}\n
-              \ {{event['before']['sub_label']}}\n{%endif%}\n"
+            sub_label: "{% if event['after']['sub_label'] %} 
+  {{event['after']['sub_label'][0]}}
+{%else%}
+
+              \ {{event['after']['sub_label']}}
+{%endif%}
+"
+            sub_label_before: "{% if event['before']['sub_label'] %} 
+  {{event['before']['sub_label'][0]}}
+{%else%}
+
+              \ {{event['before']['sub_label']}}
+{%endif%}
+"
             sub_label_changed: '{{ update_sub_label and sub_label != sub_label_before
               }}'
             update: '{{ alert_once or (new_snapshot and not loitering and not presence_changed
@@ -1341,13 +1497,23 @@ action:
             critical: '{{ true if critical_input == ''true'' else true if critical_input
               == True else false }}'
             tts: !input tts
-            title: "{% if sub_label and update_sub_label %} \n  {{title | replace('A
-              Person', sub_label|title) | replace('Person', sub_label|title)}}\n{%else%}\n
-              \ {{title}}\n{%endif%}\n"
+            title: "{% if sub_label and update_sub_label %} 
+  {{title | replace('A
+              Person', sub_label|title) | replace('Person', sub_label|title)}}
+{%else%}
+
+              \ {{title}}
+{%endif%}
+"
             input_message: !input message
-            message: "{% if sub_label and update_sub_label %} \n  {{input_message
-              | replace('A Person', sub_label|title) | replace('Person', sub_label|title)}}\n{%else%}\n
-              \ {{input_message}}\n{%endif%}\n"
+            message: "{% if sub_label and update_sub_label %} 
+  {{input_message
+              | replace('A Person', sub_label|title) | replace('Person', sub_label|title)}}
+{%else%}
+
+              \ {{input_message}}
+{%endif%}
+"
             custom_action_auto_multi: !input custom_action_auto_multi
         - alias: Update thumbnail at end of event
           choose:
@@ -1368,43 +1534,88 @@ action:
             - service: logbook.log
               data_template:
                 name: Frigate Notification
-                message: "DEBUG (in loop): \n  Send Notification: {{ loitering or
+                message: "DEBUG (in loop): 
+  Send Notification: {{ loitering or
                   (custom_filter and not home and zone_filter and zone_multi_filter
                   and state_true and (new_snapshot or presence_changed or stationary_moved
                   or zone_only_changed or entered_zones_changed or sub_label_changed))
-                  }}\n  Info: \n    sublabel: {{sub_label}}, \n    image: \"{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}\"\n
-                  \   Title: {{title}}\n    message: {{message}}\n    iOS sound: {{'Critical'
+                  }}
+  Info: 
+    sublabel: {{sub_label}}, 
+    image: \"{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}\"
+
+                  \   Title: {{title}}
+    message: {{message}}
+    iOS sound: {{'Critical'
                   if critical else 'disabled by alert once' if alert_once else 'enabled'}},
-                  \n    Android Sound: {{'disabled by alert once' if alert_once else
-                  'enabled'}}, \n    iOS url: /api/frigate{{client_id}}/notifications/{{id}}/{{camera
+                  
+    Android Sound: {{'disabled by alert once' if alert_once else
+                  'enabled'}}, 
+    iOS url: /api/frigate{{client_id}}/notifications/{{id}}/{{camera
                   + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type']
-                  == 'end' else attachment }}\n    video: \"{{video}}\"\n    critical:
-                  {{critical}},\n    tts: {{tts}} \n  Triggers: \n    New Snapshot:
+                  == 'end' else attachment }}
+    video: \"{{video}}\"
+    critical:
+                  {{critical}},
+    tts: {{tts}} 
+  Triggers: 
+    New Snapshot:
                   {{'True' if event['before']['snapshot']['frame_time'] != event['after']['snapshot']['frame_time']
-                  else 'False'}}{{' - Disabled' if not update_thumbnail}} \n    Presence
-                  Changed: {{presence_changed}}, \n    Stationary Moved: {{stationary_moved}},
-                  \n    Entered Zones Changed: {{'True' if event['before']['entered_zones']
+                  else 'False'}}{{' - Disabled' if not update_thumbnail}} 
+    Presence
+                  Changed: {{presence_changed}}, 
+    Stationary Moved: {{stationary_moved}},
+                  
+    Entered Zones Changed: {{'True' if event['before']['entered_zones']
                   != event['after']['entered_zones'] else 'False'}}{{' - Disabled'
-                  if not zone_only}}, \n    sublabel changed: {{ sub_label != sub_label_before
-                  }}{{' - Disabled' if not update_sub_label}}, \n  Conditions: \n
-                  \   Loitering: {{loitering}}\n      or\n    Filters: \n      Zones:
-                  \n        Zone Filter Enabled: {{zone_only}}, \n        Multi Zone
-                  Enabled: {{zone_multi}}, \n        Required Zones: {{input_zones}},
-                  \n        Last Zones: {{last_zones}}, \n        Entered zones: {{enteredzones|list|length}}
-                  - {{enteredzones}}, \n        TEST: {{'PASS' if not zone_only or
+                  if not zone_only}}, 
+    sublabel changed: {{ sub_label != sub_label_before
+                  }}{{' - Disabled' if not update_sub_label}}, 
+  Conditions: 
+
+                  \   Loitering: {{loitering}}
+      or
+    Filters: 
+      Zones:
+                  
+        Zone Filter Enabled: {{zone_only}}, 
+        Multi Zone
+                  Enabled: {{zone_multi}}, 
+        Required Zones: {{input_zones}},
+                  
+        Last Zones: {{last_zones}}, 
+        Entered zones: {{enteredzones|list|length}}
+                  - {{enteredzones}}, 
+        TEST: {{'PASS' if not zone_only or
                   (not zone_multi and zones|select('in', enteredzones)|list|length
                   ) else 'PASS (Multi)' if zone_only and zone_multi and zone_multi_filter
                   else 'FAIL (Multi)' if zone_only and zone_multi else 'FAIL' }},
-                  \n      Object Filter: \n        Input: {{input_labels}}, \n        TEST:
+                  
+      Object Filter: 
+        Input: {{input_labels}}, 
+        TEST:
                   {{'PASS' if not labels|length or object in labels else 'FAIL'}},
-                  \n      Presence entity (not home):\n        Entity: {{presence_entity}},
-                  \n        TEST:  {{'PASS' if not home else 'FAIL'}}, \n      Time
-                  Filter:\n        Disabled times: {{disable_times}}, \n        TEST:
-                  {{'PASS' if now().hour not in disable_times else 'FAIL'}}\n      State
-                  Filter: \n        state filter toggle on: {{state_only}}, \n        state
-                  filter entity: {{input_entity}}, \n        required states: {{input_states}},
-                  \n        TEST: {{'PASS' if state_true else 'FAIL'}}, \n      Custom
-                  Filter: {{'PASS' if custom_filter else 'FAIL'}},\n"
+                  
+      Presence entity (not home):
+        Entity: {{presence_entity}},
+                  
+        TEST:  {{'PASS' if not home else 'FAIL'}}, 
+      Time
+                  Filter:
+        Disabled times: {{disable_times}}, 
+        TEST:
+                  {{'PASS' if now().hour not in disable_times else 'FAIL'}}
+      State
+                  Filter: 
+        state filter toggle on: {{state_only}}, 
+        state
+                  filter entity: {{input_entity}}, 
+        required states: {{input_states}},
+                  
+        TEST: {{'PASS' if state_true else 'FAIL'}}, 
+      Custom
+                  Filter: {{'PASS' if custom_filter else 'FAIL'}},
+"
         - alias: Custom Action Auto Multi
           choose:
           - conditions:
