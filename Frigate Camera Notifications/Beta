@@ -1,5 +1,6 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4a)
+
+  name: Frigate Notifications (0.12.0.4c)
   description: |
     ## Frigate Notifications
 
@@ -140,9 +141,9 @@ blueprint:
             - label: "Short with a timestamp HH:MM"
               value: "{{ label }} detected - {{ camera_name }} at {{event['after']['start_time']|timestamp_custom('%H:%M')}}"
             - label: "Long:      e.g., A Person was detected on the Side camera in the driveway."
-              value: "A {{ label }} {{ 'is loitering' if loitering else 'was detected' }} on the {{ camera_name }} camera{% if enteredzones %} in the {{ enteredzones | join(', ') | replace('_',' ') }}{% endif %}."
+              value: "A {{ label }} {{ 'is loitering' if loitering else 'was detected' }} on the {{ camera_name }} camera{% if entered_zones %} in the {{ entered_zones | join(', ') | replace('_',' ') }}{% endif %}."
             - label: "Long with a timestamp HH:MM"
-              value: "A {{ label }} {{ 'is loitering' if loitering else 'was detected' }} on the {{ camera_name }} camera{% if enteredzones %} in the {{ enteredzones | join(', ') | replace('_',' ') }}{% endif %} at {{event['after']['start_time']|timestamp_custom('%H:%M')}}."
+              value: "A {{ label }} {{ 'is loitering' if loitering else 'was detected' }} on the {{ camera_name }} camera{% if entered_zones %} in the {{ entered_zones | join(', ') | replace('_',' ') }}{% endif %} at {{event['after']['start_time']|timestamp_custom('%H:%M')}}."
           custom_value: true
     update_sub_label:
       name: Update Sub Label (Advanced)
@@ -377,10 +378,18 @@ blueprint:
       default: false
       selector:
         boolean:
+    zone_order_enforced:
+      name: Zone Order Enforced (Optional)
+      description: |
+        Combined with Multi-Zone, requires zones to be entered in the same order as their requirement. 
+        Useful for alerting on arriving vehicles, while ignoring departing vehicles, for instance
+      default: false
+      selector:
+        boolean:
     labels:
       name: Object Filter (Optional)
       description: |
-        Enter or select one object at a time.
+        Specify objects you wish to be notified about. Enter or select one object at a time.
       default: ""
       selector:
         select:
@@ -799,6 +808,7 @@ variables:
   input_zones: !input zones
   zones: "{{ input_zones }}"
   zone_multi: !input zone_multi
+  zone_order_enforced: !input zone_order_enforced
   input_labels: !input labels
   labels: "{{ input_labels | list | lower }}"
   presence_entity: !input presence_filter
@@ -861,8 +871,26 @@ action:
               label: "{{ object | title }}"
               # Dynamic Variables per event
               initial_home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
-              enteredzones: "{{ trigger.payload_json['after']['entered_zones']}}"
-              zone_multi_filter: "{{zone_only and zone_multi and enteredzones|length and zones and zones |reject('in', enteredzones) |list |length == 0 }}"
+              entered_zones: "{{ trigger.payload_json['after']['entered_zones'] | default([]) }}"
+
+              # Zones Variables
+              # If no zones defined, or any zones have been entered
+              any_zones_entered: "{{ zones | length == 0 or ((zones | select('in', entered_zones) | list | length) > 0) }}"
+              zone_single_satisfied: "{{ any_zones_entered if zone_only else true}}"
+
+              # If no zones defined, or all zones have been entered
+              all_zones_entered: "{{ zones | length == 0 or ((zones | reject('in', entered_zones) | list | length) == 0) }}"
+              zone_multi_satisfied: "{{ all_zones_entered if zone_only and zone_multi else true}}"
+
+              # Compare the joined strings for equality is the simplest solution, due to both variables being defined in band.
+              ordered_zones: "{{ zones | join('|') }}"
+              ordered_entered_zones: "{{ entered_zones | join('|') }}"
+              ordered_zones_match: "{{ ordered_zones == ordered_entered_zones }}"
+              # Fails fast if prerequisite of zone or zone_multi is false, as they are pre-requisites
+              zone_order_satisfied: "{{ (zone_only and zone_multi and ordered_zones_match) if zone_order_enforced else true }}"
+
+              zones_satisfied: "{{zone_single_satisfied and zone_multi_satisfied and zone_order_satisfied}}"
+
               loitering: false
               # Customisation of text
               title: !input title
@@ -938,11 +966,12 @@ action:
                             tv_interrupt: {{tv_interrupt}}, 
                           Filters: 
                             Zones: 
-                              zone filter toggle on: {{zone_only}}, 
+                              Zone Filter toggle on: {{zone_only}}, 
                               Multi-Zone toggle on: {{zone_multi}}, 
                               Required zones: {{input_zones}}, 
-                              Entered Zones: {{enteredzones}}, 
-                              Zone Filter TEST: {{'PASS (Multi)' if zone_multi_filter else 'PASS' if ( not zone_only or not zone_multi and zones|select('in', enteredzones)|list|length ) else 'FAIL (Multi)' if zone_multi else 'FAIL' }}, 
+                              Zone Order toggle on: {{zone_order_enforced}}
+                              Entered Zones: {{entered_zones}},
+                              TEST: {{'PASS' if zones_satisfied else 'FAIL' }} {{'(Multi)' if zone_only and zone_multi}} {{'(Order-Enforced)' if zone_only and zone_multi and zone_order_enforced}}, 
                             Required objects TEST: 
                               Input: {{input_labels}}, 
                               TEST: {{'PASS' if not labels|length or object in labels else 'FAIL'}}
@@ -951,10 +980,10 @@ action:
                               TEST:  {{'PASS' if not initial_home else 'FAIL'}}, 
                             disabled times: {{disable_times}}, 
                             State Filter: 
-                              state filter toggle on: {{state_only}}, 
-                              state filter entity: {{input_entity}}, 
-                              required states: {{input_states}}, 
-                              State Filter TEST: {{'PASS' if not state_only or states(input_entity) in states_filter else 'FAIL' }},
+                              State Filter toggle on: {{state_only}}, 
+                              State Filter Entity: {{input_entity}}, 
+                              Required States: {{input_states}}, 
+                              TEST: {{'PASS' if not state_only or states(input_entity) in states_filter else 'FAIL' }},
                             Custom Filter: {{custom_filter}}
           - alias: "Notifications enabled for object label"
             condition: template
@@ -970,14 +999,14 @@ action:
             choose:
               - conditions:
                   - "{{ custom_action_auto |length > 0 }}"
-                  - "{{ not zone_only or (not zone_multi and zones|select('in', enteredzones)|list|length > 0) or (zone_multi and enteredzones|length > 0 and zones |reject('in', enteredzones) |list |length == 0) }}"
+                  - "{{ zones_satisfied }}"
                   - "{{ not initial_home }}"
                   - "{{ not state_only or states(input_entity) in states_filter }}"
                 sequence: !input "custom_action_auto"
           - alias: "Notify on new object"
             choose:
               - conditions:
-                  - "{{ not zone_only or (not zone_multi and zones|select('in', enteredzones)|list|length > 0) or (zone_multi and enteredzones|length > 0 and zones |reject('in', enteredzones) |list |length == 0) }}"
+                  - "{{ zones_satisfied }}"
                   - "{{ not initial_home }}"
                   - "{{ not state_only or states(input_entity) in states_filter }}"
                   - "{{ custom_filter }}"
@@ -1185,13 +1214,34 @@ action:
                     new_snapshot: "{{ update_thumbnail and event['before']['snapshot']['frame_time'] != event['after']['snapshot']['frame_time'] }}"
                     home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
                     presence_changed: "{{ presence_entity != '' and as_datetime(event['before']['frame_time']) < states[presence_entity].last_changed }}"
-                    last_zones: "{{ event['before']['entered_zones']|lower}}"
-                    enteredzones: "{{ event['after']['entered_zones']|lower}}"
-                    zone_filter: "{{ not zone_only or zones|select('in', enteredzones)|list|length > 0 }}"
-                    zone_multi_filter: "{{not zone_only or not zone_multi or ( enteredzones|list|length > 0 and zones and zones|reject('in', enteredzones)|list|length == 0 ) }}"
+                    last_zones: "{{ event['before']['entered_zones'] | lower}}"
+                    entered_zones: "{{ event['after']['entered_zones'] | lower | default([]) }}"
+
+                    # Zones Variables
+                    # If no zones defined, or any zones have been entered
+                    any_zones_entered: "{{ zones | length == 0 or ((zones | select('in', entered_zones) | list | length) > 0) }}"
+                    zone_single_satisfied: "{{ any_zones_entered if zone_only else true}}"
+
+                    # If no zones defined, or all zones have been entered
+                    all_zones_entered: "{{ zones | length == 0 or ((zones | reject('in', entered_zones) | list | length) == 0) }}"
+                    zone_multi_satisfied: "{{ all_zones_entered if zone_only and zone_multi else true}}"
+
+                    # Compare the joined strings for equality is the simplest solution, due to both variables being defined in band.
+                    ordered_zones: "{{ zones | join('|') }}"
+                    ordered_entered_zones: "{{ entered_zones | join('|') }}"
+                    ordered_zones_match: "{{ ordered_zones == ordered_entered_zones }}"
+                    # Fails fast if prerequisite of zone or zone_multi is false, as they are pre-requisites
+                    zone_order_satisfied: "{{ (zone_only and zone_multi and ordered_zones_match) if zone_order_enforced else true }}"
+
+                    zones_satisfied: "{{zone_single_satisfied and zone_multi_satisfied and zone_order_satisfied}}"
+
+                    new_entered_zones: "{{ zones | select('in', entered_zones) | list }}"
+                    last_entered_zones: "{{ zones | select('in', last_zones) | list }}"
+                    entered_new_zones: "{{ zone_only and (entered_zones | length > last_zones | length) }}"
+                    entered_new_filter_zones: "{{ zone_only and zones | length > 0 and (new_entered_zones | length > last_entered_zones | length) }}"
+
                     stationary_moved: "{{ event['after']['position_changes'] > event['before']['position_changes'] }}"
-                    zone_only_changed: "{{ zone_only and (enteredzones|length > 0 and not last_zones|length) }}"
-                    entered_zones_changed: "{{ zones|length > 0 and (zones|select('in', enteredzones)|list|length > zones|select('in', last_zones)|list|length) }}"
+
                     state_true: "{{ not state_only or states(input_entity) in states_filter }}"
                     sub_label: >
                       {% if event['after']['sub_label'] %} 
@@ -1244,7 +1294,7 @@ action:
                             name: Frigate Notification
                             message: |
                               DEBUG (in loop): 
-                                Send Notification: {{ loitering or (custom_filter and not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}
+                                Send Notification: {{ loitering or (custom_filter and not home and zones_satisified and state_true and (new_snapshot or presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_changed)) }}
                                 Info: 
                                   sublabel: {{sub_label}}, 
                                   image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
@@ -1267,12 +1317,13 @@ action:
                                     or
                                   Filters: 
                                     Zones: 
-                                      Zone Filter Enabled: {{zone_only}}, 
-                                      Multi Zone Enabled: {{zone_multi}}, 
-                                      Required Zones: {{input_zones}}, 
+                                      Zone Filter toggle on: {{zone_only}}, 
+                                      Multi-Zone toggle on: {{zone_multi}}, 
+                                      Required zones: {{input_zones}}, 
+                                      Zone Order toggle on: {{zone_order_enforced}}
                                       Last Zones: {{last_zones}}, 
-                                      Entered zones: {{enteredzones|list|length}} - {{enteredzones}}, 
-                                      TEST: {{'PASS' if not zone_only or (not zone_multi and zones|select('in', enteredzones)|list|length ) else 'PASS (Multi)' if zone_only and zone_multi and zone_multi_filter else 'FAIL (Multi)' if zone_only and zone_multi else 'FAIL' }}, 
+                                      Entered Zones: {{ entered_zones | list | length }} - {{entered_zones}},
+                                      TEST: {{'PASS' if zones_satisfied else 'FAIL' }} {{'(Multi)' if zone_only and zone_multi}} {{'(Order-Enforced)' if zone_only and zone_multi and zone_order_enforced}},         
                                     Object Filter: 
                                       Input: {{input_labels}}, 
                                       TEST: {{'PASS' if not labels|length or object in labels else 'FAIL'}}, 
@@ -1283,20 +1334,20 @@ action:
                                       Disabled times: {{disable_times}}, 
                                       TEST: {{'PASS' if now().hour not in disable_times else 'FAIL'}}
                                     State Filter: 
-                                      state filter toggle on: {{state_only}}, 
-                                      state filter entity: {{input_entity}}, 
-                                      required states: {{input_states}}, 
+                                      State Filter toggle on: {{state_only}}, 
+                                      State Filter Entity: {{input_entity}}, 
+                                      Required States: {{input_states}}, 
                                       TEST: {{'PASS' if state_true else 'FAIL'}}, 
                                     Custom Filter: {{'PASS' if custom_filter else 'FAIL'}},
                 - alias: "Custom Action Auto Multi"
                   choose:
                     - conditions:
                         - "{{ custom_action_auto_multi | length > 0 }}"
-                        - "{{ loitering or (not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
+                        - "{{ loitering or (not home and zones_satisfied and state_true and (new_snapshot or presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_changed)) }}"
                       sequence: !input "custom_action_auto_multi"
                 - alias: "Update Notification"
                   choose:
-                    - conditions: "{{ loitering or (custom_filter and not home and zone_filter and zone_multi_filter and state_true and (new_snapshot or presence_changed or stationary_moved or zone_only_changed or entered_zones_changed or sub_label_changed)) }}"
+                    - conditions: "{{ loitering or (custom_filter and not home and zones_satisfied and state_true and (new_snapshot or presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_changed)) }}"
                       sequence:
                         - choose:
                             - conditions: "{{ not notify_group_target }}"
