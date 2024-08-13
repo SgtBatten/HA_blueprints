@@ -1,4 +1,5 @@
 blueprint:
+
   name: Frigate Notifications (0.12.0.4c)
   description: |
     ## Frigate Notifications
@@ -1255,6 +1256,7 @@ action:
                         {{event['before']['sub_label']}}
                       {%endif%}
                     sub_label_changed: "{{ update_sub_label and sub_label != sub_label_before }}"
+                    update: "{{ alert_once or (new_snapshot and not loitering and not presence_changed and not zone_only_changed and not entered_zones_changed and not sub_label_changed) }}"
                     critical_input: !input critical
                     critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
                     tts: !input tts
