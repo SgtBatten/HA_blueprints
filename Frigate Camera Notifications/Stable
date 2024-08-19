@@ -336,7 +336,7 @@ blueprint:
           name: Notification Channel - Android only (Optional)
           description: Create a new channel for notifications to allow custom notification sounds, vibration patterns, and override of Do Not Disturb mode. Configured directly on the device.
           default: ""
-    filers:
+    filters:
       name: |
         # Filters
       description: These are Filter Options
