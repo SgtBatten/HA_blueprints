@@ -347,10 +347,7 @@ blueprint:
       input:
         zone_filter:
           name: Zone Filter on/off (Optional)
-          description: |
-            # Filters
-
-            Enable to only notify if an object has entered a zone listed below.
+          description: Enable to only notify if an object has entered a zone listed below.
           default: false
           selector:
             boolean:
