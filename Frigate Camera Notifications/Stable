@@ -126,7 +126,6 @@ blueprint:
           name: Notification Title (Optional)
           description: The title of the notification.
 
-            The title of the notification.
           default: ""
         message:
           name: Notification Message
