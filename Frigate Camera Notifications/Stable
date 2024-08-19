@@ -124,8 +124,7 @@ blueprint:
       input:
         title:
           name: Notification Title (Optional)
-          description: |
-            # Notification Customisations
+          description: The title of the notification.
 
             The title of the notification.
           default: ""
