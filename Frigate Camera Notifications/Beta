@@ -785,7 +785,7 @@ trigger:
     id: silence
   - platform: mqtt
     topic: "{{mqtt_topic}}"
-    payload: "{{ camera }}/new"
+    payload: "{{ camera }}/update"
     value_template: "{{ value_json['after']['camera'] | lower | replace('-','_') }}/{{ value_json['type']}}"
     id: frigate-event
 variables:
@@ -867,7 +867,7 @@ action:
           - variables:
               event: "{{ trigger.payload_json }}"
               id: "{{ trigger.payload_json['after']['id'] }}"
-              object: "{{ trigger.payload_json['after']['label'] }}"
+              object: "{{ trigger.payload_json['after']['data']['audio'] }}"
               label: "{{ object | title }}"
               # Dynamic Variables per event
               initial_home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
