@@ -3,7 +3,7 @@ Somewhere to store and discuss automation blueprints
 
 I will endeavour to do some writeups on troubleshooting and create and issues template in the coming days.
 
-## [Frigate Camera Notificatons](https://github.com/SgtBatten/HA_blueprints/tree/main/Frigate%20Camera%20Notifications)
+## [Frigate Camera Notificatons](https://github.com/SgtBatten/HA_blueprints/tree/main/Frigate_Camera_Notifications)
 
 This blueprint will send a notification to your device when a Frigate event for the selected camera is fired. The notification will initially include the thumbnail of the detection, but include an actionable notification allowing you to view the clip and snapshot.
 
