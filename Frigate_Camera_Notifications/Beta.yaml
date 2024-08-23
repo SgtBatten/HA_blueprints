@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4d)
+  name: Frigate Notifications (0.12.0.4e)
   author: SgtBatten
   homeassistant:
     min_version: 2024.6.0
@@ -543,7 +543,7 @@ blueprint:
             number:
               max: 3600
               min: 0
-              unit_of_measurement: minutes
+              unit_of_measurement: seconds
         initial_delay:
           name: Delay initial notification (Optional)
           description: |
