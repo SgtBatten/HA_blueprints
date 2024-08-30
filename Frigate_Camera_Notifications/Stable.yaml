@@ -106,7 +106,7 @@ blueprint:
       default: ""
     condition_global:
       name: Add Condition(s) to run this Automation
-      description: Add conditions if needed to run this automation at all. Note, if conditions return `false`, no actions will fire.
+      description: Add conditions if needed to run this automation at all. If conditions return `false`, no actions will fire.
       default: []
       selector:
         condition: {}
