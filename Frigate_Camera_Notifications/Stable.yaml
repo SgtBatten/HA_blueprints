@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4c)
+  name: Frigate Notifications (0.12.0.4d)
   author: SgtBatten
   homeassistant:
     min_version: 2024.6.0
@@ -104,6 +104,12 @@ blueprint:
 
         Note: If the group contains both mobile devices and TVs, the TV will not display the snapshot unless "TV notifications" is set to true. However, this will stop Android phones from receiving thumbnails.
       default: ""
+    condition_global:
+      name: Add Condition(s) to run this Automation
+      description: Add conditions if needed to run this automation at all. Note, if conditions return `false`, no actions will fire.
+      default: []
+      selector:
+        condition: {}
     base_url:
       name: Base URL (Optional)
       description: |
@@ -843,7 +849,11 @@ variables:
   tv_transparency: !input tv_transparency
   tv_interrupt: !input tv_interrupt
   debug: !input debug
+  condition_global: !input condition_global
 action:
+- if:
+  - condition: !input condition_global
+  then:
   - choose:
       - alias: "Silence New Object Notifications"
         conditions:
