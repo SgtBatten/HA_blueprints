@@ -104,12 +104,6 @@ blueprint:
 
         Note: If the group contains both mobile devices and TVs, the TV will not display the snapshot unless "TV notifications" is set to true. However, this will stop Android phones from receiving thumbnails.
       default: ""
-    condition_global:
-      name: Add Condition(s) to run this Automation
-      description: Add conditions if needed to run this automation at all. If conditions return `false`, no actions will fire.
-      default: []
-      selector:
-        condition: {}
     base_url:
       name: Base URL (Optional)
       description: |
@@ -849,11 +843,7 @@ variables:
   tv_transparency: !input tv_transparency
   tv_interrupt: !input tv_interrupt
   debug: !input debug
-  condition_global: !input condition_global
 action:
-- if:
-  - condition: !input condition_global
-  then:
   - choose:
       - alias: "Silence New Object Notifications"
         conditions:
