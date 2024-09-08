@@ -401,7 +401,7 @@ blueprint:
                 - device_tracker
                 - person
                 - group
-            multiple: true
+              multiple: true
         state_filter:
           name: State Filter on/off (Optional)
           description: Enable the two State Filter settings below. Only notify if the selected entity is in the specified states.
