@@ -397,10 +397,11 @@ blueprint:
           default: ""
           selector:
             entity:
-              domain:
-                - device_tracker
-                - person
-                - group
+              filter:
+                domain:
+                  - device_tracker
+                  - person
+                  - group
               multiple: true
         state_filter:
           name: State Filter on/off (Optional)
