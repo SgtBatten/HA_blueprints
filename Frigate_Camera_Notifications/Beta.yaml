@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4e)
+  name: Frigate Notifications (0.12.0.4f)
   author: SgtBatten
   homeassistant:
     min_version: 2024.6.0
@@ -363,6 +363,12 @@ blueprint:
       icon: mdi:filter
       collapsed: true
       input:
+        master_condition:
+          name: Master Condition (Optional)
+          description: Set conditions that will stop the automation from running if the result is false. No other tests will be conducted later. This is a kill switch on initiation.
+          default: []
+          selector:
+            condition: {}
         zone_filter:
           name: Zone Filter on/off (Optional)
           description: Enable to only notify if an object has entered a zone listed below.
@@ -870,7 +876,11 @@ variables:
   tv_transparency: !input tv_transparency
   tv_interrupt: !input tv_interrupt
   debug: !input debug
+  master_condition: !input master_condition
 action:
+- if:
+  - condition: !input master_condition
+  then:
   - choose:
       - alias: "Silence New Object Notifications"
         conditions:
