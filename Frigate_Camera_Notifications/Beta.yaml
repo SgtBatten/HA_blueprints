@@ -363,9 +363,9 @@ blueprint:
       icon: mdi:filter
       collapsed: true
       input:
-        condition_global:
-          name: Add Condition(s) to run this Automation
-          description: Add conditions if needed to run this automation at all. If conditions return `false`, no actions will fire.
+        master_condition:
+          name: Master Condition (Optional)
+          description: Set conditions that will stop the automation from running if the result is false. No other tests will be conducted later. This is a kill switch on initiation.
           default: []
           selector:
             condition: {}
@@ -876,10 +876,10 @@ variables:
   tv_transparency: !input tv_transparency
   tv_interrupt: !input tv_interrupt
   debug: !input debug
-  condition_global: !input condition_global
+  master_condition: !input master_condition
 action:
 - if:
-  - condition: !input condition_global
+  - condition: !input master_condition
   then:
   - choose:
       - alias: "Silence New Object Notifications"
