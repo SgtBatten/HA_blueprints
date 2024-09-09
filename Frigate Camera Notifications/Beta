@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4i)
+  name: Frigate Notifications (0.12.0.4j)
   author: SgtBatten
   homeassistant:
     min_version: 2024.6.0
@@ -768,8 +768,8 @@ trigger:
     id: custom
 variables:
   input_camera: !input camera
-  camera: "{{ input_camera | regex_replace('^camera\\.', '') }}"
-  camera_name: "{{ camera | replace('_', ' ') | title }}"
+  camera: "{{ state_attr(input_camera, 'camera_name') }}"
+  camera_name: "{{ state_attr(input_camera, 'friendly_name') }}"
   type: !input review_severity
   input_base_url: !input base_url
   base_url: "{{ input_base_url.rstrip('/')}}"
@@ -1112,7 +1112,7 @@ action:
                             # Android Specific
                             subject: "{{subtitle}}"
                             image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android"
-                            video: "{{video if type == 'end'}}"
+                            video: "{{video}}"
                             clickAction: "{{tap_action}}"
                             ttl: 0
                             priority: high
