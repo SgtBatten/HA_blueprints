@@ -1,5 +1,8 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4h)
+  name: Frigate Notifications (0.12.0.4i)
+  author: SgtBatten
+  homeassistant:
+    min_version: 2024.6.0
   description: |
     ## Frigate Notifications
 
@@ -8,7 +11,7 @@ blueprint:
     With this blueprint, you may send the notification to multiple devices by leaving "Device" blank and instead use a [notification group][1].
 
     ### Software Version Requirements
-      - Minimum Home Assistant Version: 2024.1
+      - Minimum Home Assistant Version: 2024.6
       - Minimum Frigate Version: 0.14
       - Minimum Frigate Integration Version: 5.0.0
         - **Note:** "Enable the unauthenticated notification event proxy" must be ticked during setup
@@ -20,7 +23,7 @@ blueprint:
       - Mobile Device (Running HA Companion App)
 
     ### Features:
-      - Easily select the camera entity or mobile device using a drop-down menu.
+      - Easily select the camera entity and mobile device using a drop-down menu.
       - Send notifications to an Android or iOS mobile device or a TV.
         - or a group containing any combination of the above.
         - for TV Alerts, you need to install and configure https://www.home-assistant.io/integrations/nfandroidtv/
@@ -916,7 +919,8 @@ action:
                         DEBUG: 
                           Info:
                             fps: {{fps}}, 
-                            frigate event id: {{id}}{{', Frigate client ID: ' + client_id if client_id else ''}}, 
+                            Frigate Review id: {{review_id}}{{', Frigate client ID: ' + client_id if client_id else ''}}, 
+                            Frigate Detections: {{detections}}
                             Objects: {{label}},
                             Sub Labels: {{sub_labels | join(', ')}}
                           Config: 
@@ -1153,7 +1157,7 @@ action:
           #       - wait_for_trigger:
           #           - platform: mqtt
           #             topic: "{{mqtt_topic}}"
-          #             payload: "{{ id }}"
+          #             payload: "{{ review_id }}"
           #             value_template: "{{ value_json['after']['id'] }}"
           #         timeout:
           #           minutes: 2
