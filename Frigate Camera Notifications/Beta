@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4j)
+  name: Frigate Notifications (0.14.0.1a)
   author: SgtBatten
   homeassistant:
     min_version: 2024.6.0
@@ -52,8 +52,7 @@ blueprint:
       - Optional delay to the initial notification to see if it resolves the no attached image issue.
       - Live view on iOS.
       - Android option: Sticky as per https://community.home-assistant.io/t/frigate-mobile-app-notifications/311091/1043
-      - Add 5s delay to the final notification update to ensure Frigate has time to save snapshot edits (crop, bounding box, etc.) if "update thumbnail" is enabled. 
-      - Add Video (gif) option to Android which will be sent 5 seconds after the event ends.
+      - Send the frigate review preview gif as an attachment to Android devices
       - Subtitle support.
       - Video for iOS sent 5 seconds after the event ends.
       - Set custom entity for iOS live view.
