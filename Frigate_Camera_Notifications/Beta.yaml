@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4f)
+  name: Frigate Notifications (0.12.0.4g)
   author: SgtBatten
   homeassistant:
     min_version: 2024.6.0
@@ -1085,6 +1085,7 @@ action:
                               url: "{{tap_action}}"
                               attachment:
                                 url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                                lazy: true
                               push:
                                 sound:
                                   name: "{{sound}}"
@@ -1139,6 +1140,7 @@ action:
                                 url: "{{tap_action}}"
                                 attachment:
                                   url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                                  lazy: true
                                 push:
                                   sound:
                                     name: "{{sound}}"
@@ -1191,6 +1193,7 @@ action:
                             url: "{{tap_action}}"
                             attachment:
                               url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                              lazy: true
                             push:
                               sound:
                                 name: "{{sound}}"
@@ -1424,6 +1427,7 @@ action:
                                     url: "{{tap_action}}"
                                     attachment:
                                       url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
+                                      lazy: true
                                     push:
                                       sound:
                                         name: "{{ iif(update, 'none', sound) }}"
@@ -1468,6 +1472,7 @@ action:
                                       # Android/Fire TV
                                       image:
                                         url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
+                                        lazy: true
                                       video: "{{video}}"
                                       fontsize: "{{tv_size}}"
                                       position: "{{tv_position}}"
@@ -1480,6 +1485,7 @@ action:
                                       url: "{{tap_action}}"
                                       attachment:
                                         url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
+                                        lazy: true
                                       push:
                                         sound:
                                           name: "{{ iif(update, 'none', sound) }}"
@@ -1533,6 +1539,7 @@ action:
                                   url: "{{tap_action}}"
                                   attachment:
                                     url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
+                                    lazy: true
                                   push:
                                     sound:
                                       name: "{{ iif(update, 'none', sound) }}"
