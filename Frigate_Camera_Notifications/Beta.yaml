@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4h)
+  name: Frigate Notifications (0.12.0.4i)
   author: SgtBatten
   homeassistant:
     min_version: 2024.6.0
@@ -814,6 +814,12 @@ blueprint:
           default: false
           selector:
             boolean:
+        redacted:
+          name: Redact Base URL
+          description: Hides the Base URL in the debug output for easier sharing. Does not hide it from other parts of the trace. 
+          default: true
+          selector:
+            boolean:
 mode: parallel
 trigger_variables:
   input_camera: !input camera
@@ -876,6 +882,7 @@ variables:
   tv_transparency: !input tv_transparency
   tv_interrupt: !input tv_interrupt
   debug: !input debug
+  redacted: !input redacted
   master_condition: !input master_condition
 action:
 - if:
@@ -979,13 +986,13 @@ action:
                             object (formatted): {{object}} ({{label}}),
                           Config: 
                             camera(formatted): {{camera}}({{camera_name}}), 
-                            Base URL: {{base_url}}, 
+                            Base URL: {{'REDACTED' if base_url and redacted else base_url}}, 
                             critical: {{critical}}, 
                             tts: {{tts}} 
                             helper: {{tts_helper if tts else 'N/A'}},
                             alert once: {{alert_once}}, 
                             Update Thumbnails: {{update_thumbnail}}, 
-                            Video: {{video}}, 
+                            Video: {{video if not redacted else video |regex_replace(find='^[^\/].+?[^\/:](?=[?\/]|$)', replace='REDACTED', ignorecase=False)}}, 
                             Target: {{'group (input/formatted): ' + notify_group + '/' + notify_group_target + ', ' if notify_group else 'Mobile Device'}}
                             cooldown: {{cooldown}}s, 
                             loiter timer: {{loiter_timer}}s, 
@@ -1343,13 +1350,14 @@ action:
                                 Send Notification: {{ loitering or (custom_filter and not home and zones_satisified and state_true and (new_snapshot or presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_changed)) }}
                                 Info: 
                                   sublabel: {{sub_label}}, 
-                                  image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                                  image: "{{'REDACTED' if base_url and redacted else base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                                   Title: {{title}}
                                   message: {{message}}
                                   iOS sound: {{'Critical' if critical else 'disabled by alert once' if alert_once else 'enabled'}}, 
                                   Android Sound: {{'disabled by alert once' if alert_once else 'enabled'}}, 
-                                  iOS url: /api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}
-                                  video: "{{video}}"
+                                  iOS url: {{'REDACTED' if base_url and redacted else base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}
+                                  video: "{{video if not redacted else video |regex_replace(find='^[^\/].+?[^\/:](?=[?\/]|$)', replace='REDACTED', ignorecase=False)}}"
+
                                   critical: {{critical}},
                                   tts: {{tts}} 
                                 Triggers: 
