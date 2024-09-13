@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4h)
+  name: Frigate Notifications (0.12.0.4i)
   author: SgtBatten
   homeassistant:
     min_version: 2024.6.0
@@ -1083,8 +1083,6 @@ action:
                               # iOS Specific
                               subtitle: "{{subtitle}}"
                               url: "{{tap_action}}"
-                              attachment:
-                                url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                               push:
                                 sound:
                                   name: "{{sound}}"
@@ -1137,8 +1135,6 @@ action:
                                 # iOS Specific
                                 subtitle: "{{subtitle}}"
                                 url: "{{tap_action}}"
-                                attachment:
-                                  url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                                 push:
                                   sound:
                                     name: "{{sound}}"
@@ -1189,8 +1185,6 @@ action:
                             interrupt: "{{tv_interrupt}}"
                             # iOS Specific
                             url: "{{tap_action}}"
-                            attachment:
-                              url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                             push:
                               sound:
                                 name: "{{sound}}"
@@ -1422,8 +1416,6 @@ action:
                                     # iOS Specific
                                     subtitle: "{{subtitle}}"
                                     url: "{{tap_action}}"
-                                    attachment:
-                                      url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
                                     push:
                                       sound:
                                         name: "{{ iif(update, 'none', sound) }}"
@@ -1478,8 +1470,6 @@ action:
                                       # iOS Specific
                                       subtitle: "{{subtitle}}"
                                       url: "{{tap_action}}"
-                                      attachment:
-                                        url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
                                       push:
                                         sound:
                                           name: "{{ iif(update, 'none', sound) }}"
@@ -1531,8 +1521,6 @@ action:
                                   # iOS Specific
                                   subtitle: "{{subtitle}}"
                                   url: "{{tap_action}}"
-                                  attachment:
-                                    url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
                                   push:
                                     sound:
                                       name: "{{ iif(update, 'none', sound) }}"
