@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4j)
+  name: Frigate Notifications (0.12.0.4k)
   author: SgtBatten
   homeassistant:
     min_version: 2024.6.0
@@ -1006,10 +1006,10 @@ action:
                             Title: {{title}}, 
                             Message: {{message}},
                             Subtitle: {{subtitle}}, 
-                            tap_action: {{tap_action}}, 
-                            button 1 Text/URL/Icon: {{iif(button_1, button_1, 'unset')}} ({{url_1}}) {{icon_1}}, 
-                            button 2 Text/URL/Icon: {{button_2}} ({{url_2}}) {{icon_2}}, 
-                            button 3 Text/URL/Icon: {{button_3}} ({{url_3}}) {{icon_3}}, 
+                            tap_action: {{tap_action if not redacted else tap_action |regex_replace(find='^[^\/].+?[^\/:](?=[?\/]|$)', replace='REDACTED', ignorecase=False)}}, 
+                            button 1 Text/URL/Icon: {{iif(button_1, button_1, 'unset')}} ({{url_1 if not redacted else url_1 |regex_replace(find='^[^\/].+?[^\/:](?=[?\/]|$)', replace='REDACTED', ignorecase=False)}}) {{icon_1}}, 
+                            button 2 Text/URL/Icon: {{button_2}} ({{url_2 if not redacted else url_2 |regex_replace(find='^[^\/].+?[^\/:](?=[?\/]|$)', replace='REDACTED', ignorecase=False)}}) {{icon_2}}, 
+                            button 3 Text/URL/Icon: {{button_3}} ({{url_3 if not redacted else url_3 |regex_replace(find='^[^\/].+?[^\/:](?=[?\/]|$)', replace='REDACTED', ignorecase=False)}}) {{icon_3}}, 
                             icon: {{icon}}
                             tv: {{ tv }}, 
                             tv_position: {{tv_position}}, 
