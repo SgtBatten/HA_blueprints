@@ -38,6 +38,7 @@ blueprint:
       - Configure custom notification channels on Android.
       - Specify which [zones][2] to be notified about. (Zone Filter)
         - Choose between enforcing all required zones simultaneously or any one zone.
+        - Choose to enforce zones in a specific order (e.g arriving but not leaving)
       - Specify what type of [objects][3] to be notified about. (Object Filter)
       - Disable notifications if a presence entity or group is "home". (Presence Filter)
       - Limit notifications based on the state of another entity. (State Filter)
