@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4i)
+  name: Frigate Notifications (0.12.0.4j)
   author: SgtBatten
   homeassistant:
     min_version: 2024.6.0
@@ -1347,7 +1347,7 @@ action:
                             name: Frigate Notification
                             message: |
                               DEBUG (in loop): 
-                                Send Notification: {{ loitering or (custom_filter and not home and zones_satisified and state_true and (new_snapshot or presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_changed)) }}
+                                Send Notification: {{ loitering or (custom_filter and not home and zones_satisfied and state_true and (new_snapshot or presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_changed)) }}
                                 Info: 
                                   sublabel: {{sub_label}}, 
                                   image: "{{'REDACTED' if base_url and redacted else base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
