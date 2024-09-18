@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4l)
+  name: Frigate Notifications (0.12.0.4m)
   author: SgtBatten
   homeassistant:
     min_version: 2024.6.0
@@ -1140,7 +1140,7 @@ action:
                                 car_ui: "{{android_auto}}"
                                 # Android/Fire TV
                                 image:
-                                  url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
+                                  url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                                 fontsize: "{{tv_size}}"
                                 position: "{{tv_position}}"
                                 duration: "{{tv_duration}}"
@@ -1481,7 +1481,7 @@ action:
                                       car_ui: "{{android_auto}}"
                                       # Android/Fire TV
                                       image:
-                                        url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
+                                        url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                                       video: "{{video}}"
                                       fontsize: "{{tv_size}}"
                                       position: "{{tv_position}}"
