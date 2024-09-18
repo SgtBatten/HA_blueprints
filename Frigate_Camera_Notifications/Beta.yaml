@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4k)
+  name: Frigate Notifications (0.12.0.4l)
   author: SgtBatten
   homeassistant:
     min_version: 2024.6.0
@@ -18,12 +18,13 @@ blueprint:
       - An MQTT broker connected to Home Assistant and Frigate.
       - Minimum iOS Version: 15.0
 
-    ### Required entities:
-      - Frigate Camera Name
+    ### Required Configuration Options:
+      - Frigate Cameras
       - Mobile Device (Running HA Companion App)
 
     ### Features:
-      - Easily select the camera entity or mobile device using a drop-down menu.
+      - Easily select the camera entities or mobile device using a drop-down menu.
+      - COnfigure multipl cameras in one automation. 
       - Send notifications to an Android or iOS mobile device or a TV.
         - or a group containing any combination of the above.
         - for TV Alerts, you need to install and configure https://www.home-assistant.io/integrations/nfandroidtv/
@@ -79,17 +80,17 @@ blueprint:
   source_url: https://github.com/SgtBatten/HA_blueprints/blob/main/Frigate_Camera_Notifications/Beta.yaml
   input:
     camera:
-      name: Frigate Camera
+      name: Frigate Cameras
       description: |
-        Select the camera entity that will trigger notifications. 
+        Select the cameras that will trigger notifications. 
         If you do not see cameras listed in the drop-down, check you have the Frigate integration installed.
-
-        Note: The automation relies on the Frigate camera name matching the entity id in Home Assistant. It will automatically strip "_x" from the end of the entity id where x is a number If your camera name in frigate ends in _x you need to manually edit the yaml of this automation to add it twice e.g camera.front_1_1.
+        To more effectively customise the notifications per camera you may need to create one automation per camera.
       selector:
         entity:
           integration: frigate
           domain: camera
           device_class: camera
+          multiple: true
     notify_device:
       name: Mobile Device
       description: Select a device that runs the official Home Assistant app to receive notifications. If you wish to notify a group of devices and/or Android/Fire TV use the field below to override this selection. This will be ignored in that case but is still required.
@@ -633,7 +634,7 @@ blueprint:
                 - label: Open Reolink App (Android)
                   value: app://com.mcu.reolink
                 - label: Custom Action (Manual Trigger)
-                  value: custom-{{ camera }}
+                  value: custom-{{ this.entity_id }}
               custom_value: true
         icon_1:
           name: Action Button 1 icon - iOS Only
@@ -669,7 +670,7 @@ blueprint:
                 - label: Open Reolink App (Android)
                   value: app://com.mcu.reolink
                 - label: Custom Action (Manual Trigger)
-                  value: custom-{{ camera }}
+                  value: custom-{{ this.entity_id }}
               custom_value: true
         icon_2:
           name: Action Button 2 icon - iOS Only
@@ -682,12 +683,12 @@ blueprint:
         url_3:
           name: Action Button 3 URL
           description: Customise what happens when you press the third Action Button. Select from one of the preconfigured options or enter your own custom URL.
-          default: silence-{{ camera }}
+          default: silence-{{ this.entity_id }}
           selector:
             select:
               options:
                 - label: Silence New Notifications
-                  value: silence-{{ camera }}
+                  value: silence-{{ this.entity_id }}
                 - label: View Clip
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
                 - label: View Snapshot
@@ -707,7 +708,7 @@ blueprint:
                 - label: Open Reolink App (Android)
                   value: app://com.mcu.reolink
                 - label: Custom Action (Manual Trigger)
-                  value: custom-{{ camera }}
+                  value: custom-{{ this.entity_id }}
               custom_value: true
         icon_3:
           name: Action Button 3 icon - iOS Only
@@ -817,29 +818,29 @@ blueprint:
             boolean:
         redacted:
           name: Redact Base URL
-          description: Hides the Base URL in the debug output for easier sharing. Does not hide it from other parts of the trace. 
+          description: Hides the Base URL in the debug output for easier sharing. Does not hide it from other parts of the trace.
           default: true
           selector:
             boolean:
 mode: parallel
 trigger_variables:
-  input_camera: !input camera
-  camera: "{{ input_camera | regex_replace('^camera\\.|_\\d+$', '') }}"
   mqtt_topic: !input mqtt_topic
 trigger:
   - platform: event
     event_type: mobile_app_notification_action
     event_data:
-      action: "silence-{{ camera }}"
+      action: "silence-{{ this.entity_id }}"
     id: silence
   - platform: mqtt
     topic: "{{mqtt_topic}}"
-    payload: "{{ camera }}/new"
-    value_template: "{{ value_json['after']['camera'] | lower | replace('-','_') }}/{{ value_json['type']}}"
+    payload: "new"
+    value_template: "{{ value_json['type']}}"
     id: frigate-event
 variables:
+  type: "{{trigger.payload_json['type'] if trigger.id == 'frigate-event'}}"
   input_camera: !input camera
-  camera: "{{ input_camera | regex_replace('^camera\\.', '') }}"
+  input_camera_name: "{{input_camera|expand|map(attribute='attributes.camera_name')|list}}"
+  camera: "{{trigger.payload_json['after']['camera'] if trigger.id == 'frigate-event'}}"
   camera_name: "{{ camera | replace('_', ' ') | title }}"
   input_base_url: !input base_url
   base_url: "{{ input_base_url.rstrip('/')}}"
@@ -917,6 +918,8 @@ action:
           - "{{ is_state(this.entity_id, 'on') }}"
           - "{{ not this.attributes.last_triggered or (now() - this.attributes.last_triggered).seconds > cooldown }}"
           - "{{ not disable_times|length or not now().hour in disable_times|map('int')|list }}"
+          - "{{ type|select('in', 'new')|list|length>0 }}"
+          - "{{ input_camera_name|select('in', camera)|list|length>0 }}"
         sequence:
           - variables:
               event: "{{ trigger.payload_json }}"
@@ -986,15 +989,17 @@ action:
                             frigate event id: {{id}}{{', Frigate client ID: ' + client_id if client_id else ''}}, 
                             object (formatted): {{object}} ({{label}}),
                           Config: 
-                            camera(formatted): {{camera}}({{camera_name}}), 
+                            Input Camera(formatted): {{input_camera}}({{input_camera_name}}), 
+                            Trigger Camera(formatted): {{camera}}({{camera_name}}), 
                             Base URL: {{'REDACTED' if base_url and redacted else base_url}}, 
                             critical: {{critical}}, 
                             tts: {{tts}} 
                             helper: {{tts_helper if tts else 'N/A'}},
                             alert once: {{alert_once}}, 
                             Update Thumbnails: {{update_thumbnail}}, 
-                            Video: {{video if not redacted else video |regex_replace(find='^[^\/].+?[^\/:](?=[?\/]|$)', replace='REDACTED', ignorecase=False)}}, 
-                            Target: {{'group (input/formatted): ' + notify_group + '/' + notify_group_target + ', ' if notify_group else 'Mobile Device'}}
+                            image: {{'REDACTED' if base_url and redacted else base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android 
+                            Video: {{video if not redacted or not base_url else video |replace(base_url, 'REDACTED')}}, 
+                            Target: {{'group (input/formatted): ' + notify_group + '/' + notify_group_target + ', ' if notify_group else 'Mobile Device'}}, 
                             cooldown: {{cooldown}}s, 
                             loiter timer: {{loiter_timer}}s, 
                             initial delay: {{initial_delay}}s, 
@@ -1007,10 +1012,10 @@ action:
                             Title: {{title}}, 
                             Message: {{message}},
                             Subtitle: {{subtitle}}, 
-                            tap_action: {{tap_action if not redacted else tap_action |regex_replace(find='^[^\/].+?[^\/:](?=[?\/]|$)', replace='REDACTED', ignorecase=False)}}, 
-                            button 1 Text/URL/Icon: {{iif(button_1, button_1, 'unset')}} ({{url_1 if not redacted else url_1 |regex_replace(find='^[^\/].+?[^\/:](?=[?\/]|$)', replace='REDACTED', ignorecase=False)}}) {{icon_1}}, 
-                            button 2 Text/URL/Icon: {{button_2}} ({{url_2 if not redacted else url_2 |regex_replace(find='^[^\/].+?[^\/:](?=[?\/]|$)', replace='REDACTED', ignorecase=False)}}) {{icon_2}}, 
-                            button 3 Text/URL/Icon: {{button_3}} ({{url_3 if not redacted else url_3 |regex_replace(find='^[^\/].+?[^\/:](?=[?\/]|$)', replace='REDACTED', ignorecase=False)}}) {{icon_3}}, 
+                            tap_action: {{tap_action if not redacted or not base_url else tap_action |replace(base_url, 'REDACTED')}}, 
+                            button 1 Text/URL/Icon: {{iif(button_1, button_1, 'unset')}} ({{url_1 if not redacted or not base_url else url_1 |replace(base_url, 'REDACTED')}}) {{icon_1}}, 
+                            button 2 Text/URL/Icon: {{iif(button_2, button_2, 'unset')}} ({{url_2 if not redacted or not base_url else url_2 |replace(base_url, 'REDACTED')}}) {{icon_2}}, 
+                            button 3 Text/URL/Icon: {{iif(button_3, button_3, 'unset')}} ({{url_3 if not redacted or not base_url else url_3 |replace(base_url, 'REDACTED')}}) {{icon_3}}, 
                             icon: {{icon}}
                             tv: {{ tv }}, 
                             tv_position: {{tv_position}}, 
@@ -1357,7 +1362,7 @@ action:
                                   iOS sound: {{'Critical' if critical else 'disabled by alert once' if alert_once else 'enabled'}}, 
                                   Android Sound: {{'disabled by alert once' if alert_once else 'enabled'}}, 
                                   iOS url: {{'REDACTED' if base_url and redacted else base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}
-                                  video: "{{video if not redacted else video |regex_replace(find='^[^\/].+?[^\/:](?=[?\/]|$)', replace='REDACTED', ignorecase=False)}}"
+                                  video: "{{video if not redacted or not base_url else video |replace(base_url, 'REDACTED')}}"
 
                                   critical: {{critical}},
                                   tts: {{tts}} 
