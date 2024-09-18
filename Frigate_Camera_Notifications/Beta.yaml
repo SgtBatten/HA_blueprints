@@ -12,8 +12,8 @@ blueprint:
 
     ### Software Version Requirements
       - Minimum Home Assistant Version: 2024.6
-      - Minimum Frigate Version: 0.11.0
-      - Minimum Frigate Integration Version: 3.0.0
+      - Minimum Frigate Version: 0.12.0
+      - Minimum Frigate Integration Version: 5.0.0
         - **Note:** "Enable the unauthenticated notification event proxy" must be ticked during setup
       - An MQTT broker connected to Home Assistant and Frigate.
       - Minimum iOS Version: 15.0
