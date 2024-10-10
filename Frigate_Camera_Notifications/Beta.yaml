@@ -831,6 +831,11 @@ trigger:
     event_data:
       action: "silence-{{ this.entity_id }}"
     id: silence
+  - platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: custom-{{ this.entity_id }}
+    id: custom
   - platform: mqtt
     topic: "{{mqtt_topic}}"
     payload: "new"
