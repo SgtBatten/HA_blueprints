@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.1a)
+  name: Frigate Notifications (0.14.0.1b)
   author: SgtBatten
   homeassistant:
     min_version: 2024.6.0
@@ -1024,6 +1024,7 @@ action:
                               url: "{{tap_action}}"
                               attachment:
                                 url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                                content-type: jpeg
                               push:
                                 sound:
                                   name: "{{sound}}"
@@ -1078,6 +1079,7 @@ action:
                                 url: "{{tap_action}}"
                                 attachment:
                                   url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                                  content-type: jpeg
                                 push:
                                   sound:
                                     name: "{{sound}}"
@@ -1130,6 +1132,7 @@ action:
                             url: "{{tap_action}}"
                             attachment:
                               url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                              content-type: jpeg
                             push:
                               sound:
                                 name: "{{sound}}"
