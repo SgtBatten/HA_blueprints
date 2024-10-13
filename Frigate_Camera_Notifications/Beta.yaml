@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4n)
+  name: Frigate Notifications (0.12.0.4o)
   author: SgtBatten
   homeassistant:
     min_version: 2024.6.0
@@ -1042,7 +1042,7 @@ action:
                               State Filter toggle on: {{state_only}}, 
                               State Filter Entity: {{input_entity}}, 
                               Required States: {{input_states}}, 
-                              TEST: {{'PASS' if not state_only or states(input_entity) in states_filter else 'FAIL' }},
+                              TEST: {{'PASS' if not state_only or states(input_entity)|lower in states_filter else 'FAIL' }},
                             Custom Filter: {{custom_filter}}
           - alias: "Notifications enabled for object label"
             condition: template
@@ -1060,14 +1060,14 @@ action:
                   - "{{ custom_action_auto |length > 0 }}"
                   - "{{ zones_satisfied }}"
                   - "{{ not initial_home }}"
-                  - "{{ not state_only or states(input_entity) in states_filter }}"
+                  - "{{ not state_only or states(input_entity)|lower in states_filter }}"
                 sequence: !input "custom_action_auto"
           - alias: "Notify on new object"
             choose:
               - conditions:
                   - "{{ zones_satisfied }}"
                   - "{{ not initial_home }}"
-                  - "{{ not state_only or states(input_entity) in states_filter }}"
+                  - "{{ not state_only or states(input_entity)|lower in states_filter }}"
                   - "{{ custom_filter }}"
                 sequence:
                   - choose:
@@ -1304,7 +1304,7 @@ action:
 
                     stationary_moved: "{{ event['after']['position_changes'] > event['before']['position_changes'] }}"
 
-                    state_true: "{{ not state_only or states(input_entity) in states_filter }}"
+                    state_true: "{{ not state_only or states(input_entity)|lower in states_filter }}"
                     sub_label: >
                       {% if event['after']['sub_label'] %} 
                         {{event['after']['sub_label'][0]}}
