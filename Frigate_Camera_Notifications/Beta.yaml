@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4m)
+  name: Frigate Notifications (0.12.0.4n)
   author: SgtBatten
   homeassistant:
     min_version: 2024.6.0
@@ -919,7 +919,7 @@ action:
           - "{{ not this.attributes.last_triggered or (now() - this.attributes.last_triggered).seconds > cooldown }}"
           - "{{ not disable_times|length or not now().hour in disable_times|map('int')|list }}"
           - "{{ type|select('in', 'new')|list|length>0 }}"
-          - "{{ input_camera_name|select('in', camera)|list|length>0 }}"
+          - "{{ input_camera_name|select('equalto', camera)|list|length>0 }}"
         sequence:
           - variables:
               event: "{{ trigger.payload_json }}"
