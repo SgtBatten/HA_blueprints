@@ -538,7 +538,7 @@ blueprint:
             - label: Open Reolink App (Android)
               value: app://com.mcu.reolink
             - label: Custom Action (Manual Trigger)
-              value: custom-{{ camera }}
+              value: custom-{{ this.entity_id}}
           custom_value: true
     button_1:
       name: Action Button 1 Text
@@ -569,8 +569,6 @@ blueprint:
               value: /ccab4aaf_frigate-proxy/dashboard
             - label: Open Reolink App (Android)
               value: app://com.mcu.reolink
-            - label: Custom Action (Manual Trigger)
-              value: custom-{{ camera }}
           custom_value: true
     icon_1:
       name: Action Button 1 icon - iOS Only
@@ -605,8 +603,6 @@ blueprint:
               value: /ccab4aaf_frigate-proxy/dashboard
             - label: Open Reolink App (Android)
               value: app://com.mcu.reolink
-            - label: Custom Action (Manual Trigger)
-              value: custom-{{ camera }}
           custom_value: true
     icon_2:
       name: Action Button 2 icon - iOS Only
@@ -644,7 +640,7 @@ blueprint:
             - label: Open Reolink App (Android)
               value: app://com.mcu.reolink
             - label: Custom Action (Manual Trigger)
-              value: custom-{{ camera }}
+              value: custom-{{ this.entity_id}}
           custom_value: true
     icon_3:
       name: Action Button 3 icon - iOS Only
@@ -763,7 +759,7 @@ trigger:
   - platform: event
     event_type: mobile_app_notification_action
     event_data:
-      action: "custom-{{ camera }}"
+      action: "custom-{{ this.entity_id}}"
     id: custom
 variables:
   input_camera: !input camera
