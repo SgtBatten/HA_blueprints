@@ -941,8 +941,15 @@ action:
 
               # Compare the joined strings for equality is the simplest solution, due to both variables being defined in band.
               ordered_zones: "{{ zones | join('|') }}"
-              ordered_entered_zones: "{{ entered_zones | join('|') }}"
-              ordered_zones_match: "{{ ordered_zones == ordered_entered_zones }}"
+              ordered_entered_zones: >
+                {% set ns = namespace(intersection=[]) %}
+                {% for zone in entered_zones %}
+                    {% if zone in zones %}
+                        {% set ns.intersection = ns.intersection + [zone] %}
+                    {% endif %}
+                {% endfor %}
+                {{ ns.intersection | join('|') }}
+              ordered_zones_match: "{{ ordered_zones in ordered_entered_zones }}"
               # Fails fast if prerequisite of zone or zone_multi is false, as they are pre-requisites
               zone_order_satisfied: "{{ (zone_only and zone_multi and ordered_zones_match) if zone_order_enforced else true }}"
 
