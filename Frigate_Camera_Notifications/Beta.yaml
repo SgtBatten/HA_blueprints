@@ -942,8 +942,8 @@ action:
               # Compare the joined strings for equality is the simplest solution, due to both variables being defined in band.
               ordered_zones_match: >
                 {% set ns = namespace(intersection=[]) %}
-                {% for item in zones %}
-                    {% if item in entered_zones %}
+                {% for item in entered_zones %}
+                    {% if item in zones %}
                         {% set ns.intersection = ns.intersection + [item] %}
                     {% endif %}
                 {% endfor %}
@@ -1296,8 +1296,8 @@ action:
                     # Compare the joined strings for equality is the simplest solution, due to both variables being defined in band.
                     ordered_zones_match: >
                       {% set ns = namespace(intersection=[]) %}
-                      {% for item in zones %}
-                          {% if item in entered_zones %}
+                      {% for item in entered_zones %}
+                          {% if item in zones %}
                               {% set ns.intersection = ns.intersection + [item] %}
                           {% endif %}
                       {% endfor %}
