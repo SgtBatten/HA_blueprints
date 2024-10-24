@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4o)
+  name: Frigate Notifications (0.12.0.4p)
   author: SgtBatten
   homeassistant:
     min_version: 2024.6.0
@@ -940,9 +940,14 @@ action:
               zone_multi_satisfied: "{{ all_zones_entered if zone_only and zone_multi else true}}"
 
               # Compare the joined strings for equality is the simplest solution, due to both variables being defined in band.
-              ordered_zones: "{{ zones | join('|') }}"
-              ordered_entered_zones: "{{ entered_zones | join('|') }}"
-              ordered_zones_match: "{{ ordered_zones == ordered_entered_zones }}"
+              ordered_zones_match: >
+                {% set ns = namespace(intersection=[]) %}
+                {% for item in entered_zones %}
+                    {% if item in zones %}
+                        {% set ns.intersection = ns.intersection + [item] %}
+                    {% endif %}
+                {% endfor %}
+                {{ ns.intersection == zones }}
               # Fails fast if prerequisite of zone or zone_multi is false, as they are pre-requisites
               zone_order_satisfied: "{{ (zone_only and zone_multi and ordered_zones_match) if zone_order_enforced else true }}"
 
@@ -1289,9 +1294,14 @@ action:
                     zone_multi_satisfied: "{{ all_zones_entered if zone_only and zone_multi else true}}"
 
                     # Compare the joined strings for equality is the simplest solution, due to both variables being defined in band.
-                    ordered_zones: "{{ zones | join('|') }}"
-                    ordered_entered_zones: "{{ entered_zones | join('|') }}"
-                    ordered_zones_match: "{{ ordered_zones == ordered_entered_zones }}"
+                    ordered_zones_match: >
+                      {% set ns = namespace(intersection=[]) %}
+                      {% for item in entered_zones %}
+                          {% if item in zones %}
+                              {% set ns.intersection = ns.intersection + [item] %}
+                          {% endif %}
+                      {% endfor %}
+                      {{ ns.intersection == zones }}
                     # Fails fast if prerequisite of zone or zone_multi is false, as they are pre-requisites
                     zone_order_satisfied: "{{ (zone_only and zone_multi and ordered_zones_match) if zone_order_enforced else true }}"
 
