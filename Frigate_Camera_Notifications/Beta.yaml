@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4p)
+  name: Frigate Notifications (0.12.0.5)
   author: SgtBatten
   homeassistant:
     min_version: 2024.6.0
@@ -24,7 +24,7 @@ blueprint:
 
     ### Features:
       - Easily select the camera entities or mobile device using a drop-down menu.
-      - COnfigure multipl cameras in one automation. 
+      - Configure multiple cameras in one automation. 
       - Send notifications to an Android or iOS mobile device or a TV.
         - or a group containing any combination of the above.
         - for TV Alerts, you need to install and configure https://www.home-assistant.io/integrations/nfandroidtv/
@@ -61,13 +61,11 @@ blueprint:
       - Video for iOS sent 5 seconds after the event ends.
       - Set custom entity for iOS live view.
       - Set Icons for Action Buttons on iOS.
-      - Strip trailing underscores and numbers from the camera name. (This will break automation for anyone whose Frigate cam ends in _x.)
       - Android Auto option.
       - Custom Filter.
       - Customise group on mobile devices.
       - Bounding box and crop options for attachment.
       - Set notification volume on iOS
-      - Integrates with Double Take to replace object labels with names if a face is matched.
 
     [1]: https://companion.home-assistant.io/docs/notifications/notifications-basic#sending-notifications-to-multiple-devices
     [2]: https://blakeblackshear.github.io/frigate/configuration/cameras#zones
@@ -84,7 +82,7 @@ blueprint:
       description: |
         Select the cameras that will trigger notifications. 
         If you do not see cameras listed in the drop-down, check you have the Frigate integration installed.
-        To more effectively customise the notifications per camera you may need to create one automation per camera.
+        To more effectively customise the notifications you may need to create one automation per camera.
       selector:
         entity:
           integration: frigate
@@ -129,10 +127,7 @@ blueprint:
       input:
         title:
           name: Notification Title (Optional)
-          description: |
-            # Notification Customisations
-
-            The title of the notification.
+          description: The title of the notification.
           default: ""
         message:
           name: Notification Message
@@ -573,9 +568,7 @@ blueprint:
       input:
         tap_action:
           name: Tap Action URL
-          description: |
-            # Action Buttons and URLs
-
+          description:
             The URL to open when tapping on the notification. Some presets are provided, you can also set your own by typing in the box. 
 
             These options define the text and URLs associated with the three action buttons at the bottom of the notification.
