@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.1d)
+  name: Frigate Notifications (0.14.0.1e)
   author: SgtBatten
   homeassistant:
     min_version: 2024.10.0
@@ -886,8 +886,23 @@ variables:
   # Dynamic Variables per event
   objects: "{{ trigger.payload_json['after']['data']['objects'] if trigger.id == 'frigate-event' }}"
   initial_home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
-  after_zones: "{{ trigger.payload_json['after']['data']['zones'] if trigger.id == 'frigate-event'}}"
+  before_zones: "{{ trigger.payload_json['before']['data']['zones'] if trigger.id == 'frigate-event' }}"
+  after_zones: "{{ trigger.payload_json['after']['data']['zones'] if trigger.id == 'frigate-event' }}"
   zone_multi_filter: "{{zone_only and zone_multi and after_zones|length and zones and zones |reject('in', after_zones) |list |length == 0 }}"
+  # still need to add somemore conditions to these to catch all use cases, especially the zones.  
+  zone_updated: >
+                  {% if trigger.id == 'frigate-event' %} 
+
+                    {{ before_zones | select('in', zones) | list | length != after_zones| select('in', zones) | list | length }}
+                  {% endif %}
+  object_updated: >
+                  {% if trigger.id == 'frigate-event' %}
+                    {{ trigger.payload_json['before']['data']['objects'] | select('in', labels) | list | length  != objects | select('in', labels) | list | length }}
+                  {% endif %}
+  sublabel_updated: >
+                  {% if trigger.id == 'frigate-event' and 'person' in input_labels %}
+                    {{trigger.payload_json['before']['data']['sub_labels'] != trigger.payload_json['after']['data']['sub_labels'] }}
+                  {% endif %}
 conditions:
   condition: or
   conditions:
@@ -909,7 +924,7 @@ conditions:
         - "{{ not initial_home }}"
         - "{{ not state_only or states(input_entity) in states_filter }}"
         - "{{ custom_filter }}"
-        - "{{ type == 'new' or type  == 'end' or update_thumbnail }}"
+        - "{{ type == 'new' or (type  == 'end' and video != '' ) or zone_updated or object_updated or sublabel_updated }}"
 actions:
   - if:
       - condition: !input master_condition
@@ -959,7 +974,7 @@ actions:
 
                   # Dynamic Variables per event
                   initial_home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
-                  entered_zones: "{{ trigger.payload_json['after']['entered_zones'] | default([]) }}"
+                  entered_zones: "{{ event['after']['data']['zones'] | default([]) }}"
                   # after_zones: "{{ event['after']['data']['zones'] }}"
                   # zone_multi_filter: "{{zone_only and zone_multi and after_zones|length and zones and zones |reject('in', after_zones) |list |length == 0 }}"
 
