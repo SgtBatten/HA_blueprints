@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.1e)
+  name: Frigate Notifications (0.14.0.1f)
   author: SgtBatten
   homeassistant:
     min_version: 2024.10.0
@@ -917,7 +917,7 @@ conditions:
         - "{{ input_camera_name|select('equalto', camera)|list|length>0 }}"
         - alias: "Notifications enabled for object"
           condition: template
-          value_template: "{{ not labels|length or labels|select('in', objects)|list|length > 0 }}"
+          value_template: "{{ not labels|length or labels|select('in', objects)|list|length > 0 or ('person-verified' in objects and 'person' in labels) }}"
         - "{{ not this.attributes.last_triggered or (now() - this.attributes.last_triggered).seconds > cooldown }}"
         - "{{ not disable_times|length or not now().hour in disable_times|map('int')|list }}"
         - "{{ not zone_only or (not zone_multi and zones|select('in', after_zones)|list|length > 0) or (zone_multi and after_zones|length > 0 and zones |reject('in', after_zones) |list |length == 0) }}"
