@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.1f)
+  name: Frigate Notifications (0.14.0.1g)
   author: SgtBatten
   homeassistant:
     min_version: 2024.10.0
@@ -1277,6 +1277,37 @@ actions:
                                     uri: "{{url_3}}"
                                     icon: "{{icon_3}}"
                                     destructive: true
+                      - if: "{{tts and (not tts_helper or not alert_once or (tts_helper and id not in states(tts_helper)))}}"
+                        then:
+                          sequence:
+                            - choose:
+                                - conditions: "{{ not notify_group_target }}"
+                                  sequence:
+                                    - device_id: !input notify_device
+                                      domain: mobile_app
+                                      type: notify
+                                      message: "{{'TTS'}}"
+                                      data:
+                                        tag: "{{ id }}{{'-tts'}}"
+                                        channel: "{{'alarm_stream' if critical else channel}}"
+                                        alert_once: "{{ alert_once }}"
+                                        tts_text: "{{message}}"
+                              default:
+                                - service: "notify.{{ notify_group_target }}"
+                                  data:
+                                    message: "{{'TTS'}}"
+                                    data:
+                                      tag: "{{ id }}{{'-tts'}}"
+                                      channel: "{{'alarm_stream' if critical else channel}}"
+                                      alert_once: "{{ alert_once }}"
+                                      tts_text: "{{message}}"
+                            - service: input_text.set_value
+                              data:
+                                value: |
+                                  {% set newIds = id + '|' + states(tts_helper) %}
+                                  {{ newIds[:250] }}
+                              target:
+                                entity_id: input_text.tts_notifications
               # - repeat:
               #     sequence:
               #       - wait_for_trigger:
