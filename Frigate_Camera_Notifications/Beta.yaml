@@ -109,6 +109,7 @@ blueprint:
       description: |
         The chat ID to send telegram notifications to.
         If set, this will override individual devices and groups above. Note: TV (far below) must be set to false.
+        Base URL must start with https since telegram URL buttons only work with https.
       default: ""
     api_url:
       name: API URL (Optional)
