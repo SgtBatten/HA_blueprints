@@ -117,6 +117,13 @@ blueprint:
         The API URL for downloading files for telegram integration.
         Required if Telegram Chat ID is set.
       default: ""
+    bearer_token:
+      name: Bearer token (Optional)
+      description: |
+        Bearer token is used instead of accessing API via unsecure ports.
+        Required if Telegram Chat ID is set.
+        Bearer token should be generated as HS256 JWT with Frigate JWT secret.
+      default: ""
     base_url:
       name: Base URL (Optional)
       description: |
@@ -863,7 +870,8 @@ variables:
   notify_group: !input notify_group
   notify_group_target: "{{ notify_group | lower | regex_replace('^notify\\.', '') | replace(' ','_') }}"
   telegram_chat_id: !input notify_telegram_chat_id
-  telegram: "{{true if ((telegram_chat_id | length > 0) and api_url) else ''}}"
+  bearer_token: !input bearer_token
+  telegram: "{{true if ((telegram_chat_id | length > 0) and (api_url or bearer_token)) else ''}}"
   zone_only: !input zone_filter
   input_zones: !input zones
   zones: "{{ input_zones }}"
@@ -1199,7 +1207,14 @@ action:
                            data:
                              target: "{{telegram_chat_id}}"
                              caption: "{{message}}"
-                             url: "{{api_url}}/api/events/{{id}}/{{attachment}}"
+                             password: "{{ bearer_token if bearer_token else '' }}"
+                             authentication: "{{ 'bearer_token' if bearer_token else '' }}"
+                             url: >
+                               {% if bearer_token %}
+                                {{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}
+                               {% else %}
+                                {{api_url}}/api/events/{{id}}/{{attachment}}
+                               {% endif %}
                     default:
                       - service: "notify.{{ notify_group_target }}"
                         data:
@@ -1561,7 +1576,14 @@ action:
                                         data:
                                           target: "{{telegram_chat_id}}"
                                           caption: "{{message}}"
-                                          url: "{{api_url}}/api/events/{{id}}/clip.mp4"
+                                          password: "{{ bearer_token if bearer_token else '' }}"
+                                          authentication: "{{ 'bearer_token' if bearer_token else '' }}"
+                                          url: >
+                                            {% if bearer_token %}
+                                              {{ video }}
+                                            {% else %}
+                                              {{api_url}}/api/events/{{id}}/clip.mp4
+                                            {% endif %}
                                           inline_keyboard:
                                             - [["{{button_1}}", "{{url_1}}"], ["{{button_2}}", "{{url_2}}"]]
                                             - [["{{button_3}}", "{{url_3}}"]]
@@ -1570,7 +1592,14 @@ action:
                                       data:
                                         target: "{{telegram_chat_id}}"
                                         caption: "{{message}}"
-                                        url: "{{api_url}}/api/events/{{id}}/{{attachment}}"
+                                        password: "{{ bearer_token if bearer_token else '' }}"
+                                        authentication: "{{ 'bearer_token' if bearer_token else '' }}"
+                                        url: >
+                                           {% if bearer_token %}
+                                            {{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}
+                                           {% else %}
+                                            {{api_url}}/api/events/{{id}}/{{attachment}}
+                                           {% endif %}
                                         inline_keyboard:
                                           - [["{{button_1}}", "{{url_1}}"], ["{{button_2}}", "{{url_2}}"]]
                                           - [["{{button_3}}", "{{url_3}}"]]
