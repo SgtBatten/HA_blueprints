@@ -75,8 +75,7 @@ blueprint:
     Go to https://github.com/SgtBatten/HA_blueprints to report bugs, request new features, or get support with your configuration.
 
   domain: automation
-  #source_url: https://github.com/SgtBatten/HA_blueprints/blob/main/Frigate_Camera_Notifications/Stable.yaml
-  source_url: https://github.com/arpel/HA_blueprints/blob/main/Frigate_Camera_Notifications/Stable.yaml
+  source_url: https://github.com/SgtBatten/HA_blueprints/blob/main/Frigate_Camera_Notifications/Stable.yaml
   input:
     camera:
       name: Frigate Camera
@@ -882,7 +881,6 @@ action:
               object: "{{ trigger.payload_json['after']['label'] }}"
               label: "{{ object | title }}"
               # Dynamic Variables per event
-              #initial_home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
               initial_home: "{{presence_entity |reject('in', '') |select('is_state', 'home') |list |length != 0 }}"
               enteredzones: "{{ trigger.payload_json['after']['entered_zones']}}"
               zone_multi_filter: "{{zone_only and zone_multi and enteredzones|length and zones and zones |reject('in', enteredzones) |list |length == 0 }}"
@@ -1170,9 +1168,7 @@ action:
                     event: "{{ wait.trigger.payload_json }}"
                     loitering: "{{ loiter_timer and event['before']['motionless_count']/fps/60 < loiter_timer and event['after']['motionless_count']/fps/60 >= loiter_timer }}"
                     new_snapshot: "{{ update_thumbnail and event['before']['snapshot']['frame_time'] != event['after']['snapshot']['frame_time'] }}"
-                    #home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
                     home: "{{presence_entity |reject('in', '') |select('is_state', 'home') |list |length != 0 }}"
-                    #presence_changed: "{{ presence_entity != '' and as_datetime(event['before']['frame_time']) < states[presence_entity].last_changed }}"
                     presence_changed: "{{ presence_entity |reject('in', '') |expand |map(attribute='last_changed') |list |select('gt', as_datetime(event['before']['frame_time'])) |list |length != 0}}"
                     last_zones: "{{ event['before']['entered_zones']|lower}}"
                     enteredzones: "{{ event['after']['entered_zones']|lower}}"
