@@ -104,6 +104,18 @@ blueprint:
 
         Note: If the group contains both mobile devices and TVs, the TV will not display the snapshot unless "TV notifications" is set to true. However, this will stop Android phones from receiving thumbnails.
       default: ""
+    notify_telegram_chat_id:
+      name: Telegram Chat ID (Optional)
+      description: |
+        The chat ID to send telegram notifications to.
+        If set, this will override individual devices and groups above. Note: TV (far below) must be set to false.
+      default: ""
+    api_url:
+      name: API URL (Optional)
+      description: |
+        The API URL for downloading files for telegram integration.
+        Required if Telegram Chat ID is set.
+      default: ""
     base_url:
       name: Base URL (Optional)
       description: |
@@ -837,6 +849,8 @@ variables:
   camera_name: "{{ camera | replace('_', ' ') | title }}"
   input_base_url: !input base_url
   base_url: "{{ input_base_url.rstrip('/')}}"
+  input_api_url: !input api_url
+  api_url: "{{ input_api_url.rstrip('/')}}"
   update_sub_label: !input update_sub_label
   input_client_id: !input client_id
   client_id: "{{input_client_id if not input_client_id else '/' + input_client_id if '/' not in input_client_id else input_client_id }}"
@@ -847,6 +861,8 @@ variables:
   android_auto: !input android_auto
   notify_group: !input notify_group
   notify_group_target: "{{ notify_group | lower | regex_replace('^notify\\.', '') | replace(' ','_') }}"
+  telegram_chat_id: !input notify_telegram_chat_id
+  telegram: "{{true if ((telegram_chat_id | length > 0) and api_url) else ''}}"
   zone_only: !input zone_filter
   input_zones: !input zones
   zones: "{{ input_zones }}"
@@ -990,6 +1006,7 @@ action:
                             Input Camera(formatted): {{input_camera}}({{input_camera_name}}), 
                             Trigger Camera(formatted): {{camera}}({{camera_name}}), 
                             Base URL: {{'REDACTED' if base_url and redacted else base_url}}, 
+                            API URL: {{'REDACTED' if api_url and redacted else api_url}},
                             critical: {{critical}}, 
                             tts: {{tts}} 
                             helper: {{tts_helper if tts else 'N/A'}},
@@ -1021,6 +1038,8 @@ action:
                             tv_duration: {{tv_duration}}, 
                             tv_transparency: {{tv_transparency}}, 
                             tv_interrupt: {{tv_interrupt}}, 
+                            telegram: {{telegram}},
+                            telegram_chat_id: {{telegram_chat_id}},
                           Filters: 
                             Zones: 
                               Zone Filter toggle on: {{zone_only}}, 
@@ -1069,7 +1088,7 @@ action:
                   - "{{ custom_filter }}"
                 sequence:
                   - choose:
-                      - conditions: "{{ not notify_group_target }}"
+                      - conditions: "{{ not notify_group_target and not telegram }}"
                         sequence:
                           - device_id: !input notify_device
                             domain: mobile_app
@@ -1173,6 +1192,13 @@ action:
                                     uri: "{{url_3}}"
                                     icon: "{{icon_3}}"
                                     destructive: true
+                      - conditions: "{{ telegram }}"
+                        sequence:
+                         - service: telegram_bot.send_photo
+                           data:
+                             target: "{{telegram_chat_id}}"
+                             caption: "{{message}}"
+                             url: "{{api_url}}/api/events/{{id}}/{{attachment}}"
                     default:
                       - service: "notify.{{ notify_group_target }}"
                         data:
@@ -1227,7 +1253,7 @@ action:
                                 icon: "{{icon_3}}"
                                 destructive: true
 
-                  - if: "{{tts and (not tts_helper or not alert_once or (tts_helper and id not in states(tts_helper)))}}"
+                  - if: "{{tts and not telegram and (not tts_helper or not alert_once or (tts_helper and id not in states(tts_helper)))}}"
                     then:
                       sequence:
                         - choose:
@@ -1416,7 +1442,7 @@ action:
                     - conditions: "{{ loitering or (custom_filter and not home and zones_satisfied and state_true and (new_snapshot or presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_changed)) }}"
                       sequence:
                         - choose:
-                            - conditions: "{{ not notify_group_target }}"
+                            - conditions: "{{ not notify_group_target and not telegram }}"
                               sequence:
                                 - device_id: !input notify_device
                                   domain: mobile_app
@@ -1523,6 +1549,30 @@ action:
                                           uri: "{{url_3}}"
                                           icon: "{{icon_3}}"
                                           destructive: true
+                            - conditions: "{{ telegram }}"
+                              sequence:
+                                - choose:
+                                  - conditions:
+                                    - "{{ event['type'] == 'end' }}"
+                                    - "{{ video | length > 0 }}"
+                                    sequence:
+                                      - service: telegram_bot.send_video
+                                        data:
+                                          target: "{{telegram_chat_id}}"
+                                          caption: "{{message}}"
+                                          url: "{{api_url}}/api/events/{{id}}/clip.mp4"
+                                          inline_keyboard:
+                                            - [["{{button_1}}", "{{url_1}}"], ["{{button_2}}", "{{url_2}}"]]
+                                            - [["{{button_3}}", "{{url_3}}"]]
+                                  default:
+                                    - service: telegram_bot.send_photo
+                                      data:
+                                        target: "{{telegram_chat_id}}"
+                                        caption: "{{message}}"
+                                        url: "{{api_url}}/api/events/{{id}}/{{attachment}}"
+                                        inline_keyboard:
+                                          - [["{{button_1}}", "{{url_1}}"], ["{{button_2}}", "{{url_2}}"]]
+                                          - [["{{button_3}}", "{{url_3}}"]]
                           default:
                             - service: "notify.{{ notify_group_target }}"
                               data:
@@ -1578,7 +1628,7 @@ action:
                                       icon: "{{icon_3}}"
                                       destructive: true
 
-                        - if: "{{tts and (not tts_helper or not alert_once or (tts_helper and id not in states(tts_helper)))}}"
+                        - if: "{{tts and not telegram and (not tts_helper or not alert_once or (tts_helper and id not in states(tts_helper)))}}"
                           then:
                             sequence:
                               - choose:
