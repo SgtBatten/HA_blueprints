@@ -115,13 +115,13 @@ blueprint:
       name: API URL (Optional)
       description: |
         The API URL for downloading files for telegram integration.
-        Required if Telegram Chat ID is set.
+        Required if Telegram Chat ID is set and bearer token is unset.
       default: ""
     bearer_token:
       name: Bearer token (Optional)
       description: |
         Bearer token is used instead of accessing API via unsecure ports.
-        Required if Telegram Chat ID is set.
+        Required if Telegram Chat ID is set and API URL is unset.
         Bearer token should be generated as HS256 JWT with Frigate JWT secret.
       default: ""
     base_url:
