@@ -394,7 +394,7 @@ blueprint:
               custom_value: true
         presence_filter:
           name: Presence Filter (Optional)
-          description: Only notify if the selected presence entity is not "home".
+          description: Only notify if ALL of the selected presence entities is not "home".
           default: ""
           selector:
             entity:
