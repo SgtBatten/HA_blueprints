@@ -112,9 +112,9 @@ blueprint:
         Base URL must start with https since telegram URL buttons only work with https.
       default: ""
     frigate_url:
-      name: Frigate API URL (Optional)
+      name: Frigate Base URL (Optional)
       description: |
-        The Frigate API URL for downloading files for telegram integration.
+        The Frigate Base URL for downloading files for telegram integration.
         Required if Telegram Chat ID is set and bearer token is unset.
       default: ""
     bearer_token:
@@ -1015,7 +1015,7 @@ action:
                             Input Camera(formatted): {{input_camera}}({{input_camera_name}}), 
                             Trigger Camera(formatted): {{camera}}({{camera_name}}), 
                             Base URL: {{'REDACTED' if base_url and redacted else base_url}}, 
-                            Frigate API URL: {{'REDACTED' if frigate_url and redacted else frigate_url}},
+                            Frigate Base URL: {{'REDACTED' if frigate_url and redacted else frigate_url}},
                             critical: {{critical}}, 
                             tts: {{tts}} 
                             helper: {{tts_helper if tts else 'N/A'}},
