@@ -109,6 +109,8 @@ blueprint:
       description: |
         The external URL for your Home Assistant instance. 
         Recommended for iOS and required for Android/Fire TV.
+        Must include the scheme i.e http:// or https://
+        Examples: http://192.168.1.25:8123   https://homeassistant.mydomain.com
       default: ""
     mqtt_topic:
       name: MQTT Topic (Advanced)
