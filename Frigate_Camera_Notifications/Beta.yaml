@@ -111,17 +111,17 @@ blueprint:
         If set, this will override individual devices and groups above. Note: TV (far below) must be set to false.
         Base URL must start with https since telegram URL buttons only work with https.
       default: ""
-    api_url:
-      name: API URL (Optional)
+    frigate_url:
+      name: Frigate API URL (Optional)
       description: |
-        The API URL for downloading files for telegram integration.
+        The Frigate API URL for downloading files for telegram integration.
         Required if Telegram Chat ID is set and bearer token is unset.
       default: ""
     bearer_token:
       name: Bearer token (Optional)
       description: |
-        Bearer token is used instead of accessing API via unsecure ports.
-        Required if Telegram Chat ID is set and API URL is unset.
+        Bearer token is used instead of accessing Frigate API via unsecure ports.
+        Required if Telegram Chat ID is set and Frigate API URL is unset.
         Bearer token should be generated as HS256 JWT with Frigate JWT secret.
       default: ""
     base_url:
@@ -857,8 +857,8 @@ variables:
   camera_name: "{{ camera | replace('_', ' ') | title }}"
   input_base_url: !input base_url
   base_url: "{{ input_base_url.rstrip('/')}}"
-  input_api_url: !input api_url
-  api_url: "{{ input_api_url.rstrip('/')}}"
+  input_frigate_url: !input frigate_url
+  frigate_url: "{{ input_frigate_url.rstrip('/')}}"
   update_sub_label: !input update_sub_label
   input_client_id: !input client_id
   client_id: "{{input_client_id if not input_client_id else '/' + input_client_id if '/' not in input_client_id else input_client_id }}"
@@ -871,7 +871,7 @@ variables:
   notify_group_target: "{{ notify_group | lower | regex_replace('^notify\\.', '') | replace(' ','_') }}"
   telegram_chat_id: !input notify_telegram_chat_id
   bearer_token: !input bearer_token
-  telegram: "{{true if ((telegram_chat_id | length > 0) and (api_url or bearer_token)) else ''}}"
+  telegram: "{{true if ((telegram_chat_id | length > 0) and (frigate_url or bearer_token)) else ''}}"
   zone_only: !input zone_filter
   input_zones: !input zones
   zones: "{{ input_zones }}"
@@ -1015,7 +1015,7 @@ action:
                             Input Camera(formatted): {{input_camera}}({{input_camera_name}}), 
                             Trigger Camera(formatted): {{camera}}({{camera_name}}), 
                             Base URL: {{'REDACTED' if base_url and redacted else base_url}}, 
-                            API URL: {{'REDACTED' if api_url and redacted else api_url}},
+                            Frigate API URL: {{'REDACTED' if frigate_url and redacted else frigate_url}},
                             critical: {{critical}}, 
                             tts: {{tts}} 
                             helper: {{tts_helper if tts else 'N/A'}},
@@ -1109,7 +1109,7 @@ action:
                                {% if bearer_token %}
                                 {{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}
                                {% else %}
-                                {{api_url}}/api/events/{{id}}/{{attachment}}
+                                {{frigate_url}}/api/events/{{id}}/{{attachment}}
                                {% endif %}
                       - conditions: "{{ not notify_group_target }}"
                         sequence:
@@ -1475,7 +1475,7 @@ action:
                                             {% if bearer_token %}
                                               {{ video }}
                                             {% else %}
-                                              {{api_url}}/api/events/{{id}}/clip.mp4
+                                              {{frigate_url}}/api/events/{{id}}/clip.mp4
                                             {% endif %}
                                           inline_keyboard:
                                             - [["{{button_1}}", "{{url_1}}"], ["{{button_2}}", "{{url_2}}"]]
@@ -1491,7 +1491,7 @@ action:
                                            {% if bearer_token %}
                                             {{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}
                                            {% else %}
-                                            {{api_url}}/api/events/{{id}}/{{attachment}}
+                                            {{frigate_url}}/api/events/{{id}}/{{attachment}}
                                            {% endif %}
                                         inline_keyboard:
                                           - [["{{button_1}}", "{{url_1}}"], ["{{button_2}}", "{{url_2}}"]]
