@@ -12,7 +12,7 @@ With this blueprint, you may send the notification to multiple devices by leavin
 
 ### Software Version Requirements
 
-- Minimum Home Assistant Version: 2022.2
+- Minimum Home Assistant Version: 2024.6
 - Minimum Frigate Version: 0.11.0
 - Minimum Frigate Integration Version: 3.0.0
   - “Enable the unauthenticated notification event proxy” must be ticked during setup

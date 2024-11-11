@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.4cafe)
+  name: Frigate Notifications (0.12.0.4e)
   author: SgtBatten
   homeassistant:
     min_version: 2024.6.0
@@ -109,6 +109,8 @@ blueprint:
       description: |
         The external URL for your Home Assistant instance. 
         Recommended for iOS and required for Android/Fire TV.
+        Must include the scheme i.e http:// or https://
+        Examples: http://192.168.1.25:8123   https://homeassistant.mydomain.com
       default: ""
     mqtt_topic:
       name: MQTT Topic (Advanced)
@@ -532,11 +534,11 @@ blueprint:
       description: These are Action Buttons and URL Options
       icon: mdi:gesture-double-tap
       collapsed: true
-      input:    
+      input:
         tap_action:
           name: Tap Action URL
           description:
-            The URL to open when tapping on the notification. Some presets are provided, you can also set your own by typing in the box. 
+            The URL to open when tapping on the notification. Some presets are provided, you can also set your own by typing in the box.
 
             These options define the text and URLs associated with the three action buttons at the bottom of the notification.
           default: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
@@ -698,11 +700,10 @@ blueprint:
       description: These are TV Notification Options
       icon: mdi:television
       collapsed: true
-      input:    
+      input:
         tv:
           name: TV Notification (Optional)
-          description:
-            Set to true if you are notifying an Android/Fire TV
+          description: Set to true if you are notifying an Android/Fire TV
             Can also be used to prioritise snapshots on the TV over Android mobile apps when notifying a mixed device group.
             Base URL must be set
 
@@ -769,7 +770,7 @@ blueprint:
       description: These are DEBUG Options
       icon: mdi:bug
       collapsed: true
-      input:    
+      input:
         debug:
           name: Debug
           description: |
@@ -971,7 +972,7 @@ action:
                               state filter toggle on: {{state_only}}, 
                               state filter entity: {{input_entity}}, 
                               required states: {{input_states}}, 
-                              State Filter TEST: {{'PASS' if not state_only or states(input_entity) in states_filter else 'FAIL' }},
+                              State Filter TEST: {{'PASS' if not state_only or states(input_entity)|lower in states_filter else 'FAIL' }},
                             Custom Filter: {{custom_filter}}
           - alias: "Notifications enabled for object label"
             condition: template
@@ -989,14 +990,14 @@ action:
                   - "{{ custom_action_auto |length > 0 }}"
                   - "{{ not zone_only or (not zone_multi and zones|select('in', enteredzones)|list|length > 0) or (zone_multi and enteredzones|length > 0 and zones |reject('in', enteredzones) |list |length == 0) }}"
                   - "{{ not initial_home }}"
-                  - "{{ not state_only or states(input_entity) in states_filter }}"
+                  - "{{ not state_only or states(input_entity)|lower in states_filter }}"
                 sequence: !input "custom_action_auto"
           - alias: "Notify on new object"
             choose:
               - conditions:
                   - "{{ not zone_only or (not zone_multi and zones|select('in', enteredzones)|list|length > 0) or (zone_multi and enteredzones|length > 0 and zones |reject('in', enteredzones) |list |length == 0) }}"
                   - "{{ not initial_home }}"
-                  - "{{ not state_only or states(input_entity) in states_filter }}"
+                  - "{{ not state_only or states(input_entity)|lower in states_filter }}"
                   - "{{ custom_filter }}"
                 sequence:
                   - choose:
@@ -1177,7 +1178,7 @@ action:
                     stationary_moved: "{{ event['after']['position_changes'] > event['before']['position_changes'] }}"
                     zone_only_changed: "{{ zone_only and (enteredzones|length > 0 and not last_zones|length) }}"
                     entered_zones_changed: "{{ zones|length > 0 and (zones|select('in', enteredzones)|list|length > zones|select('in', last_zones)|list|length) }}"
-                    state_true: "{{ not state_only or states(input_entity) in states_filter }}"
+                    state_true: "{{ not state_only or states(input_entity)|lower in states_filter }}"
                     sub_label: >
                       {% if event['after']['sub_label'] %} 
                         {{event['after']['sub_label'][0]}}

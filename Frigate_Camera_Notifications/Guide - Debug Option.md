@@ -1,8 +1,9 @@
 ### Debug Option
 
-The blueprint contains a toggle to enable some debug output. To enable it, scroll to the bottom of the automation and toggle Debug to on/true
+The blueprint contains a toggle to enable some debug output. To enable it, scroll to the bottom of the automation and toggle Debug to on/true. You can also hide your Base URL from the output for easier sharing using the redacted toggle.
 
-![image](https://github.com/SgtBatten/HA_blueprints/assets/24822223/afcec28a-680a-42b0-9979-c32dc234a5e1)
+![image](https://github.com/user-attachments/assets/0201a2df-5c75-422f-b237-4632521832bb)
+
 
 Note you can increase the number of stored traces by adding this to the beginning or end of the automation while editing it in yaml mode:
 
@@ -21,12 +22,13 @@ First go the the automation and select traces in the top right.
 There is a visual depiction of the trace. This is broken down in [Create a guide later post]
 There are two nodes we are interested in, they are indicated in red. The first is the output for the initial notification. The second is the output from all update loop cycles.
 
-![image](https://github.com/SgtBatten/HA_blueprints/assets/24822223/a8bbb218-1480-4ab6-85da-42e242c6a14b)
+![image](https://github.com/user-attachments/assets/0c4ebd4a-9032-4510-9d9f-28d634e0a938)
+
 
 If you click on either node, you will find the Debug output to read or copy like below.
 
 ```
-Executed: May 19, 2023 at 16:48:25
+Executed: September 15, 2024 at 17:05:10
 Result:
 params:
   domain: logbook
@@ -37,30 +39,35 @@ params:
       DEBUG: 
         Info:
           fps: 5, 
-          frigate event id: 168442347804.110348-ouga0p, 
+          frigate event id: 1726383908.860047-zjn8r0, 
           object (formatted): person (Person),
         Config: 
-          camera(formatted): doorbell(Doorbell), 
-          Base URL: https://ha.mydomain.com, 
+          camera(formatted): car_port(Car Port), 
+          Base URL: REDACTED, 
           critical: False, 
-          TEST: 0.775390625: 0.775390625: False
+          tts: False 
+          helper: N/A,
           alert once: True, 
           Update Thumbnails: True, 
-          Video: /api/frigate/notifications/168442347804.110348-ouga0p/doorbell/clip.mp4, 
+          Video: , 
           Target: Mobile Device
-          cooldown: 40s, 
+          cooldown: 10s, 
           loiter timer: 0s, 
-          color: green, 
+          initial delay: 0s, 
+          color: grey, 
           sound: default, 
-          Channel: test, 
+          android_auto: False, 
+          Group: car_port-frigate-notification, 
+          Channel: , 
           Sticky: False, 
-          Title: Test, 
-          Message: Person detected - Doorbell at 16:48,
-          tap_action: /ccab4aaf_frigate-proxy/dashboard, 
-          button 1 Text/URL: View Clip (https://ha.mydomain.com/api/frigate/notifications/168442347804.110348-ouga0p/doorbell/clip.mp4), 
-          button 2 Text/URL: View Snapshot (https://ha.mydomain.com/api/frigate/notifications/168442347804.110348-ouga0p/snapshot.jpg), 
-          button 3 Text/URL: Silence New Notifications (silence-doorbell), 
-          icon: mdi:home-assistant
+          Title: , 
+          Message: A Person was detected on the Car Port camera.,
+          Subtitle: , 
+          tap_action: REDACTED/api/frigate/notifications/1726383908.860047-zjn8r0/snapshot.jpg, 
+          button 1 Text/URL/Icon: View Clip (REDACTED/api/frigate/notifications/1726383908.860047-zjn8r0/car_port/clip.mp4) , 
+          button 2 Text/URL/Icon: View Stream (REDACTED/api/camera_proxy_stream/camera.car_port?token=11d76014953a85dcfc1a9d0dea25f3aa3d8234ded506397bfba013019729aef2) , 
+          button 3 Text/URL/Icon: Silence New Notifications (REDACTED) , 
+          icon: mdi:homeassistant
           tv: False, 
           tv_position: center, 
           tv_size: large, 
@@ -69,25 +76,26 @@ params:
           tv_interrupt: False, 
         Filters: 
           Zones: 
-            zone filter toggle on: False, 
-            Multi Zone toggle on: False, 
-            Required zones: [], 
-            Entered Zones: ['front_door', 'carport'], 
-            Zone Filter TEST: PASS, 
+            Zone Filter toggle on: True, 
+            Multi-Zone toggle on: False, 
+            Required zones: ['carport', 'front_door'], 
+            Zone Order toggle on: False
+            Entered Zones: ['front_door'],
+            TEST: PASS  , 
           Required objects TEST: 
-            Input: [], 
+            Input: ['person'], 
             TEST: PASS
           presence entity (not home):
             Entity: 
             TEST:  PASS, 
           disabled times: [], 
           State Filter: 
-            state filter toggle on: False, 
-            state filter entity: , 
-            required states: [], 
-            State Filter TEST: PASS,
+            State Filter toggle on: True, 
+            State Filter Entity: lock.front_door_lock, 
+            Required States: ['locked', 'unavailable'], 
+            TEST: PASS,
+          Custom Filter: True
   target: {}
 running_script: false
-limit: 10
 ```
 
