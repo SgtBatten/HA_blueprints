@@ -1097,7 +1097,21 @@ action:
                   - "{{ custom_filter }}"
                 sequence:
                   - choose:
-                      - conditions: "{{ not notify_group_target and not telegram }}"
+                      - conditions: "{{ telegram }}"
+                        sequence:
+                         - service: telegram_bot.send_photo
+                           data:
+                             target: "{{telegram_chat_id}}"
+                             caption: "{{message}}"
+                             password: "{{ bearer_token if bearer_token else '' }}"
+                             authentication: "{{ 'bearer_token' if bearer_token else '' }}"
+                             url: >
+                               {% if bearer_token %}
+                                {{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}
+                               {% else %}
+                                {{api_url}}/api/events/{{id}}/{{attachment}}
+                               {% endif %}
+                      - conditions: "{{ not notify_group_target }}"
                         sequence:
                           - device_id: !input notify_device
                             domain: mobile_app
@@ -1201,20 +1215,6 @@ action:
                                     uri: "{{url_3}}"
                                     icon: "{{icon_3}}"
                                     destructive: true
-                      - conditions: "{{ telegram }}"
-                        sequence:
-                         - service: telegram_bot.send_photo
-                           data:
-                             target: "{{telegram_chat_id}}"
-                             caption: "{{message}}"
-                             password: "{{ bearer_token if bearer_token else '' }}"
-                             authentication: "{{ 'bearer_token' if bearer_token else '' }}"
-                             url: >
-                               {% if bearer_token %}
-                                {{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}
-                               {% else %}
-                                {{api_url}}/api/events/{{id}}/{{attachment}}
-                               {% endif %}
                     default:
                       - service: "notify.{{ notify_group_target }}"
                         data:
@@ -1269,7 +1269,7 @@ action:
                                 icon: "{{icon_3}}"
                                 destructive: true
 
-                  - if: "{{tts and not telegram and (not tts_helper or not alert_once or (tts_helper and id not in states(tts_helper)))}}"
+                  - if: "{{tts and (not tts_helper or not alert_once or (tts_helper and id not in states(tts_helper)))}}"
                     then:
                       sequence:
                         - choose:
@@ -1458,7 +1458,45 @@ action:
                     - conditions: "{{ loitering or (custom_filter and not home and zones_satisfied and state_true and (new_snapshot or presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_changed)) }}"
                       sequence:
                         - choose:
-                            - conditions: "{{ not notify_group_target and not telegram }}"
+                            - conditions: "{{ telegram }}"
+                              sequence:
+                                - choose:
+                                  - conditions:
+                                    - "{{ event['type'] == 'end' }}"
+                                    - "{{ video | length > 0 }}"
+                                    sequence:
+                                      - service: telegram_bot.send_video
+                                        data:
+                                          target: "{{telegram_chat_id}}"
+                                          caption: "{{message}}"
+                                          password: "{{ bearer_token if bearer_token else '' }}"
+                                          authentication: "{{ 'bearer_token' if bearer_token else '' }}"
+                                          url: >
+                                            {% if bearer_token %}
+                                              {{ video }}
+                                            {% else %}
+                                              {{api_url}}/api/events/{{id}}/clip.mp4
+                                            {% endif %}
+                                          inline_keyboard:
+                                            - [["{{button_1}}", "{{url_1}}"], ["{{button_2}}", "{{url_2}}"]]
+                                            - [["{{button_3}}", "{{url_3}}"]]
+                                  default:
+                                    - service: telegram_bot.send_photo
+                                      data:
+                                        target: "{{telegram_chat_id}}"
+                                        caption: "{{message}}"
+                                        password: "{{ bearer_token if bearer_token else '' }}"
+                                        authentication: "{{ 'bearer_token' if bearer_token else '' }}"
+                                        url: >
+                                           {% if bearer_token %}
+                                            {{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}
+                                           {% else %}
+                                            {{api_url}}/api/events/{{id}}/{{attachment}}
+                                           {% endif %}
+                                        inline_keyboard:
+                                          - [["{{button_1}}", "{{url_1}}"], ["{{button_2}}", "{{url_2}}"]]
+                                          - [["{{button_3}}", "{{url_3}}"]]
+                            - conditions: "{{ not notify_group_target }}"
                               sequence:
                                 - device_id: !input notify_device
                                   domain: mobile_app
@@ -1565,44 +1603,6 @@ action:
                                           uri: "{{url_3}}"
                                           icon: "{{icon_3}}"
                                           destructive: true
-                            - conditions: "{{ telegram }}"
-                              sequence:
-                                - choose:
-                                  - conditions:
-                                    - "{{ event['type'] == 'end' }}"
-                                    - "{{ video | length > 0 }}"
-                                    sequence:
-                                      - service: telegram_bot.send_video
-                                        data:
-                                          target: "{{telegram_chat_id}}"
-                                          caption: "{{message}}"
-                                          password: "{{ bearer_token if bearer_token else '' }}"
-                                          authentication: "{{ 'bearer_token' if bearer_token else '' }}"
-                                          url: >
-                                            {% if bearer_token %}
-                                              {{ video }}
-                                            {% else %}
-                                              {{api_url}}/api/events/{{id}}/clip.mp4
-                                            {% endif %}
-                                          inline_keyboard:
-                                            - [["{{button_1}}", "{{url_1}}"], ["{{button_2}}", "{{url_2}}"]]
-                                            - [["{{button_3}}", "{{url_3}}"]]
-                                  default:
-                                    - service: telegram_bot.send_photo
-                                      data:
-                                        target: "{{telegram_chat_id}}"
-                                        caption: "{{message}}"
-                                        password: "{{ bearer_token if bearer_token else '' }}"
-                                        authentication: "{{ 'bearer_token' if bearer_token else '' }}"
-                                        url: >
-                                           {% if bearer_token %}
-                                            {{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}
-                                           {% else %}
-                                            {{api_url}}/api/events/{{id}}/{{attachment}}
-                                           {% endif %}
-                                        inline_keyboard:
-                                          - [["{{button_1}}", "{{url_1}}"], ["{{button_2}}", "{{url_2}}"]]
-                                          - [["{{button_3}}", "{{url_3}}"]]
                           default:
                             - service: "notify.{{ notify_group_target }}"
                               data:
@@ -1658,7 +1658,7 @@ action:
                                       icon: "{{icon_3}}"
                                       destructive: true
 
-                        - if: "{{tts and not telegram and (not tts_helper or not alert_once or (tts_helper and id not in states(tts_helper)))}}"
+                        - if: "{{tts and (not tts_helper or not alert_once or (tts_helper and id not in states(tts_helper)))}}"
                           then:
                             sequence:
                               - choose:
