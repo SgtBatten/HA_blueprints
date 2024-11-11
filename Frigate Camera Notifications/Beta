@@ -890,9 +890,12 @@ variables:
   after_zones: "{{ trigger.payload_json['after']['data']['zones'] if trigger.id == 'frigate-event' }}"
   zone_multi_filter: "{{zone_only and zone_multi and after_zones|length and zones and zones |reject('in', after_zones) |list |length == 0 }}"
   # still need to add somemore conditions to these to catch all use cases, especially the zones.  
+  severity_updated: >
+                  {% if trigger.id == 'frigate-event' %}
+                    {{ trigger.payload_json['before']['severity'] != trigger.payload_json['after']['severity']  }}
+                  {% endif %}
   zone_updated: >
                   {% if trigger.id == 'frigate-event' %} 
-
                     {{ before_zones | select('in', zones) | list | length != after_zones| select('in', zones) | list | length }}
                   {% endif %}
   object_updated: >
@@ -924,7 +927,7 @@ conditions:
         - "{{ not initial_home }}"
         - "{{ not state_only or states(input_entity) in states_filter }}"
         - "{{ custom_filter }}"
-        - "{{ type == 'new' or (type  == 'end' and video != '' ) or zone_updated or object_updated or sublabel_updated }}"
+        - "{{ type == 'new' or (type  == 'end' and video != '' ) or severity_updated or zone_updated or object_updated or sublabel_updated }}"
 actions:
   - if:
       - condition: !input master_condition
