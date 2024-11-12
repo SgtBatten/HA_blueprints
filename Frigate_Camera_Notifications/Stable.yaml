@@ -109,6 +109,8 @@ blueprint:
       description: |
         The external URL for your Home Assistant instance. 
         Recommended for iOS and required for Android/Fire TV.
+        Must include the scheme i.e http:// or https://
+        Examples: http://192.168.1.25:8123   https://homeassistant.mydomain.com
       default: ""
     mqtt_topic:
       name: MQTT Topic (Advanced)
@@ -392,14 +394,16 @@ blueprint:
               custom_value: true
         presence_filter:
           name: Presence Filter (Optional)
-          description: Only notify if the selected presence entity is not "home".
+          description: Only notify if ALL of the selected presence entities are not "home".
           default: ""
           selector:
             entity:
-              domain:
-                - device_tracker
-                - person
-                - group
+              filter:
+                domain:
+                  - device_tracker
+                  - person
+                  - group
+              multiple: true
         state_filter:
           name: State Filter on/off (Optional)
           description: Enable the two State Filter settings below. Only notify if the selected entity is in the specified states.
@@ -878,7 +882,7 @@ action:
               object: "{{ trigger.payload_json['after']['label'] }}"
               label: "{{ object | title }}"
               # Dynamic Variables per event
-              initial_home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
+              initial_home: "{{presence_entity |reject('in', '') |select('is_state', 'home') |list |length != 0 }}"
               enteredzones: "{{ trigger.payload_json['after']['entered_zones']}}"
               zone_multi_filter: "{{zone_only and zone_multi and enteredzones|length and zones and zones |reject('in', enteredzones) |list |length == 0 }}"
               loitering: false
@@ -1165,8 +1169,8 @@ action:
                     event: "{{ wait.trigger.payload_json }}"
                     loitering: "{{ loiter_timer and event['before']['motionless_count']/fps/60 < loiter_timer and event['after']['motionless_count']/fps/60 >= loiter_timer }}"
                     new_snapshot: "{{ update_thumbnail and event['before']['snapshot']['frame_time'] != event['after']['snapshot']['frame_time'] }}"
-                    home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
-                    presence_changed: "{{ presence_entity != '' and as_datetime(event['before']['frame_time']) < states[presence_entity].last_changed }}"
+                    home: "{{presence_entity |reject('in', '') |select('is_state', 'home') |list |length != 0 }}"
+                    presence_changed: "{{ presence_entity |reject('in', '') |expand |map(attribute='last_changed') |list |select('gt', as_datetime(event['before']['frame_time'])) |list |length != 0}}"
                     last_zones: "{{ event['before']['entered_zones']|lower}}"
                     enteredzones: "{{ event['after']['entered_zones']|lower}}"
                     zone_filter: "{{ not zone_only or zones|select('in', enteredzones)|list|length > 0 }}"
