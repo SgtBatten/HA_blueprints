@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.5a)
+  name: Frigate Notifications (0.12.0.5b)
   author: SgtBatten
   homeassistant:
     min_version: 2024.6.0
@@ -103,6 +103,13 @@ blueprint:
         If set, this will override the individual devices above.
 
         Note: If the group contains both mobile devices and TVs, the TV will not display the snapshot unless "TV notifications" is set to true. However, this will stop Android phones from receiving thumbnails.
+      default: ""
+    notify_telegram_chat_id:
+      name: Telegram Chat ID (Optional)
+      description: |
+        The chat ID to send telegram notifications to.
+        If set, this will override individual devices and groups above. Note: TV (far below) must be set to false.
+        Base URL must start with https since telegram URL buttons only work with https.
       default: ""
     base_url:
       name: Base URL (Optional)
@@ -851,6 +858,8 @@ variables:
   android_auto: !input android_auto
   notify_group: !input notify_group
   notify_group_target: "{{ notify_group | lower | regex_replace('^notify\\.', '') | replace(' ','_') }}"
+  telegram_chat_id: !input notify_telegram_chat_id
+  telegram: "{{true if (telegram_chat_id | length > 0) else ''}}"
   zone_only: !input zone_filter
   input_zones: !input zones
   zones: "{{ input_zones }}"
@@ -1025,6 +1034,8 @@ action:
                             tv_duration: {{tv_duration}}, 
                             tv_transparency: {{tv_transparency}}, 
                             tv_interrupt: {{tv_interrupt}}, 
+                            telegram: {{telegram}},
+                            telegram_chat_id: {{telegram_chat_id}},
                           Filters: 
                             Zones: 
                               Zone Filter toggle on: {{zone_only}}, 
@@ -1073,6 +1084,13 @@ action:
                   - "{{ custom_filter }}"
                 sequence:
                   - choose:
+                      - conditions: "{{ telegram }}"
+                        sequence:
+                         - service: telegram_bot.send_photo
+                           data:
+                             target: "{{telegram_chat_id}}"
+                             caption: "{{message}}"
+                             url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                       - conditions: "{{ not notify_group_target }}"
                         sequence:
                           - device_id: !input notify_device
@@ -1420,6 +1438,30 @@ action:
                     - conditions: "{{ loitering or (custom_filter and not home and zones_satisfied and state_true and (new_snapshot or presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_changed)) }}"
                       sequence:
                         - choose:
+                            - conditions: "{{ telegram }}"
+                              sequence:
+                                - choose:
+                                  - conditions:
+                                    - "{{ event['type'] == 'end' }}"
+                                    - "{{ video | length > 0 }}"
+                                    sequence:
+                                      - service: telegram_bot.send_video
+                                        data:
+                                          target: "{{telegram_chat_id}}"
+                                          caption: "{{message}}"
+                                          url: "{{ video }}"
+                                          inline_keyboard:
+                                            - [["{{button_1}}", "{{url_1}}"], ["{{button_2}}", "{{url_2}}"]]
+                                            - [["{{button_3}}", "{{url_3}}"]]
+                                  default:
+                                    - service: telegram_bot.send_photo
+                                      data:
+                                        target: "{{telegram_chat_id}}"
+                                        caption: "{{message}}"
+                                        url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                                        inline_keyboard:
+                                          - [["{{button_1}}", "{{url_1}}"], ["{{button_2}}", "{{url_2}}"]]
+                                          - [["{{button_3}}", "{{url_3}}"]]
                             - conditions: "{{ not notify_group_target }}"
                               sequence:
                                 - device_id: !input notify_device
