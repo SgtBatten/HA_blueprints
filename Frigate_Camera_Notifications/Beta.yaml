@@ -119,8 +119,8 @@ blueprint:
         Must include the scheme i.e http:// or https://
         Examples: http://192.168.1.25:8123   https://homeassistant.mydomain.com
       default: ""
-    internal_base_url:
-      name: Internal Base URL (Optional)
+    telegram_base_url:
+      name: Telegram Base URL (Optional)
       description: |
         The internal URL for your Home Assistant instance.
         Used only for telegram integration (For downloading media). Useful when your base URL points to a proxy instance
@@ -857,8 +857,8 @@ variables:
   camera_name: "{{ camera | replace('_', ' ') | title }}"
   input_base_url: !input base_url
   base_url: "{{ input_base_url.rstrip('/')}}"
-  input_internal_base_url: !input internal_base_url
-  internal_base_url: "{{ input_internal_base_url.rstrip('/') if input_internal_base_url else base_url }}"
+  input_telegram_base_url: !input internal_base_url
+  telegram_base_url: "{{ input_telegram_base_url.rstrip('/') if input_telegram_base_url else base_url }}"
   update_sub_label: !input update_sub_label
   input_client_id: !input client_id
   client_id: "{{input_client_id if not input_client_id else '/' + input_client_id if '/' not in input_client_id else input_client_id }}"
@@ -1101,7 +1101,7 @@ action:
                            data:
                              target: "{{telegram_chat_id}}"
                              caption: "{{message}}"
-                             url: "{{internal_base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                             url: "{{telegram_base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                       - conditions: "{{ not notify_group_target }}"
                         sequence:
                           - device_id: !input notify_device
@@ -1460,7 +1460,7 @@ action:
                                         data:
                                           target: "{{telegram_chat_id}}"
                                           caption: "{{message}}"
-                                          url: "{{ video | replace(base_url, internal_base_url) }}"
+                                          url: "{{ video | replace(base_url, telegram_base_url) }}"
                                           inline_keyboard:
                                             - [["{{button_1}}", "{{url_1}}"], ["{{button_2}}", "{{url_2}}"]]
                                             - [["{{button_3}}", "{{url_3}}"]]
@@ -1469,7 +1469,7 @@ action:
                                       data:
                                         target: "{{telegram_chat_id}}"
                                         caption: "{{message}}"
-                                        url: "{{internal_base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                                        url: "{{telegram_base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                                         inline_keyboard:
                                           - [["{{button_1}}", "{{url_1}}"], ["{{button_2}}", "{{url_2}}"]]
                                           - [["{{button_3}}", "{{url_3}}"]]
