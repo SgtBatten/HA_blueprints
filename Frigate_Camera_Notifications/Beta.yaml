@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.5b)
+  name: Frigate Notifications (0.12.0.5c)
   author: SgtBatten
   homeassistant:
     min_version: 2024.6.0
@@ -857,7 +857,7 @@ variables:
   camera_name: "{{ camera | replace('_', ' ') | title }}"
   input_base_url: !input base_url
   base_url: "{{ input_base_url.rstrip('/')}}"
-  input_telegram_base_url: !input internal_base_url
+  input_telegram_base_url: !input telegram_base_url
   telegram_base_url: "{{ input_telegram_base_url.rstrip('/') if input_telegram_base_url else base_url }}"
   update_sub_label: !input update_sub_label
   input_client_id: !input client_id
