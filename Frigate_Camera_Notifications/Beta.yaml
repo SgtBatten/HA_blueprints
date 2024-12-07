@@ -1510,8 +1510,8 @@ action:
                                     subtitle: "{{subtitle}}"
                                     url: "{{tap_action}}"
                                     attachment:
-                                      url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
-                                      content-type: "{{ 'mpeg4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else 'jpeg' }}"
+                                      url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
+                                      content-type: "{{ 'application/vnd.apple.mpegurl' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else 'jpeg' }}"
                                     push:
                                       sound:
                                         name: "{{ iif(update, 'none', sound) }}"
@@ -1568,7 +1568,7 @@ action:
                                       url: "{{tap_action}}"
                                       attachment:
                                         url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
-                                        content-type: "{{ 'mpeg4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else 'jpeg' }}"
+                                        content-type: "{{ 'application/vnd.apple.mpegurl' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else 'jpeg' }}"
                                       push:
                                         sound:
                                           name: "{{ iif(update, 'none', sound) }}"
@@ -1622,7 +1622,7 @@ action:
                                   url: "{{tap_action}}"
                                   attachment:
                                     url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
-                                    content-type: "{{ 'mpegURL' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else 'jpeg' }}"
+                                    content-type: "{{ 'application/vnd.apple.mpegurl' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else 'jpeg' }}"
                                   push:
                                     sound:
                                       name: "{{ iif(update, 'none', sound) }}"
