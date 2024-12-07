@@ -1,8 +1,8 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.5c)
+  name: Frigate Notifications (0.12.0.5d)
   author: SgtBatten
   homeassistant:
-    min_version: 2024.6.0
+    min_version: 2024.11.0
   description: |
     ## Frigate Notifications
 
@@ -12,8 +12,8 @@ blueprint:
 
     ### Software Version Requirements
       - Minimum Home Assistant Version: 2024.6
-      - Minimum Frigate Version: 0.12.0
-      - Minimum Frigate Integration Version: 5.0.0
+      - Minimum Frigate Version: 0.14.0
+      - Minimum Frigate Integration Version: 5.5.2
         - **Note:** "Enable the unauthenticated notification event proxy" must be ticked during setup
       - An MQTT broker connected to Home Assistant and Frigate.
       - Minimum iOS Version: 15.0
@@ -256,8 +256,10 @@ blueprint:
               options:
                 - label: None
                   value: ""
-                - label: Clip
+                - label: Clip mp4
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
+                - label: Clip m3u8 (IOS)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/master.m3u8"
         color:
           name: Notification Color - Android/TV only (Optional)
           description: Set the color of the notification on your Android mobile device or TV.
@@ -601,6 +603,8 @@ blueprint:
               options:
                 - label: View Clip
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
+                - label: View Clip (IOS)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/master.m3u8"  
                 - label: View Snapshot
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
                 - label: View Stream
@@ -633,6 +637,8 @@ blueprint:
               options:
                 - label: View Clip
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
+                - label: View Clip (IOS)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/master.m3u8"  
                 - label: View Snapshot
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
                 - label: View Stream
@@ -669,6 +675,8 @@ blueprint:
               options:
                 - label: View Clip
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
+                - label: View Clip (IOS)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/master.m3u8"  
                 - label: View Snapshot
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
                 - label: View Stream
@@ -707,6 +715,8 @@ blueprint:
                   value: silence-{{ this.entity_id }}
                 - label: View Clip
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
+                - label: View Clip (IOS)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/master.m3u8"  
                 - label: View Snapshot
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
                 - label: View Stream
@@ -1403,7 +1413,7 @@ actions:
                                   message: {{message}}
                                   iOS sound: {{'Critical' if critical else 'disabled by alert once' if alert_once else 'enabled'}}, 
                                   Android Sound: {{'disabled by alert once' if alert_once else 'enabled'}}, 
-                                  iOS url: {{'REDACTED' if base_url and redacted else base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}
+                                  iOS url: {{'REDACTED' if base_url and redacted else base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}
                                   video: "{{video if not redacted or not base_url else video |replace(base_url, 'REDACTED')}}"
 
                                   critical: {{critical}},
@@ -1503,8 +1513,8 @@ actions:
                                     subtitle: "{{subtitle}}"
                                     url: "{{tap_action}}"
                                     attachment:
-                                      url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
-                                      content-type: "{{ 'mpeg4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else 'jpeg' }}"
+                                      url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
+                                      content-type: "{{ 'application/vnd.apple.mpegurl' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else 'jpeg' }}"
                                     push:
                                       sound:
                                         name: "{{ iif(update, 'none', sound) }}"
@@ -1560,8 +1570,8 @@ actions:
                                       subtitle: "{{subtitle}}"
                                       url: "{{tap_action}}"
                                       attachment:
-                                        url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
-                                        content-type: "{{ 'mpeg4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else 'jpeg' }}"
+                                        url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
+                                        content-type: "{{ 'application/vnd.apple.mpegurl' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else 'jpeg' }}"
                                       push:
                                         sound:
                                           name: "{{ iif(update, 'none', sound) }}"
@@ -1614,8 +1624,8 @@ actions:
                                   subtitle: "{{subtitle}}"
                                   url: "{{tap_action}}"
                                   attachment:
-                                    url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
-                                    content-type: "{{ 'mpeg4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else 'jpeg' }}"
+                                    url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
+                                    content-type: "{{ 'application/vnd.apple.mpegurl' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else 'jpeg' }}"
                                   push:
                                     sound:
                                       name: "{{ iif(update, 'none', sound) }}"
