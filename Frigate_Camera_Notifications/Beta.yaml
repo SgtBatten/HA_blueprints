@@ -85,9 +85,9 @@ blueprint:
         To more effectively customise the notifications you may need to create one automation per camera.
       selector:
         entity:
-          integration: frigate
-          domain: camera
-          device_class: camera
+          filter:
+            integration: frigate
+            domain: camera
           multiple: true
     notify_device:
       name: Mobile Device
@@ -95,7 +95,8 @@ blueprint:
       default: false
       selector:
         device:
-          integration: mobile_app
+          filter:
+            integration: mobile_app
     notify_group:
       name: Notification Group or Android/Fire TV (Optional)
       description: |
@@ -211,7 +212,8 @@ blueprint:
           default: ""
           selector:
             entity:
-              integration: input_text
+              filter:
+                integration: input_text
         alert_once:
           name: Alert Once (Optional)
           description: Only the first notification for each event will play a sound. Updates, including new thumbnails, will be silent. iOS users who use Critical Notifications above will still hear default critical sounds for updates.
@@ -353,7 +355,8 @@ blueprint:
           default: ""
           selector:
             entity:
-              domain: camera
+              filter:
+                domain: camera
         android_auto:
           name: Android Auto
           description: Show the notification on Android Auto if the receiving device is connected.
@@ -838,13 +841,13 @@ blueprint:
 mode: parallel
 trigger_variables:
   mqtt_topic: !input mqtt_topic
-trigger:
-  - platform: event
+triggers:
+  - trigger: event
     event_type: mobile_app_notification_action
     event_data:
       action: "silence-{{ this.entity_id }}"
     id: silence
-  - platform: mqtt
+  - trigger: mqtt
     topic: "{{mqtt_topic}}"
     payload: "new"
     value_template: "{{ value_json['type']}}"
@@ -903,7 +906,7 @@ variables:
   debug: !input debug
   redacted: !input redacted
   master_condition: !input master_condition
-action:
+actions:
 - if:
   - condition: !input master_condition
   then:
@@ -913,14 +916,14 @@ action:
           - condition: trigger
             id: silence
         sequence:
-          - service: automation.turn_off
+          - action: automation.turn_off
             target:
               entity_id: "{{ this.entity_id }}"
             data:
               stop_actions: false
           - delay:
               minutes: !input silence_timer
-          - service: automation.turn_on
+          - action: automation.turn_on
             target:
               entity_id: "{{ this.entity_id }}"
       - alias: "Custom Action Manual"
@@ -1001,7 +1004,7 @@ action:
               - conditions:
                   - "{{debug}}"
                 sequence:
-                  - service: logbook.log
+                  - action: logbook.log
                     data_template:
                       name: Frigate Notification
                       message: |
@@ -1097,11 +1100,11 @@ action:
                   - choose:
                       - conditions: "{{ telegram }}"
                         sequence:
-                         - service: telegram_bot.send_photo
-                           data:
-                             target: "{{telegram_chat_id}}"
-                             caption: "{{message}}"
-                             url: "{{telegram_base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                          - action: telegram_bot.send_photo
+                            data:
+                              target: "{{telegram_chat_id}}"
+                              caption: "{{message}}"
+                              url: "{{telegram_base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                       - conditions: "{{ not notify_group_target }}"
                         sequence:
                           - device_id: !input notify_device
@@ -1153,7 +1156,7 @@ action:
                                   destructive: true
                       - conditions: "{{ tv }}"
                         sequence:
-                          - service: "notify.{{ notify_group_target }}"
+                          - action: "notify.{{ notify_group_target }}"
                             data:
                               title: "{{title}}"
                               message: "{{message}}"
@@ -1207,7 +1210,7 @@ action:
                                     icon: "{{icon_3}}"
                                     destructive: true
                     default:
-                      - service: "notify.{{ notify_group_target }}"
+                      - action: "notify.{{ notify_group_target }}"
                         data:
                           title: "{{title}}"
                           message: "{{message}}"
@@ -1276,7 +1279,7 @@ action:
                                     alert_once: "{{ alert_once }}"
                                     tts_text: "{{message}}"
                           default:
-                            - service: "notify.{{ notify_group_target }}"
+                            - action: "notify.{{ notify_group_target }}"
                               data:
                                 message: "{{'TTS'}}"
                                 data:
@@ -1284,7 +1287,7 @@ action:
                                   channel: "{{'alarm_stream' if critical else channel}}"
                                   alert_once: "{{ alert_once }}"
                                   tts_text: "{{message}}"
-                        - service: input_text.set_value
+                        - action: input_text.set_value
                           data:
                             value: |
                               {% set newIds = id + '|' + states(tts_helper) %}
@@ -1294,7 +1297,7 @@ action:
           - repeat:
               sequence:
                 - wait_for_trigger:
-                    - platform: mqtt
+                    - trigger: mqtt
                       topic: "{{mqtt_topic}}"
                       payload: "{{ id }}"
                       value_template: "{{ value_json['after']['id'] }}"
@@ -1387,7 +1390,7 @@ action:
                     - conditions:
                         - "{{debug}}"
                       sequence:
-                        - service: logbook.log
+                        - action: logbook.log
                           data_template:
                             name: Frigate Notification
                             message: |
@@ -1456,7 +1459,7 @@ action:
                                     - "{{ event['type'] == 'end' }}"
                                     - "{{ video | length > 0 }}"
                                     sequence:
-                                      - service: telegram_bot.send_video
+                                      - action: telegram_bot.send_video
                                         data:
                                           target: "{{telegram_chat_id}}"
                                           caption: "{{message}}"
@@ -1465,7 +1468,7 @@ action:
                                             - [["{{button_1}}", "{{url_1}}"], ["{{button_2}}", "{{url_2}}"]]
                                             - [["{{button_3}}", "{{url_3}}"]]
                                   default:
-                                    - service: telegram_bot.send_photo
+                                    - action: telegram_bot.send_photo
                                       data:
                                         target: "{{telegram_chat_id}}"
                                         caption: "{{message}}"
@@ -1525,7 +1528,7 @@ action:
                                         destructive: true
                             - conditions: "{{ tv }}"
                               sequence:
-                                - service: "notify.{{ notify_group_target }}"
+                                - action: "notify.{{ notify_group_target }}"
                                   data:
                                     title: "{{title}}"
                                     message: "{{message}}"
@@ -1581,7 +1584,7 @@ action:
                                           icon: "{{icon_3}}"
                                           destructive: true
                           default:
-                            - service: "notify.{{ notify_group_target }}"
+                            - action: "notify.{{ notify_group_target }}"
                               data:
                                 title: "{{title}}"
                                 message: "{{message}}"
@@ -1652,7 +1655,7 @@ action:
                                           tts_text: "{{message}}"
 
                                 default:
-                                  - service: "notify.{{ notify_group_target }}"
+                                  - action: "notify.{{ notify_group_target }}"
                                     data:
                                       message: "{{'TTS'}}"
                                       data:
@@ -1660,7 +1663,7 @@ action:
                                         channel: "{{'alarm_stream' if critical else channel}}"
                                         alert_once: "{{ alert_once }}"
                                         tts_text: "{{message}}"
-                              - service: input_text.set_value
+                              - action: input_text.set_value
                                 data:
                                   value: |
                                     {% set newIds = id + '|' + states(tts_helper) %}
