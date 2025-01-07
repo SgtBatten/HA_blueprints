@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.2a)
+  name: Frigate Notifications (0.14.0.2b)
   author: SgtBatten
   homeassistant:
     min_version: 2024.10.0
@@ -180,15 +180,15 @@ blueprint:
                 - label: "Long with a timestamp HH:MM"
                   value: "{{ label }}{{ ' was' if type == 'end' else '' }} detected on the {{ camera_name }} camera{{' in the ' if after_zones|length}}{{ after_zones | join(', ') | replace('_', ' ' ) | title }} at {{event['after']['start_time']|timestamp_custom('%H:%M')}}."
               custom_value: true
-        # update_sub_label:
-        #   name: Update Sub Label (Advanced)
-        #   description: |
-        #     Update the title and/or message with the matched face name and trigger a notification update.
+        update_sub_label:
+          name: Update Sub Labels (Advanced)
+          description: |
+            Update the title and/or message with the matched face name and trigger a notification update.
 
-        #     Requires face detection to be configured via Double Take (Advanced). Requires Title and/or Message to contain 'A Person' or 'A {{ label }}'
-        #   default: true
-        #   selector:
-        #     boolean:
+            Requires face detection to be configured via Double Take (Advanced). Requires Title and/or Message to contain {{ label }} variable
+          default: true
+          selector:
+            boolean:
         subtitle:
           name: Subtitle
           description: A secondary heading you can use in your notifications.
@@ -877,7 +877,7 @@ variables:
   base_url: "{{ input_base_url.rstrip('/')}}"
   input_telegram_base_url: !input telegram_base_url
   telegram_base_url: "{{ input_telegram_base_url.rstrip('/') if input_telegram_base_url else base_url }}"
-  # update_sub_label: !input update_sub_label
+  update_sub_label: !input update_sub_label
   input_client_id: !input client_id
   client_id: "{{input_client_id if not input_client_id else '/' + input_client_id if '/' not in input_client_id else input_client_id }}"
   attachment: !input attachment
@@ -1000,14 +1000,18 @@ actions:
                   objects: "{{ event['after']['data']['objects'] }}"
                   sub_labels: "{{ event['after']['data']['sub_labels'] }}"
                   label: >-
-                    {% set data = namespace(labels=[]) %} 
-                    {% for obj in objects %}
-                      {% if "-verified" in obj %}
-                      {% else %}
-                        {% set data.labels = data.labels + [obj] %}
-                      {% endif %}
-                    {% endfor %} {% set data.labels = data.labels + sub_labels %} 
-                    {{ data.labels | unique | list | sort | join(", ") | title }}
+                    {% if update_sub_label %}
+                      {% set data = namespace(labels=[]) %} 
+                      {% for obj in objects|select('in', labels) %}
+                        {% if "-verified" in obj %}
+                        {% else %}
+                          {% set data.labels = data.labels + [obj] %}
+                        {% endif %}
+                      {% endfor %} {% set data.labels = data.labels + sub_labels %} 
+                      {{ data.labels | unique | list | sort | join(", ") | title }}
+                    {% else %}
+                      {{objects}}
+                    {% endif %}
 
                   # Dynamic Variables per event
                   initial_home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
