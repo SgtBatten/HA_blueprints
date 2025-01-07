@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.2b)
+  name: Frigate Notifications (0.14.0.2c)
   author: SgtBatten
   homeassistant:
     min_version: 2024.10.0
@@ -1002,13 +1002,23 @@ actions:
                   label: >-
                     {% if update_sub_label %}
                       {% set data = namespace(labels=[]) %} 
-                      {% for obj in objects|select('in', labels) %}
-                        {% if "-verified" in obj %}
-                        {% else %}
-                          {% set data.labels = data.labels + [obj] %}
-                        {% endif %}
-                      {% endfor %} {% set data.labels = data.labels + sub_labels %} 
-                      {{ data.labels | unique | list | sort | join(", ") | title }}
+                      {% if labels|length %}
+                        {% for obj in objects|select('in', labels) %}
+                          {% if "-verified" in obj %}
+                          {% else %}
+                            {% set data.labels = data.labels + [obj] %}
+                          {% endif %}
+                        {% endfor %} {% set data.labels = data.labels + sub_labels %} 
+                        {{ data.labels | unique | list | sort | join(", ") | title }}
+                      {% else %}
+                        {% for obj in objects %}
+                          {% if "-verified" in obj %}
+                          {% else %}
+                            {% set data.labels = data.labels + [obj] %}
+                          {% endif %}
+                        {% endfor %} {% set data.labels = data.labels + sub_labels %} 
+                        {{ data.labels | unique | list | sort | join(", ") | title }}
+                      {% endif %}
                     {% else %}
                       {{objects}}
                     {% endif %}
