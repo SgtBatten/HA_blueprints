@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.2c)
+  name: Frigate Notifications (0.14.0.2d)
   author: SgtBatten
   homeassistant:
     min_version: 2024.10.0
@@ -1409,7 +1409,7 @@ actions:
                         entered_new_zones: "{{ zone_only and (entered_zones | length > last_zones | length) }}"
                         entered_new_filter_zones: "{{ zone_only and zones | length > 0 and (new_entered_zones | length > last_entered_zones | length) }}"
 
-                        stationary_moved: "{{ event['after']['position_changes'] > event['before']['position_changes'] }}"
+                        # stationary_moved: "{{ event['after']['position_changes'] > event['before']['position_changes'] }}"
 
                         state_true: "{{ not state_only or states(input_entity)|lower in states_filter }}"
 
@@ -1471,7 +1471,7 @@ actions:
                                       critical: {{critical}},
                                       tts: {{tts}}
                                     Triggers:
-                                      New Snapshot: {{'True' if event['before']['snapshot']['frame_time'] != event['after']['snapshot']['frame_time'] else 'False'}}{{' - Disabled' if not update_thumbnail}}
+                                      New Snapshot: False (not functional with reviews)
                                       Presence Changed: {{presence_changed}},
                                       Stationary Moved: {{stationary_moved}},
                                       Entered Zones Changed: {{'True' if event['before']['entered_zones'] != event['after']['entered_zones'] else 'False'}}{{' - Disabled' if not zone_only}},
