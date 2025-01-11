@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.2d)
+  name: Frigate Notifications (0.14.0.2e)
   author: SgtBatten
   homeassistant:
     min_version: 2024.10.0
@@ -251,12 +251,6 @@ blueprint:
                 - label: Snapshot cropped with bounding box
                   value: snapshot.jpg?bbox=1&crop=1
               mode: dropdown
-        update_thumbnail:
-          name: Update Image (Optional)
-          description: Update the notification if a new "better" image is available.
-          default: false
-          selector:
-            boolean:
         video:
           name: Video (Optional)
           description: You can optionally attach the clip to the notification which will replace the thumbnail/snapshot above, if available.
@@ -270,6 +264,12 @@ blueprint:
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{review_id}}/review_preview.gif?format=ts"
                 - label: Clip
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
+        final_update:
+          name: Final update (Optional)
+          description: Update the notification at the end of the event. Configure the delay if necessary in the timers section (default - 5 seconds). 
+          default: false
+          selector:
+            boolean:
         color:
           name: Notification Color - Android/TV only (Optional)
           description: Set the color of the notification on your Android mobile device or TV.
@@ -592,6 +592,16 @@ blueprint:
               max: 15
               min: 0
               unit_of_measurement: seconds
+        final_delay:
+          name: Delay Final notification (Optional)
+          description: |
+            How long to delay the final notification for each event. Only applies if Final Update is enabled.
+          default: 5
+          selector:
+            number:
+              max: 20
+              min: 0
+              unit_of_measurement: seconds
     actions:
       name: |
         # Action Buttons and URLS
@@ -852,7 +862,8 @@ triggers:
   - trigger: mqtt
     topic: "{{mqtt_topic}}"
     payload: "new-{{severity}}"
-    value_template: "{{value_json['type']}}-{{value_json['after']['severity']}}"
+    value_template:
+      "{{value_json['type']}}-{{value_json['after']['severity']}}"
       #  {{ iif(severity|select('equalto', value_json['after']['severity'])|list|length>0, 'yes', 'no') }}
       #  value_template: "{{ 'proceed' if severity|select('equalto', value_json['after']['severity'])|list|length>0 }}"
     id: frigate-event
@@ -882,7 +893,7 @@ variables:
   client_id: "{{input_client_id if not input_client_id else '/' + input_client_id if '/' not in input_client_id else input_client_id }}"
   attachment: !input attachment
   alert_once: !input alert_once
-  update_thumbnail: !input update_thumbnail
+  final_update: !input final_update
   ios_live_view: !input ios_live_view
   android_auto: !input android_auto
   notify_group: !input notify_group
@@ -902,6 +913,7 @@ variables:
   loitering: false
   loiter_timer: !input loiter_timer
   initial_delay: !input initial_delay
+  final_delay: !input final_delay
   fps: "{{ states('sensor.' + camera + '_camera_fps')|int(5) }}"
   state_only: !input state_filter
   input_entity: !input state_entity
@@ -930,17 +942,17 @@ variables:
   zone_multi_filter: "{{zone_only and zone_multi and after_zones|length and zones and zones |reject('in', after_zones) |list |length == 0 }}"
   # still need to add somemore conditions to these to catch all use cases, especially the zones.
   zone_updated: >
-                  {% if trigger.id == 'frigate-event' %} 
-                    {{ before_zones | select('in', zones) | list | length != after_zones| select('in', zones) | list | length }}
-                  {% endif %}
+    {% if trigger.id == 'frigate-event' %} 
+      {{ before_zones | select('in', zones) | list | length != after_zones| select('in', zones) | list | length }}
+    {% endif %}
   object_updated: >
-                  {% if trigger.id == 'frigate-event' %}
-                    {{ trigger.payload_json['before']['data']['objects'] | select('in', labels) | list | length  != objects | select('in', labels) | list | length }}
-                  {% endif %}
+    {% if trigger.id == 'frigate-event' %}
+      {{ trigger.payload_json['before']['data']['objects'] | select('in', labels) | list | length  != objects | select('in', labels) | list | length }}
+    {% endif %}
   sublabel_updated: >
-                  {% if trigger.id == 'frigate-event' and 'person' in input_labels %}
-                    {{trigger.payload_json['before']['data']['sub_labels'] != trigger.payload_json['after']['data']['sub_labels'] }}
-                  {% endif %}
+    {% if trigger.id == 'frigate-event' and 'person' in input_labels %}
+      {{trigger.payload_json['before']['data']['sub_labels'] != trigger.payload_json['after']['data']['sub_labels'] }}
+    {% endif %}
 conditions:
   condition: or
   conditions:
@@ -1099,7 +1111,7 @@ actions:
                                 tts: {{tts}} 
                                 helper: {{tts_helper if tts else 'N/A'}},
                                 alert once: {{alert_once}}, 
-                                Update Thumbnails: {{update_thumbnail}}, 
+                                Final_Update (delay): {{final_update}} ({{final_delay}}), 
                                 image: {{'REDACTED' if base_url and redacted else base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android 
                                 Video: {{video if not redacted or not base_url else video |replace(base_url, 'REDACTED')}}, 
                                 Target: {{'group (input/formatted): ' + notify_group + '/' + notify_group_target + ', ' if notify_group else 'Mobile Device'}}, 
@@ -1434,19 +1446,19 @@ actions:
                         object_updated: "{{ trigger.payload_json['before']['data']['objects'] | select('in', labels) | list | length  != objects | select('in', labels) | list | length }}"
 
                         # update is used to determine if we should play a sound. if it returns true, we should be silent.
-                        update: "{{ alert_once or (new_snapshot and not presence_changed and not zone_updated and not sub_label_updated) }}"
+                        update: "{{ alert_once or (new_snapshot and not presence_changed and not zone_updated and not object_updated and not sub_label_updated) }}"
 
                         custom_action_auto_multi: !input custom_action_auto_multi
                     - alias: "Update thumbnail at end of event"
                       choose:
                         - conditions:
                             - "{{event['type'] == 'end' }}"
-                            - "{{('snapshot' in attachment and update_thumbnail) or video|length > 0}}"
+                            - "{{('snapshot' in attachment and final_update) or video|length > 0}}"
                           sequence:
                             - delay:
-                                seconds: 5
-                            - variables:
-                                new_snapshot: "{{update_thumbnail}}"
+                                seconds: "{{final_delay}}"
+                            # - variables:
+                            #     new_snapshot: "{{update_thumbnail}}"
                     - alias: "Debug: write to Log"
                       choose:
                         - conditions:
@@ -1474,7 +1486,8 @@ actions:
                                       New Snapshot: False (not functional with reviews)
                                       Presence Changed: {{presence_changed}},
                                       Stationary Moved: {{stationary_moved}},
-                                      Entered Zones Changed: {{'True' if event['before']['entered_zones'] != event['after']['entered_zones'] else 'False'}}{{' - Disabled' if not zone_only}},
+                                      Object changed: {{object_updated}},
+                                      Entered Zones Changed: {{'True' if last_zones != entered_zones and not zone_only or (zone_only and zones_satisfied and (entered_new_zones or entered_new_filter_zones)) else 'False' }},
                                       sublabel changed: {{ sub_label != sub_label_before }}{{' - Disabled' if not update_sub_label}},
                                     Conditions:
                                       Loitering: {{loitering}} - not in use currently
@@ -1511,7 +1524,7 @@ actions:
                           sequence: !input "custom_action_auto_multi"
                     - alias: "Update Notification"
                       choose:
-                        - conditions: "{{ loitering or (custom_filter and not home and zones_satisfied and state_true and (new_snapshot or presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_changed)) }}"
+                        - conditions: "{{ final_update or loitering or (custom_filter and not home and zones_satisfied and state_true and (new_snapshot or presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_changed)) }}"
                           sequence:
                             - choose:
                                 - conditions: "{{ telegram }}"
