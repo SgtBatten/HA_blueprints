@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.2h)
+  name: Frigate Notifications (0.14.0.2i)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -1470,7 +1470,7 @@ actions:
                         object_updated: "{{ trigger.payload_json['before']['data']['objects'] | select('in', labels) | list | length  != objects | select('in', labels) | list | length }}"
 
                         # update is used to determine if we should play a sound. if it returns true, we should be silent.
-                        update: "{{ alert_once or (new_snapshot and not presence_changed and not zone_updated and not object_updated and not sub_label_updated) }}"
+                        update: "{{ alert_once or (not presence_changed and not zone_updated and not object_updated and not sub_label_updated) }}"
 
                         custom_action_auto_multi: !input custom_action_auto_multi
                     - alias: "Update thumbnail at end of event"
@@ -1493,7 +1493,7 @@ actions:
                                 name: Frigate Notification
                                 message: |
                                   DEBUG (in loop):
-                                    Send Notification: {{ loitering or (custom_filter and not home and zones_satisfied and state_true and (new_snapshot or presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_updated)) }}
+                                    Send Notification: {{ loitering or (custom_filter and not home and zones_satisfied and state_true and ( presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_updated)) }}
                                     Info:
                                       sublabel: {{sub_label}},
                                       image: "{{'REDACTED' if base_url and redacted else base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
@@ -1544,11 +1544,11 @@ actions:
                       choose:
                         - conditions:
                             - "{{ custom_action_auto_multi | length > 0 }}"
-                            - "{{ loitering or (not home and zones_satisfied and state_true and (new_snapshot or presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_updated)) }}"
+                            - "{{ loitering or (not home and zones_satisfied and state_true and ( presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_updated)) }}"
                           sequence: !input "custom_action_auto_multi"
                     - alias: "Update Notification"
                       choose:
-                        - conditions: "{{ final_update or loitering or (custom_filter and not home and zones_satisfied and state_true and (new_snapshot or presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_updated)) }}"
+                        - conditions: "{{ final_update or loitering or (custom_filter and not home and zones_satisfied and state_true and ( presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_updated)) }}"
                           sequence:
                             - choose:
                                 - conditions: "{{ telegram }}"
