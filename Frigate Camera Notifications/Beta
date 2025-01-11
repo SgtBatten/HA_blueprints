@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.2f)
+  name: Frigate Notifications (0.14.0.2g)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -1494,7 +1494,7 @@ actions:
                                 name: Frigate Notification
                                 message: |
                                   DEBUG (in loop):
-                                    Send Notification: {{ loitering or (custom_filter and not home and zones_satisfied and state_true and (new_snapshot or presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_changed)) }}
+                                    Send Notification: {{ loitering or (custom_filter and not home and zones_satisfied and state_true and (new_snapshot or presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_updated)) }}
                                     Info:
                                       sublabel: {{sub_label}},
                                       image: "{{'REDACTED' if base_url and redacted else base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
@@ -1545,11 +1545,11 @@ actions:
                       choose:
                         - conditions:
                             - "{{ custom_action_auto_multi | length > 0 }}"
-                            - "{{ loitering or (not home and zones_satisfied and state_true and (new_snapshot or presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_changed)) }}"
+                            - "{{ loitering or (not home and zones_satisfied and state_true and (new_snapshot or presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_updated)) }}"
                           sequence: !input "custom_action_auto_multi"
                     - alias: "Update Notification"
                       choose:
-                        - conditions: "{{ final_update or loitering or (custom_filter and not home and zones_satisfied and state_true and (new_snapshot or presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_changed)) }}"
+                        - conditions: "{{ final_update or loitering or (custom_filter and not home and zones_satisfied and state_true and (new_snapshot or presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_updated)) }}"
                           sequence:
                             - choose:
                                 - conditions: "{{ telegram }}"
