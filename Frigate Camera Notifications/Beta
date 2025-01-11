@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.2g)
+  name: Frigate Notifications (0.14.0.2h)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -269,7 +269,7 @@ blueprint:
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/master.m3u8"
         final_update:
           name: Final update (Optional)
-          description: Update the notification at the end of the event. Configure the delay if necessary in the timers section (default - 5 seconds). 
+          description: Update the notification at the end of the event. Configure the delay if necessary in the timers section (default - 5 seconds).
           default: false
           selector:
             boolean:
@@ -952,7 +952,7 @@ variables:
   master_condition: !input master_condition
   # Dynamic Variables per event
   objects: "{{ trigger.payload_json['after']['data']['objects'] if trigger.id == 'frigate-event' }}"
-  initial_home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
+  initial_home: "{{ presence_entity != '' and presence_entity|expand|selectattr('state','eq','home')|list|length != 0 }}"
   before_zones: "{{ trigger.payload_json['before']['data']['zones'] if trigger.id == 'frigate-event' }}"
   after_zones: "{{ trigger.payload_json['after']['data']['zones'] if trigger.id == 'frigate-event' }}"
   zone_multi_filter: "{{zone_only and zone_multi and after_zones|length and zones and zones |reject('in', after_zones) |list |length == 0 }}"
@@ -1052,7 +1052,6 @@ actions:
                     {% endif %}
 
                   # Dynamic Variables per event
-                  initial_home: "{{ presence_entity != '' and is_state(presence_entity, 'home') }}"
                   entered_zones: "{{ event['after']['data']['zones'] | default([]) }}"
                   # after_zones: "{{ event['after']['data']['zones'] }}"
                   # zone_multi_filter: "{{zone_only and zone_multi and after_zones|length and zones and zones |reject('in', after_zones) |list |length == 0 }}"
