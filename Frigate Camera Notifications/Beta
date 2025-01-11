@@ -1,8 +1,8 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.2e)
+  name: Frigate Notifications (0.14.0.2f)
   author: SgtBatten
   homeassistant:
-    min_version: 2024.10.0
+    min_version: 2024.11.0
   description: |
     ## Frigate Notifications
 
@@ -12,8 +12,8 @@ blueprint:
 
     ### Software Version Requirements
       - Minimum Home Assistant Version: 2024.10
-      - Minimum Frigate Version: 0.14
-      - Minimum Frigate Integration Version: 5.0.0
+      - Minimum Frigate Version: 0.14.0
+      - Minimum Frigate Integration Version: 5.7.0
         - **Note:** "Enable the unauthenticated notification event proxy" must be ticked during setup
       - An MQTT broker connected to Home Assistant and Frigate.
       - Minimum iOS Version: 15.0
@@ -39,6 +39,7 @@ blueprint:
       - Configure custom notification channels on Android.
       - Specify which [zones][2] to be notified about. (Zone Filter)
         - Choose between enforcing all required zones simultaneously or any one zone.
+        - Choose to enforce zones in a specific order (e.g arriving but not leaving)
       - Specify what type of [objects][3] to be notified about. (Object Filter)
       - Disable notifications if a presence entity or group is "home". (Presence Filter)
       - Limit notifications based on the state of another entity. (State Filter)
@@ -72,7 +73,7 @@ blueprint:
     Go to https://github.com/SgtBatten/HA_blueprints to report bugs, request new features, or get support with your configuration.
 
   domain: automation
-  source_url: https://github.com/SgtBatten/HA_blueprints/blob/main/Frigate%20Camera%20Notifications/Beta
+  source_url: https://github.com/SgtBatten/HA_blueprints/blob/main/Frigate_Camera_Notifications/Beta.yaml
   input:
     camera:
       name: Frigate Cameras
@@ -262,8 +263,10 @@ blueprint:
                   value: ""
                 - label: Android GIF
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{review_id}}/review_preview.gif?format=ts"
-                - label: Clip
+                - label: Clip mp4
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
+                - label: Clip m3u8 (IOS)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/master.m3u8"
         final_update:
           name: Final update (Optional)
           description: Update the notification at the end of the event. Configure the delay if necessary in the timers section (default - 5 seconds). 
@@ -452,7 +455,7 @@ blueprint:
               custom_value: true
         presence_filter:
           name: Presence Filter (Optional)
-          description: Only notify if the selected presence entity is not "home".
+          description: Only notify if ALL of the selected presence entities are not "home".
           default: ""
           selector:
             entity:
@@ -461,6 +464,7 @@ blueprint:
                   - device_tracker
                   - person
                   - group
+              multiple: true
         state_filter:
           name: State Filter on/off (Optional)
           description: Enable the two State Filter settings below. Only notify if the selected entity is in the specified states.
@@ -621,6 +625,8 @@ blueprint:
               options:
                 - label: View Clip
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
+                - label: View Clip (IOS)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/master.m3u8"
                 - label: View Snapshot
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
                 - label: View Stream
@@ -653,6 +659,8 @@ blueprint:
               options:
                 - label: View Clip
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
+                - label: View Clip (IOS)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/master.m3u8"
                 - label: View Snapshot
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
                 - label: View Stream
@@ -669,6 +677,8 @@ blueprint:
                   value: /ccab4aaf_frigate-proxy/dashboard
                 - label: Open Reolink App (Android)
                   value: app://com.mcu.reolink
+                - label: Custom Action (Manual Trigger)
+                  value: custom-{{ this.entity_id }}
               custom_value: true
         icon_1:
           name: Action Button 1 icon - iOS Only
@@ -687,6 +697,8 @@ blueprint:
               options:
                 - label: View Clip
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
+                - label: View Clip (IOS)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/master.m3u8"
                 - label: View Snapshot
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
                 - label: View Stream
@@ -703,6 +715,8 @@ blueprint:
                   value: /ccab4aaf_frigate-proxy/dashboard
                 - label: Open Reolink App (Android)
                   value: app://com.mcu.reolink
+                - label: Custom Action (Manual Trigger)
+                  value: custom-{{ this.entity_id }}
               custom_value: true
         icon_2:
           name: Action Button 2 icon - iOS Only
@@ -723,6 +737,8 @@ blueprint:
                   value: silence-{{ this.entity_id }}
                 - label: View Clip
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
+                - label: View Clip (IOS)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/master.m3u8"
                 - label: View Snapshot
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
                 - label: View Stream
@@ -752,7 +768,7 @@ blueprint:
           selector:
             action: {}
           default: []
-        custom_action:
+        custom_action_auto:
           name: Custom Action (Auto Trigger)
           description: Customisable action that will trigger on the initial notification (subject to all other notification conditions).
           selector:
@@ -1087,7 +1103,7 @@ actions:
                   group: !input group
                   channel: !input channel
                   video: !input video
-                  custom_action: !input custom_action
+                  custom_action_auto: !input custom_action_auto
               - alias: "Debug: write to Log"
                 choose:
                   - conditions:
@@ -1137,6 +1153,8 @@ actions:
                                 tv_duration: {{tv_duration}}, 
                                 tv_transparency: {{tv_transparency}}, 
                                 tv_interrupt: {{tv_interrupt}}, 
+                                telegram: {{telegram}},
+                                telegram_chat_id: {{telegram_chat_id}},
                               Filters: 
                                 Zones: 
                                   Zone Filter toggle on: {{zone_only}}, 
@@ -1169,11 +1187,11 @@ actions:
               - alias: "Custom Action Auto"
                 choose:
                   - conditions:
-                      - "{{ custom_action |length > 0 }}"
+                      - "{{ custom_action_auto |length > 0 }}"
                       - "{{ zones_satisfied }}"
                       - "{{ not initial_home }}"
                       - "{{ not state_only or states(input_entity)|lower in states_filter }}"
-                    sequence: !input "custom_action"
+                    sequence: !input "custom_action_auto"
               - alias: "Notify on new object"
                 choose:
                   - conditions:
@@ -1183,6 +1201,13 @@ actions:
                       - "{{ custom_filter }}"
                     sequence:
                       - choose:
+                          - conditions: "{{ telegram }}"
+                            sequence:
+                              - action: telegram_bot.send_photo
+                                data:
+                                  target: "{{telegram_chat_id}}"
+                                  caption: "{{message}}"
+                                  url: "{{telegram_base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                           - conditions: "{{ not notify_group_target }}"
                             sequence:
                               - device_id: !input notify_device
@@ -1356,7 +1381,7 @@ actions:
                                         alert_once: "{{ alert_once }}"
                                         tts_text: "{{message}}"
                               default:
-                                - service: "notify.{{ notify_group_target }}"
+                                - action: "notify.{{ notify_group_target }}"
                                   data:
                                     message: "{{'TTS'}}"
                                     data:
@@ -1364,7 +1389,7 @@ actions:
                                       channel: "{{'alarm_stream' if critical else channel}}"
                                       alert_once: "{{ alert_once }}"
                                       tts_text: "{{message}}"
-                            - service: input_text.set_value
+                            - action: input_text.set_value
                               data:
                                 value: |
                                   {% set newIds = id + '|' + states(tts_helper) %}
@@ -1595,8 +1620,8 @@ actions:
                                         subtitle: "{{subtitle}}"
                                         url: "{{tap_action}}"
                                         attachment:
-                                          url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
-                                          content-type: "{{ 'mpeg4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else 'jpeg' }}"
+                                          url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
+                                          content-type: "{{ 'application/vnd.apple.mpegurl' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else 'jpeg' }}"
                                         push:
                                           sound:
                                             name: "{{ iif(update, 'none', sound) }}"
@@ -1652,8 +1677,8 @@ actions:
                                           subtitle: "{{subtitle}}"
                                           url: "{{tap_action}}"
                                           attachment:
-                                            url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
-                                            content-type: "{{ 'mpeg4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else 'jpeg' }}"
+                                            url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
+                                            content-type: "{{ 'application/vnd.apple.mpegurl' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else 'jpeg' }}"
                                           push:
                                             sound:
                                               name: "{{ iif(update, 'none', sound) }}"
@@ -1706,8 +1731,8 @@ actions:
                                       subtitle: "{{subtitle}}"
                                       url: "{{tap_action}}"
                                       attachment:
-                                        url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
-                                        content-type: "{{ 'mpeg4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else 'jpeg' }}"
+                                        url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
+                                        content-type: "{{ 'application/vnd.apple.mpegurl' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else 'jpeg' }}"
                                       push:
                                         sound:
                                           name: "{{ iif(update, 'none', sound) }}"
