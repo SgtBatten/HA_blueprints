@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.2i)
+  name: Frigate Notifications (0.14.0.2j)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -166,7 +166,7 @@ blueprint:
             You can use variables such as {{camera_name}} and {{label}}
             e.g., A {{ label }} {{ ' was' if type == 'end' else '' }} detected on the {{ camera_name }} camera.
 
-          default: "{{ label }} {{ ' was' if type == 'end' else '' }} detected on the {{ camera_name }} camera."
+          default: "A {{ label }} {{ 'was detected' }} on the {{ camera_name }} camera."
           selector:
             select:
               options:
@@ -251,6 +251,8 @@ blueprint:
                   value: snapshot.jpg?crop=1
                 - label: Snapshot cropped with bounding box
                   value: snapshot.jpg?bbox=1&crop=1
+                - label: Review GIF
+                  value: review_preview.gif
               mode: dropdown
         video:
           name: Video (Optional)
@@ -261,15 +263,17 @@ blueprint:
               options:
                 - label: None
                   value: ""
-                - label: Android GIF
+                - label: Review GIF (Android)
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{review_id}}/review_preview.gif?format=ts"
+                - label: Review GIF (IOS)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{review_id}}/event_preview.gif"
                 - label: Clip mp4
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
                 - label: Clip m3u8 (IOS)
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/master.m3u8"
         final_update:
           name: Final update (Optional)
-          description: Update the notification at the end of the event. Configure the delay if necessary in the timers section (default - 5 seconds).
+          description: Update the notification at the end of the event. Used to ensure the full video of GIF is sent. Configure the delay if necessary in the timers section (default - 5 seconds).
           default: false
           selector:
             boolean:
@@ -392,7 +396,7 @@ blueprint:
     filters:
       name: |
         # Filters
-      description: These are Filter Options
+      description: These help limit when or what you are notified about. 
       icon: mdi:filter
       collapsed: true
       input:
@@ -542,15 +546,6 @@ blueprint:
                   value: "22"
                 - label: 23:00 - 23:59
                   value: "23"
-        cooldown:
-          name: Cooldown (Optional)
-          description: Delay before sending another notification for this camera after the last event.
-          default: 30
-          selector:
-            number:
-              max: 86400
-              min: 0
-              unit_of_measurement: seconds
         custom_filter:
           name: Custom Filter (Optional - Advanced)
           description: A filter that must result in true or false but can be templated as necessary. You will need to ensure it is enclosed with appropriate \"quotes\" and \{\{brackets\}\}.
@@ -562,6 +557,15 @@ blueprint:
       icon: mdi:gesture-double-tap
       collapsed: true
       input:
+        cooldown:
+          name: Cooldown (Optional)
+          description: Delay before sending another notification for this camera after the last event.
+          default: 30
+          selector:
+            number:
+              max: 86400
+              min: 0
+              unit_of_measurement: seconds
         silence_timer:
           name: Silence New Notifications (Optional)
           description: |
@@ -627,6 +631,8 @@ blueprint:
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
                 - label: View Clip (IOS)
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/master.m3u8"
+                - label: View GIF
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{review_id}}/review_preview.gif"
                 - label: View Snapshot
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
                 - label: View Stream
@@ -645,6 +651,10 @@ blueprint:
                   value: app://com.mcu.reolink
                 - label: Custom Action (Manual Trigger)
                   value: custom-{{ this.entity_id}}
+                - label: None (Android)
+                  value: noAction
+                - label: Notification History (Android)
+                  value: settings://notification_history
               custom_value: true
         button_1:
           name: Action Button 1 Text
@@ -1233,8 +1243,8 @@ actions:
                                   subtitle: "{{subtitle}}"
                                   url: "{{tap_action}}"
                                   attachment:
-                                    url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
-                                    content-type: jpeg
+                                    url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
+                                    content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
                                   push:
                                     sound:
                                       name: "{{sound}}"
@@ -1288,8 +1298,8 @@ actions:
                                     subtitle: "{{subtitle}}"
                                     url: "{{tap_action}}"
                                     attachment:
-                                      url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
-                                      content-type: jpeg
+                                      url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
+                                      content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
                                     push:
                                       sound:
                                         name: "{{sound}}"
@@ -1341,8 +1351,8 @@ actions:
                                 # iOS Specific
                                 url: "{{tap_action}}"
                                 attachment:
-                                  url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
-                                  content-type: jpeg
+                                  url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
+                                  content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
                                 push:
                                   sound:
                                     name: "{{sound}}"
@@ -1619,8 +1629,8 @@ actions:
                                         subtitle: "{{subtitle}}"
                                         url: "{{tap_action}}"
                                         attachment:
-                                          url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
-                                          content-type: "{{ 'application/vnd.apple.mpegurl' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else 'jpeg' }}"
+                                          url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
+                                          content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
                                         push:
                                           sound:
                                             name: "{{ iif(update, 'none', sound) }}"
@@ -1676,8 +1686,8 @@ actions:
                                           subtitle: "{{subtitle}}"
                                           url: "{{tap_action}}"
                                           attachment:
-                                            url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
-                                            content-type: "{{ 'application/vnd.apple.mpegurl' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else 'jpeg' }}"
+                                            url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
+                                            content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
                                           push:
                                             sound:
                                               name: "{{ iif(update, 'none', sound) }}"
@@ -1730,8 +1740,8 @@ actions:
                                       subtitle: "{{subtitle}}"
                                       url: "{{tap_action}}"
                                       attachment:
-                                        url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}"
-                                        content-type: "{{ 'application/vnd.apple.mpegurl' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else 'jpeg' }}"
+                                        url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
+                                        content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
                                       push:
                                         sound:
                                           name: "{{ iif(update, 'none', sound) }}"
