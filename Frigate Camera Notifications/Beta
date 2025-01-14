@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.2j)
+  name: Frigate Notifications (0.14.0.2k)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -58,7 +58,7 @@ blueprint:
       - IOS: Set notification volume.
       - IOS: Set Icons for Action Buttons.
       - Android: Sticky notification as per https://community.home-assistant.io/t/frigate-mobile-app-notifications/311091/1043
-      - Send the frigate review preview gif as an attachment to Android devices
+      - Send the frigate review preview GIF as an attachment
       - Subtitle support.
       - Video for iOS sent 5 seconds after the event ends.
       - Android Auto option.
@@ -234,7 +234,7 @@ blueprint:
         attachment:
           name: Attachment
           description: |
-            Choose which image to attach to the notification.
+            Choose which image or GIF to attach to the notification.
 
             Note: TVs will always get sent the snapshot if TV is true
           default: thumbnail.jpg
@@ -242,17 +242,19 @@ blueprint:
             select:
               options:
                 - label: Thumbnail
-                  value: thumbnail.jpg
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/thumbnail.jpg"
                 - label: Snapshot
-                  value: snapshot.jpg
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
                 - label: Snapshot with bounding box
-                  value: snapshot.jpg?bbox=1
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1"
                 - label: Snapshot cropped
-                  value: snapshot.jpg?crop=1
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?crop=1"
                 - label: Snapshot cropped with bounding box
-                  value: snapshot.jpg?bbox=1&crop=1
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1&crop=1"
                 - label: Review GIF
-                  value: review_preview.gif
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{review_id}}/review_preview.gif"
+                - label: Object 1 Event GIF
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/event_preview.gif"
               mode: dropdown
         video:
           name: Video (Optional)
@@ -263,10 +265,10 @@ blueprint:
               options:
                 - label: None
                   value: ""
-                - label: Review GIF (Android)
+                - label: Review GIF
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{review_id}}/review_preview.gif?format=ts"
-                - label: Review GIF (IOS)
-                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{review_id}}/event_preview.gif"
+                - label: Object 1 Event GIF
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/event_preview.gif?format=ts"
                 - label: Clip mp4
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
                 - label: Clip m3u8 (IOS)
@@ -671,6 +673,8 @@ blueprint:
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
                 - label: View Clip (IOS)
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/master.m3u8"
+                - label: View GIF
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{review_id}}/review_preview.gif"
                 - label: View Snapshot
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
                 - label: View Stream
@@ -1124,34 +1128,34 @@ actions:
                           message: |
                             DEBUG: 
                               Info:
-                                fps: {{fps}}, 
+                                FPS: {{fps}}, 
                                 Frigate Review id: {{review_id}}{{', Frigate client ID: ' + client_id if client_id else ''}}, 
                                 Frigate Detections: {{detections}}
                                 Objects: {{label}},
                                 Sub Labels: {{sub_labels | join(', ')}}
                               Config: 
-                                camera(formatted): {{camera}}({{camera_name}}), 
+                                Camera(formatted): {{camera}}({{camera_name}}), 
                                 Base URL: {{'REDACTED' if base_url and redacted else base_url}}, 
                                 critical: {{critical}}, 
-                                tts: {{tts}} 
-                                helper: {{tts_helper if tts else 'N/A'}},
-                                alert once: {{alert_once}}, 
+                                TTS: {{tts}} 
+                                TTS Helper: {{tts_helper if tts else 'N/A'}},
+                                Alert Once: {{alert_once}}, 
                                 Final_Update (delay): {{final_update}} ({{final_delay}}), 
-                                image: {{'REDACTED' if base_url and redacted else base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android 
+                                image: {{attachment if not redacted or not base_url else attachment |replace(base_url, 'REDACTED')}}, 
                                 Video: {{video if not redacted or not base_url else video |replace(base_url, 'REDACTED')}}, 
                                 Target: {{'group (input/formatted): ' + notify_group + '/' + notify_group_target + ', ' if notify_group else 'Mobile Device'}}, 
-                                cooldown: {{cooldown}}s, 
-                                initial delay: {{initial_delay}}s, 
-                                color: {{color}}, 
-                                sound: {{sound}}, 
-                                android_auto: {{android_auto}}, 
+                                Cooldown: {{cooldown}}s, 
+                                Initial Delay: {{initial_delay}}s, 
+                                Color: {{color}}, 
+                                Sound: {{sound}}, 
+                                Android Auto: {{android_auto}}, 
                                 Group: {{group}}, 
                                 Channel: {{channel}}, 
                                 Sticky: {{sticky}}, 
                                 Title: {{title}}, 
                                 Message: {{message}},
                                 Subtitle: {{subtitle}}, 
-                                tap_action: {{tap_action if not redacted or not base_url else tap_action |replace(base_url, 'REDACTED')}}, 
+                                Tap Action: {{tap_action if not redacted or not base_url else tap_action |replace(base_url, 'REDACTED')}}, 
                                 button 1 Text/URL/Icon: {{iif(button_1, button_1, 'unset')}} ({{url_1 if not redacted or not base_url else url_1 |replace(base_url, 'REDACTED')}}) {{icon_1}}, 
                                 button 2 Text/URL/Icon: {{iif(button_2, button_2, 'unset')}} ({{url_2 if not redacted or not base_url else url_2 |replace(base_url, 'REDACTED')}}) {{icon_2}}, 
                                 button 3 Text/URL/Icon: {{iif(button_3, button_3, 'unset')}} ({{url_3 if not redacted or not base_url else url_3 |replace(base_url, 'REDACTED')}}) {{icon_3}}, 
@@ -1230,7 +1234,7 @@ actions:
                                   color: "{{color}}"
                                   # Android Specific
                                   subject: "{{subtitle}}"
-                                  image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android"
+                                  image: "{{attachment}}"
                                   video: "{{video}}"
                                   clickAction: "{{tap_action}}"
                                   ttl: 0
@@ -1242,9 +1246,9 @@ actions:
                                   # iOS Specific
                                   subtitle: "{{subtitle}}"
                                   url: "{{tap_action}}"
-                                  attachment:
-                                    url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
-                                    content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
+                                  # attachment:
+                                  #   url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
+                                  #   content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
                                   push:
                                     sound:
                                       name: "{{sound}}"
@@ -1287,7 +1291,7 @@ actions:
                                     car_ui: "{{android_auto}}"
                                     # Android/Fire TV
                                     image:
-                                      url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
+                                      url: "{{attachment | replace(review_id,id) | replace('review_preview.gif','snapshot.jpg') | replace('event_preview.gif','snapshot.jpg')}}"
                                     fontsize: "{{tv_size}}"
                                     position: "{{tv_position}}"
                                     duration: "{{tv_duration}}"
@@ -1297,9 +1301,9 @@ actions:
                                     # iOS Specific
                                     subtitle: "{{subtitle}}"
                                     url: "{{tap_action}}"
-                                    attachment:
-                                      url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
-                                      content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
+                                    # attachment:
+                                    #   url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
+                                    #   content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
                                     push:
                                       sound:
                                         name: "{{sound}}"
@@ -1332,7 +1336,7 @@ actions:
                                 color: "{{color}}"
                                 # Android Specific
                                 subject: "{{subtitle}}"
-                                image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android"
+                                image: "{{attachment}}"
                                 video: "{{video}}"
                                 clickAction: "{{tap_action}}"
                                 ttl: 0
@@ -1350,9 +1354,9 @@ actions:
                                 interrupt: "{{tv_interrupt}}"
                                 # iOS Specific
                                 url: "{{tap_action}}"
-                                attachment:
-                                  url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
-                                  content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
+                                # attachment:
+                                #   url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
+                                #   content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
                                 push:
                                   sound:
                                     name: "{{sound}}"
@@ -1459,7 +1463,7 @@ actions:
 
                         state_true: "{{ not state_only or states(input_entity)|lower in states_filter }}"
 
-                        sub_label_before: "{{event['before']['data']['sub_labels'] | default([]) }}"
+                        sub_labels_before: "{{event['before']['data']['sub_labels'] | default([]) }}"
                         sub_labels: "{{ event['after']['data']['sub_labels'] | default([]) }}"
                         label: >-
                           {% set data = namespace(labels=[]) %}
@@ -1475,7 +1479,7 @@ actions:
                         critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
                         tts: !input tts
 
-                        sub_label_updated: "{{ update_sub_label and sub_label != sub_label_before }}"
+                        sub_label_updated: "{{ update_sub_label and sub_labels != sub_labels_before }}"
                         zone_updated: "{{ last_zones | select('in', zones) | list | length != entered_zones| select('in', zones) | list | length }}"
                         object_updated: "{{ trigger.payload_json['before']['data']['objects'] | select('in', labels) | list | length  != objects | select('in', labels) | list | length }}"
 
@@ -1503,26 +1507,25 @@ actions:
                                 name: Frigate Notification
                                 message: |
                                   DEBUG (in loop):
-                                    Send Notification: {{ loitering or (custom_filter and not home and zones_satisfied and state_true and ( presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_updated)) }}
+                                    Send Notification: {{ loitering or (custom_filter and not home and zones_satisfied and state_true and ( presence_changed or entered_new_zones or entered_new_filter_zones or sub_label_updated)) }}
                                     Info:
-                                      sublabel: {{sub_label}},
-                                      image: "{{'REDACTED' if base_url and redacted else base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                                      Sub Label: {{sub_label}},
+                                      Image: "{{attachment if not redacted or not base_url else attachment |replace(base_url, 'REDACTED')}}"
                                       Title: {{title}}
-                                      message: {{message}}
+                                      Message: {{message}}
                                       iOS sound: {{'Critical' if critical else 'disabled by alert once' if alert_once else 'enabled'}},
                                       Android Sound: {{'disabled by alert once' if alert_once else 'enabled'}},
                                       iOS url: {{'REDACTED' if base_url and redacted else base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}
-                                      video: "{{video if not redacted or not base_url else video |replace(base_url, 'REDACTED')}}"
+                                      Video: "{{video if not redacted or not base_url else video |replace(base_url, 'REDACTED')}}"
 
-                                      critical: {{critical}},
-                                      tts: {{tts}}
+                                      Critical: {{critical}},
+                                      TTS: {{tts}}
                                     Triggers:
                                       New Snapshot: False (not functional with reviews)
                                       Presence Changed: {{presence_changed}},
-                                      Stationary Moved: {{stationary_moved}},
                                       Object changed: {{object_updated}},
                                       Entered Zones Changed: {{'True' if last_zones != entered_zones and not zone_only or (zone_only and zones_satisfied and (entered_new_zones or entered_new_filter_zones)) else 'False' }},
-                                      sublabel changed: {{ sub_label != sub_label_before }}{{' - Disabled' if not update_sub_label}},
+                                      sublabel changed: {{ sub_labels != sub_labels_before }}{{' - Disabled' if not update_sub_label}},
                                     Conditions:
                                       Loitering: {{loitering}} - not in use currently
                                         or
@@ -1554,11 +1557,11 @@ actions:
                       choose:
                         - conditions:
                             - "{{ custom_action_auto_multi | length > 0 }}"
-                            - "{{ loitering or (not home and zones_satisfied and state_true and ( presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_updated)) }}"
+                            - "{{ loitering or (not home and zones_satisfied and state_true and ( presence_changed or entered_new_zones or entered_new_filter_zones or sub_label_updated)) }}"
                           sequence: !input "custom_action_auto_multi"
                     - alias: "Update Notification"
                       choose:
-                        - conditions: "{{ final_update or loitering or (custom_filter and not home and zones_satisfied and state_true and ( presence_changed or stationary_moved or entered_new_zones or entered_new_filter_zones or sub_label_updated)) }}"
+                        - conditions: "{{ final_update or loitering or (custom_filter and not home and zones_satisfied and state_true and ( presence_changed or entered_new_zones or entered_new_filter_zones or sub_label_updated)) }}"
                           sequence:
                             - choose:
                                 - conditions: "{{ telegram }}"
@@ -1615,7 +1618,7 @@ actions:
                                         color: "{{color}}"
                                         # Android Specific
                                         subject: "{{subtitle}}"
-                                        image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android"
+                                        image: "{{attachment}}"
                                         video: "{{video}}"
                                         clickAction: "{{tap_action}}"
                                         ttl: 0
@@ -1628,9 +1631,9 @@ actions:
                                         # iOS Specific
                                         subtitle: "{{subtitle}}"
                                         url: "{{tap_action}}"
-                                        attachment:
-                                          url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
-                                          content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
+                                        # attachment:
+                                        #   url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
+                                        #   content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
                                         push:
                                           sound:
                                             name: "{{ iif(update, 'none', sound) }}"
@@ -1674,7 +1677,7 @@ actions:
                                           car_ui: "{{android_auto}}"
                                           # Android/Fire TV
                                           image:
-                                            url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
+                                            url: "{{attachment | replace(review_id,id) | replace('review_preview.gif','snapshot.jpg') | replace('event_preview.gif','snapshot.jpg')}}"
                                           video: "{{video}}"
                                           fontsize: "{{tv_size}}"
                                           position: "{{tv_position}}"
@@ -1685,9 +1688,9 @@ actions:
                                           # iOS Specific
                                           subtitle: "{{subtitle}}"
                                           url: "{{tap_action}}"
-                                          attachment:
-                                            url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
-                                            content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
+                                          # attachment:
+                                          #   url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
+                                          #   content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
                                           push:
                                             sound:
                                               name: "{{ iif(update, 'none', sound) }}"
@@ -1720,7 +1723,7 @@ actions:
                                       color: "{{color}}"
                                       # Android Specific
                                       subject: "{{subtitle}}"
-                                      image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android"
+                                      image: "{{attachment}}"
                                       video: "{{video}}"
                                       clickAction: "{{tap_action}}"
                                       ttl: 0
@@ -1739,9 +1742,9 @@ actions:
                                       # iOS Specific
                                       subtitle: "{{subtitle}}"
                                       url: "{{tap_action}}"
-                                      attachment:
-                                        url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
-                                        content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
+                                      # attachment:
+                                      #   url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
+                                      #   content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
                                       push:
                                         sound:
                                           name: "{{ iif(update, 'none', sound) }}"
