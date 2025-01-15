@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.2k)
+  name: Frigate Notifications (0.14.0.2l)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -253,6 +253,7 @@ blueprint:
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1&crop=1"
                 - label: Review GIF
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{review_id}}/review_preview.gif"
+                  # this will show the GIF associated with the first object detected by frigate
                 - label: Object 1 Event GIF
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/event_preview.gif"
               mode: dropdown
@@ -266,12 +267,14 @@ blueprint:
                 - label: None
                   value: ""
                 - label: Review GIF
+                  # compared to attachments above, we add format=ts to allow HA to interpret the GIFs as videos, otherwise it fails. 
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{review_id}}/review_preview.gif?format=ts"
                 - label: Object 1 Event GIF
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/event_preview.gif?format=ts"
                 - label: Clip mp4
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
                 - label: Clip m3u8 (IOS)
+                # requires frigate integration 5.7.0+
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/master.m3u8"
         final_update:
           name: Final update (Optional)
@@ -281,7 +284,7 @@ blueprint:
             boolean:
         color:
           name: Notification Color - Android/TV only (Optional)
-          description: Set the color of the notification on your Android mobile device or TV.
+          description: Set the color of the notification on your Android mobile device or TV. TV only supports `grey`, `black`, `indigo`, `green`, `red`, `cyan`, `teal`, `amber` or `pink`."
           default: "#03a9f4"
           selector:
             select:
@@ -562,12 +565,21 @@ blueprint:
         cooldown:
           name: Cooldown (Optional)
           description: Delay before sending another notification for this camera after the last event.
-          default: 30
+          default: 0
           selector:
             number:
               max: 86400
               min: 0
               unit_of_measurement: seconds
+        timeout:
+          name: Timeout
+          description: Length of time the automation will wait for MQTT updates.
+          default: 2
+          selector:
+            number:
+              max: 90
+              min: 0
+              unit_of_measurement: minutes
         silence_timer:
           name: Silence New Notifications (Optional)
           description: |
@@ -939,6 +951,7 @@ variables:
   presence_entity: !input presence_filter
   disable_times: !input disable_times
   cooldown: !input cooldown
+  timeout: !input timeout
   loitering: false
   loiter_timer: !input loiter_timer
   initial_delay: !input initial_delay
@@ -968,20 +981,20 @@ variables:
   initial_home: "{{ presence_entity != '' and presence_entity|expand|selectattr('state','eq','home')|list|length != 0 }}"
   before_zones: "{{ trigger.payload_json['before']['data']['zones'] if trigger.id == 'frigate-event' }}"
   after_zones: "{{ trigger.payload_json['after']['data']['zones'] if trigger.id == 'frigate-event' }}"
-  zone_multi_filter: "{{zone_only and zone_multi and after_zones|length and zones and zones |reject('in', after_zones) |list |length == 0 }}"
+  # zone_multi_filter: "{{zone_only and zone_multi and after_zones|length and zones and zones |reject('in', after_zones) |list |length == 0 }}"
   # still need to add somemore conditions to these to catch all use cases, especially the zones.
-  zone_updated: >
-    {% if trigger.id == 'frigate-event' %} 
-      {{ before_zones | select('in', zones) | list | length != after_zones| select('in', zones) | list | length }}
-    {% endif %}
-  object_updated: >
-    {% if trigger.id == 'frigate-event' %}
-      {{ trigger.payload_json['before']['data']['objects'] | select('in', labels) | list | length  != objects | select('in', labels) | list | length }}
-    {% endif %}
-  sublabel_updated: >
-    {% if trigger.id == 'frigate-event' and 'person' in input_labels %}
-      {{trigger.payload_json['before']['data']['sub_labels'] != trigger.payload_json['after']['data']['sub_labels'] }}
-    {% endif %}
+  # zone_updated: >
+  #   {% if trigger.id == 'frigate-event' %} 
+  #     {{ before_zones | select('in', zones) | list | length != after_zones| select('in', zones) | list | length }}
+  #   {% endif %}
+  # object_updated: >
+  #   {% if trigger.id == 'frigate-event' %}
+  #     {{ trigger.payload_json['before']['data']['objects'] | select('in', labels) | list | length  != objects | select('in', labels) | list | length }}
+  #   {% endif %}
+  # sublabel_updated: >
+  #   {% if trigger.id == 'frigate-event' and 'person' in input_labels %}
+  #     {{trigger.payload_json['before']['data']['sub_labels'] != trigger.payload_json['after']['data']['sub_labels'] }}
+  #   {% endif %}
 conditions:
   condition: or
   conditions:
@@ -997,7 +1010,7 @@ conditions:
         - alias: "Notifications enabled for object"
           condition: template
           value_template: "{{ not labels|length or labels|select('in', objects)|list|length > 0 or ('person-verified' in objects and 'person' in labels) }}"
-        - "{{ not this.attributes.last_triggered or (now() - this.attributes.last_triggered).seconds > cooldown }}"
+        - "{{ not this.attributes.last_triggered or (now() - this.attributes.last_triggered).seconds >= cooldown }}"
         - "{{ not disable_times|length or not now().hour in disable_times|map('int')|list }}"
         - "{{ not zone_only or (not zone_multi and zones|select('in', after_zones)|list|length > 0) or (zone_multi and after_zones|length > 0 and zones |reject('in', after_zones) |list |length == 0) }}"
         - "{{ not initial_home }}"
@@ -1065,23 +1078,22 @@ actions:
                     {% endif %}
 
                   # Dynamic Variables per event
-                  entered_zones: "{{ event['after']['data']['zones'] | default([]) }}"
                   # after_zones: "{{ event['after']['data']['zones'] }}"
                   # zone_multi_filter: "{{zone_only and zone_multi and after_zones|length and zones and zones |reject('in', after_zones) |list |length == 0 }}"
 
                   # Zones Variables
                   # If no zones defined, or any zones have been entered
-                  any_zones_entered: "{{ zones | length == 0 or ((zones | select('in', entered_zones) | list | length) > 0) }}"
+                  any_zones_entered: "{{ zones | length == 0 or ((zones | select('in', after_zones) | list | length) > 0) }}"
                   zone_single_satisfied: "{{ any_zones_entered if zone_only else true}}"
 
                   # If no zones defined, or all zones have been entered
-                  all_zones_entered: "{{ zones | length == 0 or ((zones | reject('in', entered_zones) | list | length) == 0) }}"
+                  all_zones_entered: "{{ zones | length == 0 or ((zones | reject('in', after_zones) | list | length) == 0) }}"
                   zone_multi_satisfied: "{{ all_zones_entered if zone_only and zone_multi else true}}"
 
                   # Compare the joined strings for equality is the simplest solution, due to both variables being defined in band.
                   ordered_zones_match: >
                     {% set ns = namespace(intersection=[]) %}
-                    {% for item in entered_zones %}
+                    {% for item in after_zones %}
                         {% if item in zones %}
                             {% set ns.intersection = ns.intersection + [item] %}
                         {% endif %}
@@ -1114,8 +1126,8 @@ actions:
                   icon: !input icon
                   group: !input group
                   channel: !input channel
-                  attachment: !input attachment
                   video: !input video
+                  attachment: !input attachment
                   custom_action_auto: !input custom_action_auto
               - alias: "Debug: write to Log"
                 choose:
@@ -1135,7 +1147,9 @@ actions:
                                 Sub Labels: {{sub_labels | join(', ')}}
                               Config: 
                                 Camera(formatted): {{camera}}({{camera_name}}), 
-                                Base URL: {{'REDACTED' if base_url and redacted else base_url}}, 
+                                Base URL: {{'REDACTED' if base_url and redacted else base_url}},
+                                tag: {{ id }}, 
+                                group: {{ group }}, 
                                 critical: {{critical}}, 
                                 TTS: {{tts}} 
                                 TTS Helper: {{tts_helper if tts else 'N/A'}},
@@ -1148,9 +1162,11 @@ actions:
                                 Initial Delay: {{initial_delay}}s, 
                                 Color: {{color}}, 
                                 Sound: {{sound}}, 
+                                Volume: {{ iif(sound == 'none', 0, volume) }}
+                                IOS Live entity: "{{ios_live_view}}"
                                 Android Auto: {{android_auto}}, 
                                 Group: {{group}}, 
-                                Channel: {{channel}}, 
+                                Channel: {{channel}} {{' - overridden by alarm_stream' if critical}}, 
                                 Sticky: {{sticky}}, 
                                 Title: {{title}}, 
                                 Message: {{message}},
@@ -1174,7 +1190,7 @@ actions:
                                   Multi-Zone toggle on: {{zone_multi}}, 
                                   Required zones: {{input_zones}}, 
                                   Zone Order toggle on: {{zone_order_enforced}}
-                                  Entered Zones: {{entered_zones}},
+                                  Entered Zones: {{after_zones}},
                                   TEST: {{'PASS' if zones_satisfied else 'FAIL' }} {{'(Multi)' if zone_only and zone_multi}} {{'(Order-Enforced)' if zone_only and zone_multi and zone_order_enforced}}, 
                                 Required objects TEST: 
                                   Input: {{input_labels}}, 
@@ -1220,7 +1236,7 @@ actions:
                                 data:
                                   target: "{{telegram_chat_id}}"
                                   caption: "{{message}}"
-                                  url: "{{telegram_base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                                  url: "{{attachment | replace(base_url,telegram_base_url) }}"
                           - conditions: "{{ not notify_group_target }}"
                             sequence:
                               - device_id: !input notify_device
@@ -1420,30 +1436,38 @@ actions:
                           payload: "{{ review_id }}"
                           value_template: "{{ value_json['after']['id'] }}"
                       timeout:
-                        minutes: 2
+                        minutes: "{{timeout}}"
                       continue_on_timeout: false
                     - variables:
                         event: "{{ wait.trigger.payload_json }}"
+
+                        old_objects: "{{objects}}"
+                        last_zones: "{{after_zones}}"
+                        # Sometimes mqtt messages are missed so we keep the previous iteration objects and zones to compare against the new ones, 
+                        # rather than comparing the new before and after which may match despite a change between mqtt messages
+
+                        objects: "{{ event['after']['data']['objects'] }}"
                         #loitering: "{{ loiter_timer and event['before']['motionless_count']/fps/60 < loiter_timer and event['after']['motionless_count']/fps/60 >= loiter_timer }}"
                         home: "{{presence_entity |reject('in', '') |select('is_state', 'home') |list |length != 0 }}"
                         #new_snapshot: "{{ update_thumbnail and event['before']['snapshot']['frame_time'] != event['after']['snapshot']['frame_time'] }}"
                         presence_changed: "{{ presence_entity |reject('in', '') |expand |map(attribute='last_changed') |list |select('gt', as_datetime(event['before']['start_time'])) |list |length != 0}}"
 
                         # Zones Variables
-                        last_zones: "{{ event['before']['data']['zones'] | default([])}}"
-                        entered_zones: "{{ event['after']['data']['zones'] | default([]) }}"
+                        
+                        before_zones: "{{ event['before']['data']['zones'] | default([]) }}"
+                        after_zones: "{{ event['after']['data']['zones'] | default([]) }}"
                         # If no zones defined, or any zones have been entered
-                        any_zones_entered: "{{ zones | length == 0 or ((zones | select('in', entered_zones) | list | length) > 0) }}"
+                        any_zones_entered: "{{ zones | length == 0 or ((zones | select('in', after_zones) | list | length) > 0) }}"
                         zone_single_satisfied: "{{ any_zones_entered if zone_only else true}}"
 
                         # If no zones defined, or all zones have been entered
-                        all_zones_entered: "{{ zones | length == 0 or ((zones | reject('in', entered_zones) | list | length) == 0) }}"
+                        all_zones_entered: "{{ zones | length == 0 or ((zones | reject('in', after_zones) | list | length) == 0) }}"
                         zone_multi_satisfied: "{{ all_zones_entered if zone_only and zone_multi else true}}"
 
                         # Compare the joined strings for equality is the simplest solution, due to both variables being defined in band.
                         ordered_zones_match: >
                           {% set ns = namespace(intersection=[]) %}
-                          {% for item in entered_zones %}
+                          {% for item in after_zones %}
                               {% if item in zones %}
                                   {% set ns.intersection = ns.intersection + [item] %}
                               {% endif %}
@@ -1454,34 +1478,57 @@ actions:
 
                         zones_satisfied: "{{zone_single_satisfied and zone_multi_satisfied and zone_order_satisfied}}"
 
-                        new_entered_zones: "{{ zones | select('in', entered_zones) | list }}"
+                        new_entered_zones: "{{ zones | select('in', after_zones) | list }}"
                         last_entered_zones: "{{ zones | select('in', last_zones) | list }}"
-                        entered_new_zones: "{{ zone_only and (entered_zones | length > last_zones | length) }}"
+                        entered_new_zones: "{{ zone_only and (after_zones | length > last_zones | length) }}"
                         entered_new_filter_zones: "{{ zone_only and zones | length > 0 and (new_entered_zones | length > last_entered_zones | length) }}"
+                        
 
                         # stationary_moved: "{{ event['after']['position_changes'] > event['before']['position_changes'] }}"
 
                         state_true: "{{ not state_only or states(input_entity)|lower in states_filter }}"
 
-                        sub_labels_before: "{{event['before']['data']['sub_labels'] | default([]) }}"
+                        before_sub_labels: "{{ sub_labels }}"
                         sub_labels: "{{ event['after']['data']['sub_labels'] | default([]) }}"
+                        # assess the sub labels from the mqtt message.
+                        # If the user has configured specific objects we eiminate objects not in that list
+                        # Otherwise we loop through all objects and replace any verified objects with the sub label
                         label: >-
-                          {% set data = namespace(labels=[]) %}
-                          {% for obj in objects %}
-                            {% if "-verified" in obj %}
+                          {% if update_sub_label %}
+                            {% set data = namespace(labels=[]) %} 
+                            {% if labels|length %}
+                              {% for obj in objects|select('in', labels) %}
+                                {% if "-verified" in obj %}
+                                {% else %}
+                                  {% set data.labels = data.labels + [obj] %}
+                                {% endif %}
+                              {% endfor %} {% set data.labels = data.labels + sub_labels %} 
+                              {{ data.labels | unique | list | sort | join(", ") | title }}
                             {% else %}
-                              {% set data.labels = data.labels + [obj] %}
+                              {% for obj in objects %}
+                                {% if "-verified" in obj %}
+                                {% else %}
+                                  {% set data.labels = data.labels + [obj] %}
+                                {% endif %}
+                              {% endfor %} {% set data.labels = data.labels + sub_labels %} 
+                              {{ data.labels | unique | list | sort | join(", ") | title }}
                             {% endif %}
-                          {% endfor %} {% set data.labels = data.labels + sub_labels %}
-                          {{ data.labels | unique | list | sort | join(", ") | title }}
+                          {% else %}
+                            {{objects}}
+                          {% endif %}
+                        # import the title and message again so any sublabel, object or zone changes are captured. 
+                        title: !input title
+                        message: !input message
+                        subtitle: !input subtitle
 
                         critical_input: !input critical
                         critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
                         tts: !input tts
 
-                        sub_label_updated: "{{ update_sub_label and sub_labels != sub_labels_before }}"
-                        zone_updated: "{{ last_zones | select('in', zones) | list | length != entered_zones| select('in', zones) | list | length }}"
-                        object_updated: "{{ trigger.payload_json['before']['data']['objects'] | select('in', labels) | list | length  != objects | select('in', labels) | list | length }}"
+                        sub_label_updated: "{{ update_sub_label and sub_labels != before_sub_labels }}"
+                        # If we are filtering based on zones, and zone conditions are met and there is a new zone added.
+                        zone_updated: "{{ entered_new_filter_zones and zones_satisfied if zone_only else entered_new_zones}}"
+                        object_updated: "{{ old_objects | select('in', labels) | list | length  != objects | select('in', labels) | list | length }}"
 
                         # update is used to determine if we should play a sound. if it returns true, we should be silent.
                         update: "{{ alert_once or (not presence_changed and not zone_updated and not object_updated and not sub_label_updated) }}"
@@ -1507,9 +1554,9 @@ actions:
                                 name: Frigate Notification
                                 message: |
                                   DEBUG (in loop):
-                                    Send Notification: {{ loitering or (custom_filter and not home and zones_satisfied and state_true and ( presence_changed or entered_new_zones or entered_new_filter_zones or sub_label_updated)) }}
+                                    Send Notification: {{ loitering or (custom_filter and not home and zones_satisfied and state_true and ( presence_changed or zone_updated or object_updated or sub_label_updated)) }}
                                     Info:
-                                      Sub Label: {{sub_label}},
+                                      Sub Label: {{sub_labels}},
                                       Image: "{{attachment if not redacted or not base_url else attachment |replace(base_url, 'REDACTED')}}"
                                       Title: {{title}}
                                       Message: {{message}}
@@ -1524,8 +1571,8 @@ actions:
                                       New Snapshot: False (not functional with reviews)
                                       Presence Changed: {{presence_changed}},
                                       Object changed: {{object_updated}},
-                                      Entered Zones Changed: {{'True' if last_zones != entered_zones and not zone_only or (zone_only and zones_satisfied and (entered_new_zones or entered_new_filter_zones)) else 'False' }},
-                                      sublabel changed: {{ sub_labels != sub_labels_before }}{{' - Disabled' if not update_sub_label}},
+                                      Zones Changed: {{'True' if entered_new_filter_zones else 'True but not relevant zones' if entered_new_zones else 'False'}},
+                                      Sublabel changed: {{ sub_label_updated }}{{' - Disabled' if not update_sub_label}},
                                     Conditions:
                                       Loitering: {{loitering}} - not in use currently
                                         or
@@ -1536,7 +1583,7 @@ actions:
                                           Required zones: {{input_zones}},
                                           Zone Order toggle on: {{zone_order_enforced}}
                                           Last Zones: {{last_zones}},
-                                          Entered Zones: {{ entered_zones | list | length }} - {{entered_zones}},
+                                          New Zones: {{ after_zones | list | length }} - {{after_zones}},
                                           TEST: {{'PASS' if zones_satisfied else 'FAIL' }} {{'(Multi)' if zone_only and zone_multi}} {{'(Order-Enforced)' if zone_only and zone_multi and zone_order_enforced}},
                                         Object Filter:
                                           Input: {{input_labels}},
@@ -1598,7 +1645,7 @@ actions:
                                           data:
                                             target: "{{telegram_chat_id}}"
                                             caption: "{{message}}"
-                                            url: "{{telegram_base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
+                                            url: "{{attachment | replace(base_url,telegram_base_url) }}"
                                             inline_keyboard:
                                               - [
                                                   ["{{button_1}}", "{{url_1}}"],
