@@ -1319,7 +1319,7 @@ actions:
                                     url: "{{tap_action}}"
                                     attachment:
                                       url: "{{ video if video|length > 0 else attachment }}"
-                                      content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else '' }}"
+                                      # content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else '' }}"
                                     push:
                                       sound:
                                         name: "{{sound}}"
@@ -1372,7 +1372,7 @@ actions:
                                 url: "{{tap_action}}"
                                 attachment:
                                   url: "{{ video if video|length > 0 else attachment }}"
-                                  content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else '' }}"
+                                  # content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else '' }}"
                                 push:
                                   sound:
                                     name: "{{sound}}"
@@ -1680,7 +1680,7 @@ actions:
                                         url: "{{tap_action}}"
                                         attachment:
                                           url: "{{ video if video|length > 0 else attachment }}"
-                                          content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else '' }}"
+                                          # content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else '' }}"
                                         push:
                                           sound:
                                             name: "{{ iif(update, 'none', sound) }}"
@@ -1737,7 +1737,7 @@ actions:
                                           url: "{{tap_action}}"
                                           attachment:
                                             url: "{{ video if video|length > 0 else attachment }}"
-                                            content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else '' }}"
+                                            # content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else '' }}"
                                           push:
                                             sound:
                                               name: "{{ iif(update, 'none', sound) }}"
@@ -1791,7 +1791,7 @@ actions:
                                       url: "{{tap_action}}"
                                       attachment:
                                         url: "{{ video if video|length > 0 else attachment }}"
-                                        content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else '' }}"
+                                        # content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else '' }}"
                                       push:
                                         sound:
                                           name: "{{ iif(update, 'none', sound) }}"
