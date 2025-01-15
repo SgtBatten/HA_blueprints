@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.2l)
+  name: Frigate Notifications (0.14.0.2m)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -1264,7 +1264,7 @@ actions:
                                   url: "{{tap_action}}"
                                   attachment:
                                     url: "{{ video if video|length > 0 else attachment }}"
-                                    content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else '' }}"
+                                    content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
                                   push:
                                     sound:
                                       name: "{{sound}}"
@@ -1319,7 +1319,7 @@ actions:
                                     url: "{{tap_action}}"
                                     attachment:
                                       url: "{{ video if video|length > 0 else attachment }}"
-                                      # content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else '' }}"
+                                      content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
                                     push:
                                       sound:
                                         name: "{{sound}}"
@@ -1372,7 +1372,7 @@ actions:
                                 url: "{{tap_action}}"
                                 attachment:
                                   url: "{{ video if video|length > 0 else attachment }}"
-                                  # content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else '' }}"
+                                  content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
                                 push:
                                   sound:
                                     name: "{{sound}}"
@@ -1562,7 +1562,7 @@ actions:
                                       Message: {{message}}
                                       iOS sound: {{'Critical' if critical else 'disabled by alert once' if alert_once else 'enabled'}},
                                       Android Sound: {{'disabled by alert once' if alert_once else 'enabled'}},
-                                      iOS url: {{'REDACTED' if base_url and redacted else base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/clip.mp4' if video|length>0 and wait.trigger.payload_json['type'] == 'end' else attachment }}
+                                      iOS url: "{{ video if video|length > 0 else attachment }}"
                                       Video: "{{video if not redacted or not base_url else video |replace(base_url, 'REDACTED')}}"
 
                                       Critical: {{critical}},
@@ -1680,7 +1680,7 @@ actions:
                                         url: "{{tap_action}}"
                                         attachment:
                                           url: "{{ video if video|length > 0 else attachment }}"
-                                          # content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else '' }}"
+                                          content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
                                         push:
                                           sound:
                                             name: "{{ iif(update, 'none', sound) }}"
@@ -1737,7 +1737,7 @@ actions:
                                           url: "{{tap_action}}"
                                           attachment:
                                             url: "{{ video if video|length > 0 else attachment }}"
-                                            # content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else '' }}"
+                                            content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
                                           push:
                                             sound:
                                               name: "{{ iif(update, 'none', sound) }}"
@@ -1791,7 +1791,7 @@ actions:
                                       url: "{{tap_action}}"
                                       attachment:
                                         url: "{{ video if video|length > 0 else attachment }}"
-                                        # content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else '' }}"
+                                        content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
                                       push:
                                         sound:
                                           name: "{{ iif(update, 'none', sound) }}"
