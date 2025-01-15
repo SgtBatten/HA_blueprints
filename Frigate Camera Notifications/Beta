@@ -1262,9 +1262,9 @@ actions:
                                   # iOS Specific
                                   subtitle: "{{subtitle}}"
                                   url: "{{tap_action}}"
-                                  # attachment:
-                                  #   url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
-                                  #   content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
+                                  attachment:
+                                    url: "{{ video if video|length > 0 else attachment }}"
+                                    content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else '' }}"
                                   push:
                                     sound:
                                       name: "{{sound}}"
@@ -1317,9 +1317,9 @@ actions:
                                     # iOS Specific
                                     subtitle: "{{subtitle}}"
                                     url: "{{tap_action}}"
-                                    # attachment:
-                                    #   url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
-                                    #   content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
+                                    attachment:
+                                      url: "{{ video if video|length > 0 else attachment }}"
+                                      content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else '' }}"
                                     push:
                                       sound:
                                         name: "{{sound}}"
@@ -1370,9 +1370,9 @@ actions:
                                 interrupt: "{{tv_interrupt}}"
                                 # iOS Specific
                                 url: "{{tap_action}}"
-                                # attachment:
-                                #   url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
-                                #   content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
+                                attachment:
+                                  url: "{{ video if video|length > 0 else attachment }}"
+                                  content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else '' }}"
                                 push:
                                   sound:
                                     name: "{{sound}}"
@@ -1480,7 +1480,7 @@ actions:
 
                         new_entered_zones: "{{ zones | select('in', after_zones) | list }}"
                         last_entered_zones: "{{ zones | select('in', last_zones) | list }}"
-                        entered_new_zones: "{{ zone_only and (after_zones | length > last_zones | length) }}"
+                        entered_new_zones: "{{ (after_zones | length > last_zones | length) }}"
                         entered_new_filter_zones: "{{ zone_only and zones | length > 0 and (new_entered_zones | length > last_entered_zones | length) }}"
                         
 
@@ -1527,7 +1527,7 @@ actions:
 
                         sub_label_updated: "{{ update_sub_label and sub_labels != before_sub_labels }}"
                         # If we are filtering based on zones, and zone conditions are met and there is a new zone added.
-                        zone_updated: "{{ entered_new_filter_zones and zones_satisfied if zone_only else entered_new_zones}}"
+                        zone_updated: "{{ (entered_new_filter_zones and zones_satisfied) or entered_new_zones}}"
                         object_updated: "{{ old_objects | select('in', labels) | list | length  != objects | select('in', labels) | list | length }}"
 
                         # update is used to determine if we should play a sound. if it returns true, we should be silent.
@@ -1571,7 +1571,7 @@ actions:
                                       New Snapshot: False (not functional with reviews)
                                       Presence Changed: {{presence_changed}},
                                       Object changed: {{object_updated}},
-                                      Zones Changed: {{'True' if entered_new_filter_zones else 'True but not relevant zones' if entered_new_zones else 'False'}},
+                                      Zones Changed: {{'True' if entered_new_filter_zones and zones_satisfied else 'True - zone filter disabled' if entered_new_zones and not zone_only else 'True - Filter Criteria not met' if entered_new_zones else 'False'}},
                                       Sublabel changed: {{ sub_label_updated }}{{' - Disabled' if not update_sub_label}},
                                     Conditions:
                                       Loitering: {{loitering}} - not in use currently
@@ -1582,7 +1582,7 @@ actions:
                                           Multi-Zone toggle on: {{zone_multi}},
                                           Required zones: {{input_zones}},
                                           Zone Order toggle on: {{zone_order_enforced}}
-                                          Last Zones: {{last_zones}},
+                                          Last Zones: {{ last_zones | list | length }} - {{last_zones}},
                                           New Zones: {{ after_zones | list | length }} - {{after_zones}},
                                           TEST: {{'PASS' if zones_satisfied else 'FAIL' }} {{'(Multi)' if zone_only and zone_multi}} {{'(Order-Enforced)' if zone_only and zone_multi and zone_order_enforced}},
                                         Object Filter:
@@ -1678,9 +1678,9 @@ actions:
                                         # iOS Specific
                                         subtitle: "{{subtitle}}"
                                         url: "{{tap_action}}"
-                                        # attachment:
-                                        #   url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
-                                        #   content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
+                                        attachment:
+                                          url: "{{ video if video|length > 0 else attachment }}"
+                                          content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else '' }}"
                                         push:
                                           sound:
                                             name: "{{ iif(update, 'none', sound) }}"
@@ -1735,9 +1735,9 @@ actions:
                                           # iOS Specific
                                           subtitle: "{{subtitle}}"
                                           url: "{{tap_action}}"
-                                          # attachment:
-                                          #   url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
-                                          #   content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
+                                          attachment:
+                                            url: "{{ video if video|length > 0 else attachment }}"
+                                            content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else '' }}"
                                           push:
                                             sound:
                                               name: "{{ iif(update, 'none', sound) }}"
@@ -1789,9 +1789,9 @@ actions:
                                       # iOS Specific
                                       subtitle: "{{subtitle}}"
                                       url: "{{tap_action}}"
-                                      # attachment:
-                                      #   url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera + '/master.m3u8' if 'm3u8' in video else camera + '/clip.mp4' if 'mp4' in video else attachment }}"
-                                      #   content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else 'jpeg' }}"
+                                      attachment:
+                                        url: "{{ video if video|length > 0 else attachment }}"
+                                        content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else mp4 if 'mp4' in video else '' }}"
                                       push:
                                         sound:
                                           name: "{{ iif(update, 'none', sound) }}"
