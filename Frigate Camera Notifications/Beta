@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.2j)
+  name: Frigate Notifications (0.14.0.2k)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -241,16 +241,17 @@ blueprint:
           selector:
             select:
               options:
+                # format=android converts it to a 2:1 ratio for mobile display. 
                 - label: Thumbnail
-                  value: thumbnail.jpg
+                  value: thumbnail.jpg?format=android
                 - label: Snapshot
-                  value: snapshot.jpg
+                  value: snapshot.jpg?format=android
                 - label: Snapshot with bounding box
-                  value: snapshot.jpg?bbox=1
+                  value: snapshot.jpg?bbox=1&format=android
                 - label: Snapshot cropped
-                  value: snapshot.jpg?crop=1
+                  value: snapshot.jpg?crop=1&format=android
                 - label: Snapshot cropped with bounding box
-                  value: snapshot.jpg?bbox=1&crop=1
+                  value: snapshot.jpg?bbox=1&crop=1&format=android
                 - label: Review GIF
                   value: review_preview.gif
               mode: dropdown
@@ -266,7 +267,7 @@ blueprint:
                 - label: Review GIF (Android)
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{review_id}}/review_preview.gif?format=ts"
                 - label: Review GIF (IOS)
-                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{review_id}}/event_preview.gif"
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/event_preview.gif?format=ts"
                 - label: Clip mp4
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
                 - label: Clip m3u8 (IOS)
@@ -1137,7 +1138,7 @@ actions:
                                 helper: {{tts_helper if tts else 'N/A'}},
                                 alert once: {{alert_once}}, 
                                 Final_Update (delay): {{final_update}} ({{final_delay}}), 
-                                image: {{'REDACTED' if base_url and redacted else base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android 
+                                image: {{'REDACTED' if base_url and redacted else base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}} 
                                 Video: {{video if not redacted or not base_url else video |replace(base_url, 'REDACTED')}}, 
                                 Target: {{'group (input/formatted): ' + notify_group + '/' + notify_group_target + ', ' if notify_group else 'Mobile Device'}}, 
                                 cooldown: {{cooldown}}s, 
@@ -1230,7 +1231,7 @@ actions:
                                   color: "{{color}}"
                                   # Android Specific
                                   subject: "{{subtitle}}"
-                                  image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android"
+                                  image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                                   video: "{{video}}"
                                   clickAction: "{{tap_action}}"
                                   ttl: 0
@@ -1332,7 +1333,7 @@ actions:
                                 color: "{{color}}"
                                 # Android Specific
                                 subject: "{{subtitle}}"
-                                image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android"
+                                image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                                 video: "{{video}}"
                                 clickAction: "{{tap_action}}"
                                 ttl: 0
@@ -1459,7 +1460,7 @@ actions:
 
                         state_true: "{{ not state_only or states(input_entity)|lower in states_filter }}"
 
-                        sub_label_before: "{{event['before']['data']['sub_labels'] | default([]) }}"
+                        sub_labels_before: "{{event['before']['data']['sub_labels'] | default([]) }}"
                         sub_labels: "{{ event['after']['data']['sub_labels'] | default([]) }}"
                         label: >-
                           {% set data = namespace(labels=[]) %}
@@ -1475,7 +1476,7 @@ actions:
                         critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
                         tts: !input tts
 
-                        sub_label_updated: "{{ update_sub_label and sub_label != sub_label_before }}"
+                        sub_label_updated: "{{ update_sub_label and sub_labels != sub_labels_before }}"
                         zone_updated: "{{ last_zones | select('in', zones) | list | length != entered_zones| select('in', zones) | list | length }}"
                         object_updated: "{{ trigger.payload_json['before']['data']['objects'] | select('in', labels) | list | length  != objects | select('in', labels) | list | length }}"
 
@@ -1522,7 +1523,7 @@ actions:
                                       Stationary Moved: {{stationary_moved}},
                                       Object changed: {{object_updated}},
                                       Entered Zones Changed: {{'True' if last_zones != entered_zones and not zone_only or (zone_only and zones_satisfied and (entered_new_zones or entered_new_filter_zones)) else 'False' }},
-                                      sublabel changed: {{ sub_label != sub_label_before }}{{' - Disabled' if not update_sub_label}},
+                                      sublabel changed: {{ sub_labels != sub_labels_before }}{{' - Disabled' if not update_sub_label}},
                                     Conditions:
                                       Loitering: {{loitering}} - not in use currently
                                         or
@@ -1615,7 +1616,7 @@ actions:
                                         color: "{{color}}"
                                         # Android Specific
                                         subject: "{{subtitle}}"
-                                        image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android"
+                                        image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                                         video: "{{video}}"
                                         clickAction: "{{tap_action}}"
                                         ttl: 0
@@ -1720,7 +1721,7 @@ actions:
                                       color: "{{color}}"
                                       # Android Specific
                                       subject: "{{subtitle}}"
-                                      image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}{{'&' if '?' in attachment else '?'}}format=android"
+                                      image: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{attachment}}"
                                       video: "{{video}}"
                                       clickAction: "{{tap_action}}"
                                       ttl: 0
