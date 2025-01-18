@@ -241,6 +241,7 @@ blueprint:
           selector:
             select:
               options:
+                # format=android converts it to a 2:1 ratio for mobile display.
                 - label: Thumbnail
                   value: thumbnail.jpg?format=android
                 - label: Snapshot
