@@ -1482,7 +1482,7 @@ actions:
                           {{ data.labels | unique | list | sort | join(", ") | title }}
                         {% endif %}
                       {% else %}
-                        {{objects}}
+                        {{objects | list | join(', ') | title}}
                       {% endif %}
                     # import the title and message again so any sublabel, object or zone changes are captured.
                     title: !input title
