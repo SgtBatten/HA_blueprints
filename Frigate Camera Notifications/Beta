@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.2r)
+  name: Frigate Notifications (0.14.0.2s)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -1027,7 +1027,7 @@ actions:
                     {{ data.labels | unique | list | sort | join(", ") | title }}
                   {% endif %}
                 {% else %}
-                  {{objects}}
+                  {{ objects | list | join(", ") | title }}
                 {% endif %}
 
               # Dynamic Variables per event
