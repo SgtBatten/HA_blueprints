@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.2p)
+  name: Frigate Notifications (0.14.0.2q)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -895,7 +895,6 @@ variables:
   update_sub_label: !input update_sub_label
   input_client_id: !input client_id
   client_id: "{{input_client_id if not input_client_id else '/' + input_client_id if '/' not in input_client_id else input_client_id }}"
-  attachment: !input attachment
   alert_once: !input alert_once
   final_update: !input final_update
   ios_live_view: !input ios_live_view
@@ -1079,6 +1078,7 @@ actions:
               icon: !input icon
               group: !input group
               channel: !input channel
+              attachment: !input attachment
               video: !input video
               custom_action_auto: !input custom_action_auto
           - alias: "Debug: write to Log"
