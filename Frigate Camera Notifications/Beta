@@ -960,7 +960,7 @@ conditions:
         - alias: Camera Match
           condition: template
           value_template: "{{ input_camera_name|select('equalto', camera)|list|length>0 }}"
-        - alias: "Notifications enabled for object"
+        - alias: "Object Filter"
           condition: template
           value_template: "{{ not labels|length or labels|select('in', objects)|list|length > 0 or ('person-verified' in objects and 'person' in labels) }}"
         - alias: Master Condition
