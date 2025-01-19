@@ -6,9 +6,7 @@ blueprint:
   description: |
     ## Frigate Notifications
 
-    This blueprint will send a notification to your device when a Frigate event for the selected camera is fired. The notification will initially include the thumbnail of the detection, but include an actionable notification allowing you to view the clip and snapshot.
-
-    With this blueprint, you may send the notification to multiple devices by leaving "Device" blank and instead use a [notification group][1].
+    A highly customisable Notification template for Frigate Camera Notifications.
 
     ### Software Version Requirements
       - Minimum Home Assistant Version: 2024.10
@@ -18,56 +16,17 @@ blueprint:
       - An MQTT broker connected to Home Assistant and Frigate.
       - Minimum iOS Version: 15.0
 
-    ### Required Configuration Options:
+    ### Minimum Configuration Options:
       - Frigate Cameras
       - Mobile Device (Running HA Companion App)
 
     ### Features:
       - Easily select the camera entities or mobile device using a drop-down menu.
       - Configure multiple cameras in one automation. 
-      - Send notifications to an Android or iOS mobile device or a TV.
-        - or a group containing any combination of the above.
-        - for TV Alerts, you need to install and configure https://www.home-assistant.io/integrations/nfandroidtv/
-      - Configure the title and message of the notification. 
-      - Integrates with Double Take to replace object labels with names if a face is matched.
-      - Dynamically handle things like object type, zones, and face detection from doubletake.
-      - Automatically handle some common errors like case matching and bad URLs etc.
-      - Optionally send the notification as a critical alert. (Critical)
-      - Optionally limit playing audio for secondary notification updates, and on iOS, customise the sound. (Alert Once)
-      - Choose whether or not to update the notification with new thumbnails as they become available.
-      - Customise the notification colour and icon.
-      - Configure custom notification channels on Android.
-      - Specify which [zones][2] to be notified about. (Zone Filter)
-        - Choose between enforcing all required zones simultaneously or any one zone.
-        - Choose to enforce zones in a specific order (e.g arriving but not leaving)
-      - Specify what type of [objects][3] to be notified about. (Object Filter)
-      - Disable notifications if a presence entity or group is "home". (Presence Filter)
-      - Limit notifications based on the state of another entity. (State Filter)
-      - Limit notifications to certain hours of the day. (Time Filter)
-      - Custom Template Filters.
-      - Configure a cooldown for the camera to reduce the number of notifications when back-to-back events occur.
-      - Silence future notifications for a defined amount of time through actionable notifications. This is helpful in situations where you know you will be triggering detections for an extended period of time. i.e. kids playing outside.
-      - Configure what happens when you tap the notification. (Tap Action)
-      - Configure 3 action buttons to open almost anything. (defaults are: View Clip, View Snapshot, and Silence New Notifications)
-      - Configure the size, transparency, position, and duration of TV notifications.
-      - Debug option to help with troubleshooting.
-      - Option to redact Base URL from the debug output. 
-      - Support for multiple Frigate instances by specifying the ClientID and MQTT topic.
-      - Optional delay to the initial notification to see if it resolves the no attached image issue.
-      - IOS: Live view with customisable entity.
-      - IOS: Set notification volume.
-      - IOS: Set Icons for Action Buttons.
-      - Android: Sticky notification as per https://community.home-assistant.io/t/frigate-mobile-app-notifications/311091/1043
-      - Send the frigate review preview GIF as an attachment
-      - Subtitle support.
-      - Video for iOS sent 5 seconds after the event ends.
-      - Android Auto option.
-      - Customise group on mobile devices.
-      - Bounding box and crop options for attachment.
 
-    [1]: https://companion.home-assistant.io/docs/notifications/notifications-basic#sending-notifications-to-multiple-devices
-    [2]: https://blakeblackshear.github.io/frigate/configuration/cameras#zones
-    [3]: https://blakeblackshear.github.io/frigate/configuration/objects
+      For the full features list visit the [GitHub Repository][1]
+
+    [1]: https://github.com/SgtBatten/HA_blueprints/blob/main/Frigate_Camera_Notifications
 
     ## Support
     Go to https://github.com/SgtBatten/HA_blueprints to report bugs, request new features, or get support with your configuration.
