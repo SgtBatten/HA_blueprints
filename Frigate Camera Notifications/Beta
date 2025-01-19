@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.2q)
+  name: Frigate Notifications (0.14.0.2r)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -941,6 +941,7 @@ variables:
   # Dynamic Variables per event
   severity_satisfied: "{{input_severity|select('in', severity)|list|length > 0 if trigger.id == 'frigate-event'}}"
   objects: "{{ trigger.payload_json['after']['data']['objects'] if trigger.id == 'frigate-event' }}"
+  objects_satisfied: "{{ not labels|length or labels|select('in', objects)|list|length > 0 or ('person-verified' in objects and 'person' in labels) }}"
   initial_home: "{{ presence_entity != '' and presence_entity|expand|selectattr('state','eq','home')|list|length != 0 }}"
   state_satisfied: "{{ not state_only or states(input_entity)|lower in states_filter }}"
   before_zones: "{{ trigger.payload_json['before']['data']['zones'] if trigger.id == 'frigate-event' }}"
@@ -962,7 +963,7 @@ conditions:
           value_template: "{{ input_camera_name|select('equalto', camera)|list|length>0 }}"
         - alias: "Object Filter"
           condition: template
-          value_template: "{{ not labels|length or labels|select('in', objects)|list|length > 0 or ('person-verified' in objects and 'person' in labels) }}"
+          value_template: "{{ objects_satisfied }}"
         - alias: Master Condition
           condition: !input master_condition
         - alias: Cooldown
@@ -1147,9 +1148,9 @@ actions:
                               Zone Order toggle on: {{zone_order_enforced}}
                               Entered Zones: {{after_zones}},
                               TEST: {{'PASS' if zones_satisfied else 'FAIL' }} {{'(Multi)' if zone_only and zone_multi}} {{'(Order-Enforced)' if zone_only and zone_multi and zone_order_enforced}}, 
-                            Required objects TEST: 
+                            Required objects: 
                               Input: {{input_labels}}, 
-                              TEST: {{'PASS' if not labels|length or object in labels else 'FAIL'}}
+                              TEST: {{'PASS' if objects_satisfied else 'FAIL'}} - {{objects}}
                             presence entity (not home):
                               Entity: {{presence_entity}}
                               TEST:  {{'PASS' if not initial_home else 'FAIL'}}, 
@@ -1414,6 +1415,7 @@ actions:
                     severity_satisfied: "{{((input_severity | select('equalto', severity) | list | length) > 0) }}"
 
                     objects: "{{ event['after']['data']['objects'] }}"
+                    objects_satisfied: "{{ not labels|length or labels|select('in', objects)|list|length > 0 or ('person-verified' in objects and 'person' in labels) }}"
                     #loitering: "{{ loiter_timer and event['before']['motionless_count']/fps/60 < loiter_timer and event['after']['motionless_count']/fps/60 >= loiter_timer }}"
                     home: "{{presence_entity |reject('in', '') |select('is_state', 'home') |list |length != 0 }}"
                     #new_snapshot: "{{ update_thumbnail and event['before']['snapshot']['frame_time'] != event['after']['snapshot']['frame_time'] }}"
@@ -1510,7 +1512,7 @@ actions:
                             name: Frigate Notification
                             message: |
                               DEBUG (in loop):
-                                Send Notification: {{(custom_filter and not home and zones_satisfied and state_satisfied and ( severity_updated or presence_changed or zone_updated or object_updated or sub_label_updated)) }}
+                                Send Notification: {{(custom_filter and not home and zones_satisfied and state_satisfied and objects_satisfied and ( severity_updated or presence_changed or zone_updated or object_updated or sub_label_updated)) }}
                                 Info:
                                   Sub Label: {{sub_labels}},
                                   Image: "{{attachment if not redacted or not base_url else attachment |replace(base_url, 'REDACTED')}}"
@@ -1547,7 +1549,7 @@ actions:
                                       TEST: {{'PASS' if zones_satisfied else 'FAIL' }} {{'(Multi)' if zone_only and zone_multi}} {{'(Order-Enforced)' if zone_only and zone_multi and zone_order_enforced}},
                                     Object Filter:
                                       Input: {{input_labels}},
-                                      TEST: {{'PASS' if not labels|length or object in labels else 'FAIL'}},
+                                      TEST: {{'PASS' if objects_satisfied else 'FAIL'}} - {{objects}},
                                     Presence entity (not home):
                                       Entity: {{presence_entity}},
                                       TEST:  {{'PASS' if not home else 'FAIL'}},
