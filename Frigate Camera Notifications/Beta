@@ -1054,7 +1054,6 @@ actions:
                 {{ ns.intersection == zones }}
               # Fails fast if prerequisite of zone or zone_multi is false, as they are pre-requisites
               zone_order_satisfied: "{{ (zone_only and zone_multi and ordered_zones_match) if zone_order_enforced else true }}"
-
               zones_satisfied: "{{zone_single_satisfied and zone_multi_satisfied and zone_order_satisfied}}"
               # Customisation of text
               title: !input title
@@ -1272,7 +1271,7 @@ actions:
                                   car_ui: "{{android_auto}}"
                                   # Android/Fire TV
                                   image:
-                                    #only send still images to TV
+                                    #only send still images when TV enabled
                                     url: "{{attachment | replace('review_preview.gif','snapshot.jpg') | replace('event_preview.gif','snapshot.jpg')}}"
                                   fontsize: "{{tv_size}}"
                                   position: "{{tv_position}}"
@@ -1446,16 +1445,13 @@ actions:
                       {{ ns.intersection == zones }}
                     # Fails fast if prerequisite of zone or zone_multi is false, as they are pre-requisites
                     zone_order_satisfied: "{{ (zone_only and zone_multi and ordered_zones_match) if zone_order_enforced else true }}"
-
                     zones_satisfied: "{{zone_single_satisfied and zone_multi_satisfied and zone_order_satisfied}}"
-
+                    
                     new_entered_zones: "{{ zones | select('in', after_zones) | list }}"
                     last_entered_zones: "{{ zones | select('in', last_zones) | list }}"
                     entered_new_zones: "{{ not zone_only and after_zones | length > last_zones | length }}"
                     entered_new_filter_zones: "{{ zone_only and zones | length > 0 and (new_entered_zones | length > last_entered_zones | length) }}"
-
-                    # stationary_moved: "{{ event['after']['position_changes'] > event['before']['position_changes'] }}"
-
+                    
                     state_satisfied: "{{ not state_only or states(input_entity)|lower in states_filter }}"
 
                     before_sub_labels: "{{ sub_labels }}"
