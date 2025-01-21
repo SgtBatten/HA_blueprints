@@ -1425,7 +1425,7 @@ actions:
                                   {% set newIds = id + '|' + states(tts_helper) %}
                                   {{ newIds[:250] }}
                               target:
-                                entity_id: input_text.tts_notifications
+                                entity_id: "{{tts_helper}}"
           ########################################################
           #################### LOOP for updates ##################
           ########################################################
@@ -1900,5 +1900,5 @@ actions:
                                         {% set newIds = id + '|' + states(tts_helper) %}
                                         {{ newIds[:250] }}
                                     target:
-                                      entity_id: input_text.tts_notifications
+                                      entity_id: "{{tts_helper}}"
               until: "{{ not wait.trigger or wait.trigger.payload_json['type'] == 'end' }}"
