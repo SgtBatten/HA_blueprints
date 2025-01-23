@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.2t)
+  name: Frigate Notifications (0.14.0.2u)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -920,7 +920,7 @@ triggers:
     id: custom
 variables:
   input_camera: !input camera
-  input_camera_name: "{{input_camera|expand|map(attribute='attributes.camera_name')|list}}"
+  input_camera_name: "{{input_camera|expand|map(attribute='attributes.camera_name', default='none')|list}}"
   camera: "{{trigger.payload_json['after']['camera'] if trigger.id == 'frigate-event'}}"
   camera_name: "{{ camera | replace('_', ' ') | title }}"
   input_severity: !input review_severity
@@ -940,7 +940,7 @@ variables:
   notify_group: !input notify_group
   notify_group_target: "{{ notify_group | lower | regex_replace('^notify\\.', '') | replace(' ','_') }}"
   telegram_chat_id: !input notify_telegram_chat_id
-  telegram: "{{true if (telegram_chat_id | length > 0) else ''}}"
+  telegram: "{{true if (telegram_chat_id | length > 0) else false}}"
   zone_only: !input zone_filter
   input_zones: !input zones
   zones: "{{ input_zones }}"
@@ -1143,7 +1143,7 @@ actions:
                             Final_Update (delay): {{final_update}} ({{final_delay}})s, 
                             Attachment: {{attachment if not redacted or not base_url else attachment |replace(base_url, 'REDACTED')}}
                             Video: {{video if not redacted or not base_url else video |replace(base_url, 'REDACTED')}}, 
-                            iOS URL: {{(video if not redacted or not base_url else video |replace(base_url, 'REDACTED')) if video|length >0 else attachment if not redacted or not base_url else attachment |replace(base_url, 'REDACTED')}}}}
+                            iOS URL: {{(video if not redacted or not base_url else video |replace(base_url, 'REDACTED')) if video|length >0 else attachment if not redacted or not base_url else attachment |replace(base_url, 'REDACTED')}}
                             Target: {{'group (input/formatted): ' + notify_group + '/' + notify_group_target + ', ' if notify_group else 'Mobile Device'}}, 
                             Cooldown: {{cooldown}}s, 
                             Initial Delay: {{initial_delay}}s, 
@@ -1445,6 +1445,7 @@ actions:
                     attachment: "{{iif(attachment_2, attachment_2, attachment)}}"
 
                     event: "{{ wait.trigger.payload_json }}"
+                    type: "{{event['type']}}"
 
                     initial_severity: "{{severity}}"
                     old_objects: "{{objects}}"
@@ -1554,7 +1555,7 @@ actions:
                             name: Frigate Notification
                             message: |
                               DEBUG (in loop):
-                                Send Notification: {{(custom_filter and not home and zones_satisfied and state_satisfied and objects_satisfied and ( severity_updated or presence_changed or zone_updated or object_updated or sub_label_updated)) }}
+                                Send Notification: {{custom_filter and not home and zones_satisfied and state_satisfied and objects_satisfied and severity_satisfied and ((final_update and type='end') or (severity_updated or presence_changed or zone_updated or object_updated or sub_label_updated)) }}
                                 Info:
                                   Sub Label: {{sub_labels}},
                                   Image: "{{attachment if not redacted or not base_url else attachment |replace(base_url, 'REDACTED')}}"
@@ -1574,13 +1575,12 @@ actions:
                                   Object changed: {{object_updated}},
                                   Zones Changed: {{'True' if entered_new_filter_zones and zones_satisfied else 'True - zone filter disabled' if entered_new_zones and not zone_only else 'True - Filter Criteria not met' if entered_new_zones else 'False'}},
                                   Sublabel changed: {{ sub_label_updated }}{{' - Disabled' if not update_sub_label}},
+                                  Final Update: {{final_update and type = 'end'}}
                                 Conditions:
-                                  Loitering: {{loitering}} - not in use currently
-                                    or
                                   Filters:
                                     Severity:
                                       Required Severity: {{input_severity}}
-                                      TEST: {{'PASS' if severity_satisfied else 'FALSE'}} - {{severity}}, 
+                                      TEST: {{'PASS' if severity_satisfied else 'FAIL'}} - {{severity}}, 
                                     Zones:
                                       Zone Filter toggle on: {{zone_only}},
                                       Multi-Zone toggle on: {{zone_multi}},
@@ -1642,13 +1642,13 @@ actions:
                                     - alias: Severity Changed
                                       condition: template
                                       value_template: "{{severity_updated}}"
-                            - and:
-                                - alias: Final Update
-                                  condition: template
-                                  value_template: "{{final_update}}"
-                                - alias: End of Event
-                                  condition: template
-                                  value_template: "{{event['type'] == 'end'}}"
+                                    - and:
+                                        - alias: Final Update
+                                          condition: template
+                                          value_template: "{{final_update}}"
+                                        - alias: End of Event
+                                          condition: template
+                                          value_template: "{{event['type'] == 'end'}}"
                       sequence:
                         - alias: "Custom Action Auto Multi"
                           choose:
