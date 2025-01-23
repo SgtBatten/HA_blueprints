@@ -1555,7 +1555,7 @@ actions:
                             name: Frigate Notification
                             message: |
                               DEBUG (in loop):
-                                Send Notification: {{custom_filter and not home and zones_satisfied and state_satisfied and objects_satisfied and severity_satisfied and ((final_update and type='end') or (severity_updated or presence_changed or zone_updated or object_updated or sub_label_updated)) }}
+                                Send Notification: {{custom_filter and not home and zones_satisfied and state_satisfied and objects_satisfied and severity_satisfied and ((final_update and type == 'end') or (severity_updated or presence_changed or zone_updated or object_updated or sub_label_updated)) }}
                                 Info:
                                   Sub Label: {{sub_labels}},
                                   Image: "{{attachment if not redacted or not base_url else attachment |replace(base_url, 'REDACTED')}}"
@@ -1575,7 +1575,7 @@ actions:
                                   Object changed: {{object_updated}},
                                   Zones Changed: {{'True' if entered_new_filter_zones and zones_satisfied else 'True - zone filter disabled' if entered_new_zones and not zone_only else 'True - Filter Criteria not met' if entered_new_zones else 'False'}},
                                   Sublabel changed: {{ sub_label_updated }}{{' - Disabled' if not update_sub_label}},
-                                  Final Update: {{final_update and type = 'end'}}
+                                  Final Update: {{final_update and type == 'end'}}
                                 Conditions:
                                   Filters:
                                     Severity:
@@ -1606,49 +1606,48 @@ actions:
                                     Custom Filter: {{'PASS' if custom_filter else 'FAIL'}},
                 - choose:
                     - conditions:
-                        - or:
-                            - and:
-                                - alias: Severity Filter
+                        - and:
+                            - alias: Severity Filter
+                              condition: template
+                              value_template: "{{severity_satisfied}}"
+                            - alias: Object Filter
+                              condition: template
+                              value_template: "{{ objects_satisfied }}"
+                            - alias: Zone Filter
+                              condition: template
+                              value_template: "{{zones_satisfied}}"
+                            - alias: State Filter
+                              condition: template
+                              value_template: "{{state_satisfied}}"
+                            - alias: Custom Filter
+                              condition: template
+                              value_template: "{{custom_filter}}"
+                            - alias: Presence Filter
+                              condition: template
+                              value_template: "{{not home}}"
+                            - or:
+                                - alias: Presence Changed
                                   condition: template
-                                  value_template: "{{severity_satisfied}}"
-                                - alias: Object Filter
+                                  value_template: "{{presence_changed}}"
+                                - alias: Zone Changed
                                   condition: template
-                                  value_template: "{{ objects_satisfied }}"
-                                - alias: Zone Filter
+                                  value_template: "{{zone_updated}}"
+                                - alias: Sub Label Changed
                                   condition: template
-                                  value_template: "{{zones_satisfied}}"
-                                - alias: State Filter
+                                  value_template: "{{sub_label_updated}}"
+                                - alias: Object Changed
                                   condition: template
-                                  value_template: "{{state_satisfied}}"
-                                - alias: Custom Filter
+                                  value_template: "{{object_updated}}"
+                                - alias: Severity Changed
                                   condition: template
-                                  value_template: "{{custom_filter}}"
-                                - alias: Presence Filter
-                                  condition: template
-                                  value_template: "{{not home}}"
-                                - or:
-                                    - alias: Presence Changed
+                                  value_template: "{{severity_updated}}"
+                                - and:
+                                    - alias: Final Update
                                       condition: template
-                                      value_template: "{{presence_changed}}"
-                                    - alias: Zone Changed
+                                      value_template: "{{final_update}}"
+                                    - alias: End of Event
                                       condition: template
-                                      value_template: "{{zone_updated}}"
-                                    - alias: Sub Label Changed
-                                      condition: template
-                                      value_template: "{{sub_label_updated}}"
-                                    - alias: Object Changed
-                                      condition: template
-                                      value_template: "{{object_updated}}"
-                                    - alias: Severity Changed
-                                      condition: template
-                                      value_template: "{{severity_updated}}"
-                                    - and:
-                                        - alias: Final Update
-                                          condition: template
-                                          value_template: "{{final_update}}"
-                                        - alias: End of Event
-                                          condition: template
-                                          value_template: "{{event['type'] == 'end'}}"
+                                      value_template: "{{event['type'] == 'end'}}"
                       sequence:
                         - alias: "Custom Action Auto Multi"
                           choose:
