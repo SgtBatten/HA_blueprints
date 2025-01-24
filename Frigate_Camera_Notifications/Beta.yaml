@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.6a)
+  name: Frigate Notifications (0.12.0.6b)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -824,7 +824,7 @@ triggers:
 variables:
   type: "{{trigger.payload_json['type'] if trigger.id == 'frigate-event'}}"
   input_camera: !input camera
-  input_camera_name: "{{input_camera|expand|map(attribute='attributes.camera_name')|list}}"
+  input_camera_name: "{{input_camera|expand|map(attribute='attributes.camera_name', default='none')|list}}"
   camera: "{{trigger.payload_json['after']['camera'] if trigger.id == 'frigate-event'}}"
   camera_name: "{{ camera | replace('_', ' ') | title }}"
   input_base_url: !input base_url
