@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.12.0.6)
+  name: Frigate Notifications (0.12.0.6b)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -25,52 +25,10 @@ blueprint:
     ### Features:
       - Easily select the camera entities or mobile device using a drop-down menu.
       - Configure multiple cameras in one automation. 
-      - Send notifications to an Android or iOS mobile device or a TV.
-        - or a group containing any combination of the above.
-        - for TV Alerts, you need to install and configure https://www.home-assistant.io/integrations/nfandroidtv/
-      - Notify via Telegram
-      - Configure the title and message of the notification. 
-      - Dynamically handle things like object type, zones, and face detection from doubletake.
-      - Automatically handle some common errors like case matching and bad URLs etc.
-      - Optionally send the notification as a critical alert. (Critical)
-      - Optionally limit playing audio for secondary notification updates, and on iOS, customise the sound. (Alert Once)
-      - Choose whether or not to update the notification with new thumbnails as they become available.
-      - Customise the notification colour and icon.
-      - Optionally send a live view to iOS.
-      - Configure custom notification channels on Android.
-      - Specify which [zones][2] to be notified about. (Zone Filter)
-        - Choose between enforcing all required zones simultaneously or any one zone.
-        - Choose to enforce zones in a specific order (e.g arriving but not leaving)
-      - Specify what type of [objects][3] to be notified about. (Object Filter)
-      - Disable notifications if a presence entity or group is "home". (Presence Filter)
-      - Limit notifications based on the state of another entity. (State Filter)
-      - Limit notifications to certain hours of the day. (Time Filter)
-      - Configure a cooldown for the camera to reduce the number of notifications when back-to-back events occur.
-      - Silence future notifications for a defined amount of time through actionable notifications. This is helpful in situations where you know you will be triggering detections for an extended period of time. i.e. kids playing outside.
-      - Set a loitering timer to notify you of stationary objects that remain for a set time.
-      - Configure what happens when you tap the notification. (Tap Action)
-      - Configure 3 action buttons to open almost anything. (defaults are: View Clip, View Snapshot, and Silence New Notifications)
-      - Configure the size, transparency, position, and duration of TV notifications.
-      - Debug option to help with troubleshooting.
-      - Support for multiple Frigate instances by specifying the ClientID and MQTT topic.
-      - Optional delay to the initial notification to see if it resolves the no attached image issue.
-      - Live view on iOS.
-      - Android option: Sticky as per https://community.home-assistant.io/t/frigate-mobile-app-notifications/311091/1043
-      - Add 5s delay to the final notification update to ensure Frigate has time to save snapshot edits (crop, bounding box, etc.) if "update thumbnail" is enabled. 
-      - Add Video (gif) option to Android which will be sent 5 seconds after the event ends.
-      - Subtitle support.
-      - Video for iOS sent 5 seconds after the event ends.
-      - Set custom entity for iOS live view.
-      - Set Icons for Action Buttons on iOS.
-      - Android Auto option.
-      - Custom Filter.
-      - Customise group on mobile devices.
-      - Bounding box and crop options for attachment.
-      - Set notification volume on iOS
 
-    [1]: https://companion.home-assistant.io/docs/notifications/notifications-basic#sending-notifications-to-multiple-devices
-    [2]: https://blakeblackshear.github.io/frigate/configuration/cameras#zones
-    [3]: https://blakeblackshear.github.io/frigate/configuration/objects
+      For the full features list visit the [GitHub Repository][1]
+
+    [1]: https://github.com/SgtBatten/HA_blueprints/blob/main/Frigate_Camera_Notifications
 
     ## Support
     Go to https://github.com/SgtBatten/HA_blueprints to report bugs, request new features, or get support with your configuration.
@@ -866,7 +824,7 @@ triggers:
 variables:
   type: "{{trigger.payload_json['type'] if trigger.id == 'frigate-event'}}"
   input_camera: !input camera
-  input_camera_name: "{{input_camera|expand|map(attribute='attributes.camera_name')|list}}"
+  input_camera_name: "{{input_camera|expand|map(attribute='attributes.camera_name', default='none')|list}}"
   camera: "{{trigger.payload_json['after']['camera'] if trigger.id == 'frigate-event'}}"
   camera_name: "{{ camera | replace('_', ' ') | title }}"
   input_base_url: !input base_url
@@ -917,6 +875,27 @@ variables:
   debug: !input debug
   redacted: !input redacted
   master_condition: !input master_condition
+  condition: or
+  conditions:
+    - condition: trigger
+      id: silence
+    - condition: trigger
+      id: custom
+    - condition: and
+      conditions:
+        - condition: trigger
+          id: frigate-event
+        - alias: Camera Match
+          condition: template
+          value_template: "{{ input_camera_name|select('equalto', camera)|list|length>0 }}"
+        - alias: Master Condition
+          condition: !input master_condition
+        - alias: Cooldown
+          condition: template
+          value_template: "{{ not this.attributes.last_triggered or (now() - this.attributes.last_triggered).seconds > cooldown }}"
+        - alias: Disable Times
+          condition: template
+          value_template: "{{ not disable_times|length or not now().hour in disable_times|map('int')|list }}"
 actions:
   - if:
       - condition: !input master_condition
@@ -1304,7 +1283,7 @@ actions:
                                   {% set newIds = id + '|' + states(tts_helper) %}
                                   {{ newIds[:250] }}
                               target:
-                                entity_id: input_text.tts_notifications
+                                entity_id: "{{tts_helper}}"
               - repeat:
                   sequence:
                     - wait_for_trigger:
@@ -1697,5 +1676,5 @@ actions:
                                         {% set newIds = id + '|' + states(tts_helper) %}
                                         {{ newIds[:250] }}
                                     target:
-                                      entity_id: input_text.tts_notifications
+                                      entity_id: "{{tts_helper}}"
                   until: "{{ not wait.trigger or wait.trigger.payload_json['type'] == 'end' }}"
