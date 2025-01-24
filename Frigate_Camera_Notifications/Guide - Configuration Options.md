@@ -81,7 +81,11 @@ If you run [multiple instances](https://docs.frigate.video/integrations/home-ass
 
 ### Sticky (Android)
 
+By default, tapping on the notification on android (except for when using the action buttons) clears the notification. This sticky option stops the notification from clearing when tapped and notifications must be manually swiped away.
+
 ### Channel (Android)
+
+Notification channels on android allow you to customise things like the notification sound. This is configured on your device and not within the blueprint. To edit a channel the phone must first recieve a notification in that channel, so trigger th eautomation once after setting the channel and then find it in your device notification settings.
 
 ## Filters
 
@@ -92,8 +96,11 @@ If you run [multiple instances](https://docs.frigate.video/integrations/home-ass
 ### Multi Zone
 
 ### Object Filter
+Select only objects that you wish to be notified for.  Enter or select one object at a time.
 
 ### Presence Filter
+
+
 
 ### State Filter
 
@@ -132,6 +139,16 @@ If you run [multiple instances](https://docs.frigate.video/integrations/home-ass
 ## Troubleshooting
 
 ## Debug
+
+### Debug enabled
+
+Helps with troubleshooting by sending debug information about the variables to the home assistant log, and more usefully, displayed them within the automation trace in an easy to read format. 
+
+### Redact Base URL
+
+Default: true
+
+Hide your base URL from the debug ouput to make sharing it easier and safer. 
 
 
 
