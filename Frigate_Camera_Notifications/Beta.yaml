@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.2u)
+  name: Frigate Notifications (0.14.0.2v)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -10,7 +10,6 @@ blueprint:
 
     ### Software Version Requirements
       - Minimum Home Assistant Version: 2024.10
-
       - Minimum Frigate Version: 0.14.0
       - Minimum Frigate Integration Version: 5.7.0
         - **Note:** "Enable the unauthenticated notification event proxy" must be ticked during setup
@@ -119,6 +118,7 @@ blueprint:
             The message of the notification.
             You can use variables such as {{camera_name}} and {{label}}
             e.g., A {{ label }} {{ ' was' if type == 'end' else '' }} detected on the {{ camera_name }} camera.
+
           default: "A {{ label }} {{ 'was detected' }} on the {{ camera_name }} camera."
           selector:
             select:
@@ -190,26 +190,36 @@ blueprint:
             Choose which image or GIF to attach to the initial notification.
 
             Note: TVs will always get sent the snapshot.
-          default: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/thumbnail.jpg?format=android"
+          default: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/thumbnail.jpg"
           selector:
             select:
               options:
                 # format=android converts it to a 2:1 ratio for mobile display.
                 - label: Thumbnail
-                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/thumbnail.jpg?format=android"
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/thumbnail.jpg"
                 - label: Snapshot
-                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?format=android"
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
                 - label: Snapshot with bounding box
-                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1&format=android"
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1"
                 - label: Snapshot cropped
-                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?crop=1&format=android"
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?crop=1"
                 - label: Snapshot cropped with bounding box
-                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1&crop=1&format=android"
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1&crop=1"
                 - label: Review GIF
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{review_id}}/review_preview.gif"
                   # this will show the GIF associated with the first object detected by frigate
                 - label: Object 1 Event GIF
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/event_preview.gif"
+                - label: Thumbnail (2:1)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/thumbnail.jpg?format=android"
+                - label: Snapshot (2:1)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?format=android"
+                - label: Snapshot with bounding box (2:1)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1&format=android"
+                - label: Snapshot cropped (2:1)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?crop=1&format=android"
+                - label: Snapshot cropped with bounding box (2:1)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1&crop=1&format=android"
               mode: dropdown
         attachment_2:
           name: Subsequent Attachment (Optional)
@@ -218,7 +228,7 @@ blueprint:
             Set to None to continue using Initial Attachment for updates. 
 
             Note: TVs will get sent the snapshot if GIF is selected.
-          default: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/thumbnail.jpg?format=android"
+          default: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/thumbnail.jpg"
           selector:
             select:
               options:
@@ -226,20 +236,30 @@ blueprint:
                   value: ""
                 # format=android converts it to a 2:1 ratio for mobile display.
                 - label: Thumbnail
-                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/thumbnail.jpg?format=android"
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/thumbnail.jpg"
                 - label: Snapshot
-                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?format=android"
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
                 - label: Snapshot with bounding box
-                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1&format=android"
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1"
                 - label: Snapshot cropped
-                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?crop=1&format=android"
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?crop=1"
                 - label: Snapshot cropped with bounding box
-                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1&crop=1&format=android"
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1&crop=1"
                 - label: Review GIF
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{review_id}}/review_preview.gif"
                   # this will show the GIF associated with the first object detected by frigate
                 - label: Object 1 Event GIF
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/event_preview.gif"
+                - label: Thumbnail (2:1)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/thumbnail.jpg?format=android"
+                - label: Snapshot (2:1)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?format=android"
+                - label: Snapshot with bounding box (2:1)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1&format=android"
+                - label: Snapshot cropped (2:1)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?crop=1&format=android"
+                - label: Snapshot cropped with bounding box (2:1)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1&crop=1&format=android"
               mode: dropdown
         video:
           name: Video (Optional)
@@ -272,7 +292,6 @@ blueprint:
           description: |
             Set the color of the notification on your Android mobile device or TV. 
             TV supports `grey`, `black`, `indigo`, `green`, `red`, `cyan`, `teal`, `amber` or `pink` only.
-
           default: "#03a9f4"
           selector:
             select:
