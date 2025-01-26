@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.3a)
+  name: Frigate Notifications (0.14.0.3b)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -948,7 +948,17 @@ triggers:
       action: "silence-{{ this.entity_id }}"
     id: silence
   - trigger: event
+    event_type: telegram_callback
+    event_data:
+      data: "silence-{{ this.entity_id }}"
+    id: silence
+  - trigger: event
     event_type: mobile_app_notification_action
+    event_data:
+      action: "custom-{{ this.entity_id}}"
+    id: custom
+  - trigger: event
+    event_type: telegram_callback
     event_data:
       action: "custom-{{ this.entity_id}}"
     id: custom
