@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.3b)
+  name: Frigate Notifications (0.14.0.3c)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -701,6 +701,8 @@ blueprint:
           selector:
             select:
               options:
+                - label: Silence New Notifications
+                  value: silence-{{ this.entity_id }}
                 - label: View Clip
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
                 - label: View Clip (IOS)
@@ -723,6 +725,8 @@ blueprint:
                   value: /ccab4aaf_frigate-proxy/dashboard
                 - label: Open Reolink App (Android)
                   value: app://com.mcu.reolink
+                - label: Custom Action (Manual Trigger)
+                  value: custom-{{ this.entity_id }}
               custom_value: true
         icon_1:
           name: Action Button 1 icon - iOS Only
@@ -745,6 +749,8 @@ blueprint:
           selector:
             select:
               options:
+                - label: Silence New Notifications
+                  value: silence-{{ this.entity_id }}
                 - label: View Clip
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
                 - label: View Clip (IOS)
@@ -1317,12 +1323,12 @@ actions:
                                   entity_id: "{{ios_live_view}}"
                                   # Actions
                                   actions:
-                                    - action: URI
+                                    - action: "{{ 'URI' if '/' in url_1 else url_1 }}"
                                       title: "{{button_1}}"
                                       uri: "{{url_1}}"
                                       icon: "{{icon_1}}"
                                       destructive: "{{destructive_1}}"
-                                    - action: URI
+                                    - action: "{{ 'URI' if '/' in url_2 else url_2 }}"
                                       title: "{{button_2}}"
                                       uri: "{{url_2}}"
                                       icon: "{{icon_2}}"
@@ -1375,12 +1381,12 @@ actions:
                                     entity_id: "{{ios_live_view}}"
                                     # Actions
                                     actions:
-                                      - action: URI
+                                      - action: "{{ 'URI' if '/' in url_1 else url_1 }}"
                                         title: "{{button_1}}"
                                         uri: "{{url_1}}"
                                         icon: "{{icon_1}}"
                                         destructive: "{{destructive_1}}"
-                                      - action: URI
+                                      - action: "{{ 'URI' if '/' in url_2 else url_2 }}"
                                         title: "{{button_2}}"
                                         uri: "{{url_2}}"
                                         icon: "{{icon_2}}"
@@ -1430,12 +1436,12 @@ actions:
                                 entity_id: "{{ios_live_view}}"
                                 # Actions
                                 actions:
-                                  - action: URI
+                                  - action: "{{ 'URI' if '/' in url_1 else url_1 }}"
                                     title: "{{button_1}}"
                                     uri: "{{url_1}}"
                                     icon: "{{icon_1}}"
                                     destructive: "{{destructive_1}}"
-                                  - action: URI
+                                  - action: "{{ 'URI' if '/' in url_2 else url_2 }}"
                                     title: "{{button_2}}"
                                     uri: "{{url_2}}"
                                     icon: "{{icon_2}}"
@@ -1793,12 +1799,12 @@ actions:
                                         entity_id: "{{ios_live_view}}"
                                         # Actions
                                         actions:
-                                          - action: URI
+                                          - action: "{{ 'URI' if '/' in url_1 else url_1 }}"
                                             title: "{{button_1}}"
                                             uri: "{{url_1}}"
                                             icon: "{{icon_1}}"
                                             destructive: "{{destructive_1}}"
-                                          - action: URI
+                                          - action: "{{ 'URI' if '/' in url_2 else url_2 }}"
                                             title: "{{button_2}}"
                                             uri: "{{url_2}}"
                                             icon: "{{icon_2}}"
@@ -1852,12 +1858,12 @@ actions:
                                           entity_id: "{{ios_live_view}}"
                                           # Actions
                                           actions:
-                                            - action: URI
+                                            - action: "{{ 'URI' if '/' in url_1 else url_1 }}"
                                               title: "{{button_1}}"
                                               uri: "{{url_1}}"
                                               icon: "{{icon_1}}"
                                               destructive: "{{destructive_1}}"
-                                            - action: URI
+                                            - action: "{{ 'URI' if '/' in url_2 else url_2 }}"
                                               title: "{{button_2}}"
                                               uri: "{{url_2}}"
                                               icon: "{{icon_2}}"
@@ -1908,12 +1914,12 @@ actions:
                                       entity_id: "{{ios_live_view}}"
                                       # Actions
                                       actions:
-                                        - action: URI
+                                        - action: "{{ 'URI' if '/' in url_1 else url_1 }}"
                                           title: "{{button_1}}"
                                           uri: "{{url_1}}"
                                           icon: "{{icon_1}}"
                                           destructive: "{{destructive_1}}"
-                                        - action: URI
+                                        - action: "{{ 'URI' if '/' in url_2 else url_2 }}"
                                           title: "{{button_2}}"
                                           uri: "{{url_2}}"
                                           icon: "{{icon_2}}"
