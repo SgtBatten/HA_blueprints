@@ -957,6 +957,11 @@ triggers:
     event_data:
       action: "custom-{{ this.entity_id}}"
     id: custom
+  - trigger: event
+    event_type: telegram_callback
+    event_data:
+      action: "custom-{{ this.entity_id}}"
+    id: custom
 variables:
   input_camera: !input camera
   input_camera_name: "{{input_camera|expand|map(attribute='attributes.camera_name', default='none')|list}}"
