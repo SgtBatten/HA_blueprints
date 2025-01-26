@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.2w)
+  name: Frigate Notifications (0.14.0.3a)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -9,7 +9,7 @@ blueprint:
     A highly customisable Notification template for Frigate Camera Notifications.
 
     ### Software Version Requirements
-      - Minimum Home Assistant Version: 2024.10
+      - Minimum Home Assistant Version: 2024.11
       - Minimum Frigate Version: 0.14.0
       - Minimum Frigate Integration Version: 5.7.0
         - **Note:** "Enable the unauthenticated notification event proxy" must be ticked during setup
@@ -728,6 +728,12 @@ blueprint:
           name: Action Button 1 icon - iOS Only
           description: Customise the Icon on the first Action Button. Only the iOS SFSymbols library is supported, not mdi:icons. e.g., sfsymbols:bell
           default: ""
+        destructive_1:
+          name: Action Button 1 Destructive
+          description: Does pressing the action button close the notification on your mobile device. 
+          default: false
+          selector:
+            boolean:
         button_2:
           name: Action Button 2 Text
           description: "The text used on the second Action button at the bottom of the notification. Set the URL below."
@@ -766,6 +772,12 @@ blueprint:
           name: Action Button 2 icon - iOS Only
           description: Customise the Icon on the second Action Button. Only the iOS SFSymbols library is supported, not mdi:icons. e.g., sfsymbols:bell
           default: ""
+        destructive_2:
+          name: Action Button 2 Destructive
+          description: Does pressing the action button close the notification on your mobile device. 
+          default: false
+          selector:
+            boolean:
         button_3:
           name: Action Button 3 Text
           description: "The text used on the third Action button at the bottom of the notification. Set the URL below."
@@ -806,6 +818,12 @@ blueprint:
           name: Action Button 3 icon - iOS Only
           description: Customise the Icon on the third Action Button. Only the iOS SFSymbols library is supported, not mdi:icons. e.g., sfsymbols:bell
           default: ""
+        destructive_3:
+          name: Action Button 3 Destructive
+          description: Does pressing the action button close the notification on your mobile device. 
+          default: false
+          selector:
+            boolean:
         custom_action_manual:
           name: Custom Action (Manual Trigger)
           description: Customisable action that you can trigger with the Custom Action buttons in the notification. Select Custom Action on any Action Button above.
@@ -1293,15 +1311,17 @@ actions:
                                       title: "{{button_1}}"
                                       uri: "{{url_1}}"
                                       icon: "{{icon_1}}"
+                                      destructive: "{{destructive_1}}"
                                     - action: URI
                                       title: "{{button_2}}"
                                       uri: "{{url_2}}"
                                       icon: "{{icon_2}}"
+                                      destructive: "{{destructive_2}}"
                                     - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
                                       title: "{{button_3}}"
                                       uri: "{{url_3}}"
                                       icon: "{{icon_3}}"
-                                      destructive: true
+                                      destructive: "{{destructive_3}}"
                           - conditions: "{{ tv }}"
                             sequence:
                               - action: "notify.{{ notify_group_target }}"
@@ -1349,15 +1369,17 @@ actions:
                                         title: "{{button_1}}"
                                         uri: "{{url_1}}"
                                         icon: "{{icon_1}}"
+                                        destructive: "{{destructive_1}}"
                                       - action: URI
                                         title: "{{button_2}}"
                                         uri: "{{url_2}}"
                                         icon: "{{icon_2}}"
+                                        destructive: "{{destructive_2}}"
                                       - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
                                         title: "{{button_3}}"
                                         uri: "{{url_3}}"
                                         icon: "{{icon_3}}"
-                                        destructive: true
+                                        destructive: "{{destructive_3}}"
                         default:
                           - action: "notify.{{ notify_group_target }}"
                             data:
@@ -1402,15 +1424,17 @@ actions:
                                     title: "{{button_1}}"
                                     uri: "{{url_1}}"
                                     icon: "{{icon_1}}"
+                                    destructive: "{{destructive_1}}"
                                   - action: URI
                                     title: "{{button_2}}"
                                     uri: "{{url_2}}"
                                     icon: "{{icon_2}}"
+                                    destructive: "{{destructive_2}}"
                                   - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
                                     title: "{{button_3}}"
                                     uri: "{{url_3}}"
                                     icon: "{{icon_3}}"
-                                    destructive: true
+                                    destructive: "{{destructive_3}}"
                       - if: "{{tts and (not tts_helper or not alert_once or (tts_helper and id not in states(tts_helper)))}}"
                         then:
                           sequence:
@@ -1763,15 +1787,17 @@ actions:
                                             title: "{{button_1}}"
                                             uri: "{{url_1}}"
                                             icon: "{{icon_1}}"
+                                            destructive: "{{destructive_1}}"
                                           - action: URI
                                             title: "{{button_2}}"
                                             uri: "{{url_2}}"
                                             icon: "{{icon_2}}"
+                                            destructive: "{{destructive_2}}"
                                           - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
                                             title: "{{button_3}}"
                                             uri: "{{url_3}}"
                                             icon: "{{icon_3}}"
-                                            destructive: true
+                                            destructive: "{{destructive_3}}"
                                 - conditions: "{{ tv }}"
                                   sequence:
                                     - action: "notify.{{ notify_group_target }}"
@@ -1820,15 +1846,17 @@ actions:
                                               title: "{{button_1}}"
                                               uri: "{{url_1}}"
                                               icon: "{{icon_1}}"
+                                              destructive: "{{destructive_1}}"
                                             - action: URI
                                               title: "{{button_2}}"
                                               uri: "{{url_2}}"
                                               icon: "{{icon_2}}"
+                                              destructive: "{{destructive_2}}"
                                             - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
                                               title: "{{button_3}}"
                                               uri: "{{url_3}}"
                                               icon: "{{icon_3}}"
-                                              destructive: true
+                                              destructive: "{{destructive_3}}"
                               default:
                                 - action: "notify.{{ notify_group_target }}"
                                   data:
@@ -1874,15 +1902,17 @@ actions:
                                           title: "{{button_1}}"
                                           uri: "{{url_1}}"
                                           icon: "{{icon_1}}"
+                                          destructive: "{{destructive_1}}"
                                         - action: URI
                                           title: "{{button_2}}"
                                           uri: "{{url_2}}"
                                           icon: "{{icon_2}}"
+                                          destructive: "{{destructive_2}}"
                                         - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
                                           title: "{{button_3}}"
                                           uri: "{{url_3}}"
                                           icon: "{{icon_3}}"
-                                          destructive: true
+                                          destructive: "{{destructive_3}}"
 
                             - if: "{{tts and (not tts_helper or not alert_once or (tts_helper and id not in states(tts_helper)))}}"
                               then:
