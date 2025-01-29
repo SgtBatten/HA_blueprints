@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.3d)
+  name: Frigate Notifications (0.14.0.3e)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -975,7 +975,7 @@ variables:
   telegram: "{{true if (telegram_chat_id | length > 0) else false}}"
   zone_only: !input zone_filter
   input_zones: !input zones
-  zones: "{{ input_zones }}"
+  zones: "{{ input_zones | list | lower }}"
   zone_multi: !input zone_multi
   zone_order_enforced: !input zone_order_enforced
   input_labels: !input labels
@@ -1014,8 +1014,8 @@ variables:
   objects_satisfied: "{{ not labels|length or labels|select('in', objects)|list|length > 0 or ('person-verified' in objects and 'person' in labels) }}"
   initial_home: "{{ presence_entity != '' and presence_entity|expand|selectattr('state','eq','home')|list|length != 0 }}"
   state_satisfied: "{{ not state_only or states(input_entity)|lower in states_filter }}"
-  before_zones: "{{ trigger.payload_json['before']['data']['zones'] if trigger.id == 'frigate-event' }}"
-  after_zones: "{{ trigger.payload_json['after']['data']['zones'] if trigger.id == 'frigate-event' }}"
+  before_zones: "{{ trigger.payload_json['before']['data']['zones'] | list | lower if trigger.id == 'frigate-event' }}"
+  after_zones: "{{ trigger.payload_json['after']['data']['zones'] | list | lower if trigger.id == 'frigate-event' }}"
   zone_multi_filter: "{{zone_only and zone_multi and after_zones|length and zones and zones |reject('in', after_zones) |list |length == 0 }}"
 conditions:
   condition: or
@@ -1504,8 +1504,8 @@ actions:
 
                     # Zones Variables
 
-                    before_zones: "{{ event['before']['data']['zones'] | default([]) }}"
-                    after_zones: "{{ event['after']['data']['zones'] | default([]) }}"
+                    before_zones: "{{ event['before']['data']['zones'] | list | lower | default([]) }}"
+                    after_zones: "{{ event['after']['data']['zones'] | list | lower | default([]) }}"
                     # If no zones defined, or any zones have been entered
                     any_zones_entered: "{{ zones | length == 0 or ((zones | select('in', after_zones) | list | length) > 0) }}"
                     zone_single_satisfied: "{{ any_zones_entered if zone_only else true}}"
