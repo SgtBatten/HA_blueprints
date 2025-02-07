@@ -442,7 +442,7 @@ blueprint:
         zones:
           name: Required Zones (Optional - Enabled Above)
           description: |
-            Enter the name of one zone at a time. It must be lowercase and include underscores as per your Frigate config.
+            Enter the name of one zone at a time. It must include underscores as per your Frigate config. Capitalisation does not matter.
             By default any zone is acceptable. If you desire ALL listed zones to be entered before getting a notification, enable the multi toggle below.
           default: []
           selector:
