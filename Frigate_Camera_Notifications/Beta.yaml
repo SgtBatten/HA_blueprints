@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.3e)
+  name: Frigate Notifications (0.14.0.3f)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -162,6 +162,22 @@ blueprint:
                 - "{{'true' if is_state('sun.sun', 'above_horizon') else 'false' }}"
                 - "{{ event['after']['top_score'] |float(0) > 0.8 }}"
               custom_value: true
+        interruption_level:
+          name: Interruption Level (iOS)
+          description: |
+            Set the interruption level on iOS devices. This can be templated.
+            Must result in "passive", "active", "time-sensitive" or "critical" See https://companion.home-assistant.io/docs/notifications/notifications-basic#interruption-level for definitions
+            Critical option above will override this setting when it is true
+          default: "active"
+          selector:
+            select:
+              options:
+                - "passive"
+                - "active"
+                - "time-sensitive"
+                - "critical"
+                - "{{'critical' if now().hour in [8,9,10,11,12,13,14,15,16,17,18] else 'active'}}"
+                - "{{'time-sensitive' if is_state('sun.sun', 'above_horizon') else 'passive' }}"
         tts:
           name: Use TTS to override silent/dnd modes on specific phones.
           description: |
@@ -442,7 +458,7 @@ blueprint:
         zones:
           name: Required Zones (Optional - Enabled Above)
           description: |
-            Enter the name of one zone at a time. It must include underscores as per your Frigate config. Capitalisation does not matter.
+            Enter the name of one zone at a time. It must be lowercase and include underscores as per your Frigate config.
             By default any zone is acceptable. If you desire ALL listed zones to be entered before getting a notification, enable the multi toggle below.
           default: []
           selector:
@@ -1140,6 +1156,7 @@ actions:
               # other things that can be templated and might need info from the event
               critical_input: !input critical
               critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
+              interruption_level: !input interruption_level
               tts: !input tts
               tts_helper: !input tts_helper
               custom_filter: !input custom_filter
@@ -1301,7 +1318,7 @@ actions:
                                     sound:
                                       name: "{{sound}}"
                                       volume: "{{ iif(sound == 'none', 0, volume) }}"
-                                      critical: "{{ iif(critical, 1, 0) }}"
+                                    interruption-level: "{{ iif(critical, 1, interruption_level) }}"
                                   entity_id: "{{ios_live_view}}"
                                   # Actions
                                   actions:
@@ -1359,7 +1376,7 @@ actions:
                                       sound:
                                         name: "{{sound}}"
                                         volume: "{{ iif(sound == 'none', 0, volume) }}"
-                                        critical: "{{ iif(critical, 1, 0) }}"
+                                      interruption-level: "{{ iif(critical, 1, interruption_level) }}"
                                     entity_id: "{{ios_live_view}}"
                                     # Actions
                                     actions:
@@ -1414,7 +1431,7 @@ actions:
                                   sound:
                                     name: "{{sound}}"
                                     volume: "{{ iif(sound == 'none', 0, volume) }}"
-                                    critical: "{{ iif(critical, 1, 0) }}"
+                                  interruption-level: "{{ iif(critical, 1, interruption_level) }}"
                                 entity_id: "{{ios_live_view}}"
                                 # Actions
                                 actions:
@@ -1572,6 +1589,7 @@ actions:
 
                     critical_input: !input critical
                     critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
+                    interruption_level: !input interruption_level
                     tts: !input tts
 
                     sub_label_updated: "{{ update_sub_label and sub_labels != before_sub_labels }}"
@@ -1600,6 +1618,7 @@ actions:
                                   Title: {{title}}
                                   Message: {{message}}
                                   iOS sound: {{'Critical' if critical else 'disabled by alert once' if alert_once else 'Silent' if silent_update else sound}},
+                                  iOS Interruption Level: {{interruption_level}}
                                   Android Sound: {{'disabled by alert once' if alert_once else 'enabled'}},
                                   iOS url: "{{(video if not redacted or not base_url else video |replace(base_url, 'REDACTED')) if video else attachment if not redacted or not base_url else attachment |replace(base_url, 'REDACTED')}}", 
                                   Video: "{{video if not redacted or not base_url else video |replace(base_url, 'REDACTED')}}", 
@@ -1777,7 +1796,7 @@ actions:
                                           sound:
                                             name: "{{ iif(silent_update, 'none', sound) }}"
                                             volume: "{{ iif((silent_update or sound == 'none'), 0, volume) }}"
-                                            critical: "{{ iif(critical, 1, 0) }}"
+                                          interruption-level: "{{ iif(critical, 1, interruption_level) }}"
                                         entity_id: "{{ios_live_view}}"
                                         # Actions
                                         actions:
@@ -1836,7 +1855,7 @@ actions:
                                             sound:
                                               name: "{{ iif(silent_update, 'none', sound) }}"
                                               volume: "{{ iif((silent_update or sound == 'none'), 0, volume) }}"
-                                              critical: "{{ iif(critical, 1, 0) }}"
+                                            interruption-level: "{{ iif(critical, 1, interruption_level) }}"
                                           entity_id: "{{ios_live_view}}"
                                           # Actions
                                           actions:
@@ -1892,7 +1911,7 @@ actions:
                                         sound:
                                           name: "{{ iif(silent_update, 'none', sound) }}"
                                           volume: "{{ iif((silent_update or sound == 'none'), 0, volume) }}"
-                                          critical: "{{ iif(critical, 1, 0) }}"
+                                        interruption-level: "{{ iif(critical, 1, interruption_level) }}"
                                       entity_id: "{{ios_live_view}}"
                                       # Actions
                                       actions:
