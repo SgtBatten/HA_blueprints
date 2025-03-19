@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.3f)
+  name: Frigate Notifications (0.14.0.3g)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -694,11 +694,11 @@ blueprint:
                 - label: Open Home Assistant (app)
                   value: /lovelace
                 - label: Open Frigate
-                  value: /ccab4aaf_frigate/dashboard
+                  value: /ccab4aaf_frigate/ingress
                 - label: Open Frigate (Full Access)
-                  value: /ccab4aaf_frigate-fa/dashboard
+                  value: /ccab4aaf_frigate-fa/ingress
                 - label: Open Frigate (proxy)
-                  value: /ccab4aaf_frigate-proxy/dashboard
+                  value: /ccab4aaf_frigate-proxy/ingress
                 - label: Open Reolink App (Android)
                   value: app://com.mcu.reolink
                 - label: None (Android)
@@ -734,11 +734,11 @@ blueprint:
                 - label: Open Home Assistant (app)
                   value: /lovelace
                 - label: Open Frigate
-                  value: /ccab4aaf_frigate/dashboard
+                  value: /ccab4aaf_frigate/ingress
                 - label: Open Frigate (Full Access)
-                  value: /ccab4aaf_frigate-fa/dashboard
+                  value: /ccab4aaf_frigate-fa/ingress
                 - label: Open Frigate (proxy)
-                  value: /ccab4aaf_frigate-proxy/dashboard
+                  value: /ccab4aaf_frigate-proxy/ingress
                 - label: Open Reolink App (Android)
                   value: app://com.mcu.reolink
                 - label: Custom Action (Manual Trigger)
@@ -774,11 +774,11 @@ blueprint:
                 - label: Open Home Assistant (app)
                   value: /lovelace
                 - label: Open Frigate
-                  value: /ccab4aaf_frigate/dashboard
+                  value: /ccab4aaf_frigate/ingress
                 - label: Open Frigate (Full Access)
-                  value: /ccab4aaf_frigate-fa/dashboard
+                  value: /ccab4aaf_frigate-fa/ingress
                 - label: Open Frigate (proxy)
-                  value: /ccab4aaf_frigate-proxy/dashboard
+                  value: /ccab4aaf_frigate-proxy/ingress
                 - label: Open Reolink App (Android)
                   value: app://com.mcu.reolink
                 - label: Custom Action (Manual Trigger)
@@ -814,11 +814,11 @@ blueprint:
                 - label: Open Home Assistant (app)
                   value: /lovelace
                 - label: Open Frigate
-                  value: /ccab4aaf_frigate/dashboard
+                  value: /ccab4aaf_frigate/ingress
                 - label: Open Frigate (Full Access)
-                  value: /ccab4aaf_frigate-fa/dashboard
+                  value: /ccab4aaf_frigate-fa/ingress
                 - label: Open Frigate (proxy)
-                  value: /ccab4aaf_frigate-proxy/dashboard
+                  value: /ccab4aaf_frigate-proxy/ingress
                 - label: Open Reolink App (Android)
                   value: app://com.mcu.reolink
                 - label: Custom Action (Manual Trigger)
