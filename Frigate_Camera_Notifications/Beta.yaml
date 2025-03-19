@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.3g)
+  name: Frigate Notifications (0.14.0.3h)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -375,6 +375,10 @@ blueprint:
           name: Group
           description: The group name that will determine if notifications are grouped on your mobile device. If you want notifications grouped by camera, ensure it contains {{camera}}
           default: "{{camera}}-frigate-notification"
+        tag:
+          name: Tag
+          description: The Tag is used to identify individual notifications in order to replace them with updated images/text. Default is the Event ID 
+          default: "{{id}}"
         sound:
           name: Notification Sound - iOS only (Optional)
           description: You can specify a sound file on your device that will play for the notifications. You will need to import the sound file into Home Assistant.
@@ -1162,6 +1166,7 @@ actions:
               custom_filter: !input custom_filter
               icon: !input icon
               group: !input group
+              tag: !input tag
               channel: !input channel
               attachment: !input attachment
               video: !input video
@@ -1201,7 +1206,7 @@ actions:
                             Volume: {{ iif(sound == 'none', 0, volume) }}
                             IOS Live entity: "{{ios_live_view}}"
                             Android Auto: {{android_auto}}, 
-                            Tag: {{ id }}, 
+                            Tag: {{ tag }}, 
                             Group: {{group}}, 
                             Channel: {{channel}} {{' - overridden by alarm_stream' if critical}}, 
                             Sticky: {{sticky}}, 
@@ -1294,7 +1299,7 @@ actions:
                                 title: "{{title}}"
                                 message: "{{message}}"
                                 data:
-                                  tag: "{{ id }}"
+                                  tag: "{{ tag }}"
                                   group: "{{ group }}"
                                   color: "{{color}}"
                                   # Android Specific
@@ -1344,7 +1349,7 @@ actions:
                                   title: "{{title}}"
                                   message: "{{message}}"
                                   data:
-                                    tag: "{{ id }}"
+                                    tag: "{{ tag }}"
                                     group: "{{ group }}"
                                     color: "{{color}}"
                                     # Android Specific
@@ -1401,7 +1406,7 @@ actions:
                               title: "{{title}}"
                               message: "{{message}}"
                               data:
-                                tag: "{{ id }}"
+                                tag: "{{ tag }}"
                                 group: "{{ group }}"
                                 color: "{{color}}"
                                 # Android Specific
@@ -1461,7 +1466,7 @@ actions:
                                       type: notify
                                       message: "{{'TTS'}}"
                                       data:
-                                        tag: "{{ id }}{{'-tts'}}"
+                                        tag: "{{ tag }}{{'-tts'}}"
                                         channel: "{{'alarm_stream' if critical else channel}}"
                                         alert_once: "{{ alert_once }}"
                                         tts_text: "{{message}}"
@@ -1470,7 +1475,7 @@ actions:
                                   data:
                                     message: "{{'TTS'}}"
                                     data:
-                                      tag: "{{ id }}{{'-tts'}}"
+                                      tag: "{{ tag }}{{'-tts'}}"
                                       channel: "{{'alarm_stream' if critical else channel}}"
                                       alert_once: "{{ alert_once }}"
                                       tts_text: "{{message}}"
@@ -1771,7 +1776,7 @@ actions:
                                       title: "{{title}}"
                                       message: "{{message}}"
                                       data:
-                                        tag: "{{ id }}"
+                                        tag: "{{ tag }}"
                                         group: "{{ group }}"
                                         color: "{{color}}"
                                         # Android Specific
@@ -1822,7 +1827,7 @@ actions:
                                         title: "{{title}}"
                                         message: "{{message}}"
                                         data:
-                                          tag: "{{ id }}"
+                                          tag: "{{ tag }}"
                                           group: "{{ group }}"
                                           color: "{{color}}"
                                           # Android Specific
@@ -1880,7 +1885,7 @@ actions:
                                     title: "{{title}}"
                                     message: "{{message}}"
                                     data:
-                                      tag: "{{ id }}"
+                                      tag: "{{ tag }}"
                                       group: "{{ group }}"
                                       color: "{{color}}"
                                       # Android Specific
@@ -1942,7 +1947,7 @@ actions:
                                             type: notify
                                             message: "{{'TTS'}}"
                                             data:
-                                              tag: "{{ id }}{{'-loitering-tts' if loitering}}"
+                                              tag: "{{ tag }}{{'-loitering-tts' if loitering}}"
                                               channel: "{{'alarm_stream' if critical else channel}}"
                                               alert_once: "{{ alert_once }}"
                                               tts_text: "{{message}}"
@@ -1952,7 +1957,7 @@ actions:
                                         data:
                                           message: "{{'TTS'}}"
                                           data:
-                                            tag: "{{ id }}{{'-loitering-tts' if loitering}}"
+                                            tag: "{{ tag }}{{'-loitering-tts' if loitering}}"
                                             channel: "{{'alarm_stream' if critical else channel}}"
                                             alert_once: "{{ alert_once }}"
                                             tts_text: "{{message}}"
