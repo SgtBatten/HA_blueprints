@@ -1,6 +1,6 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.3h)
-  author: SgtBatten
+  name: Frigate Notifications (0.14.0.3h-11m-j1)
+  author: SgtBatten/jasonwellman
   homeassistant:
     min_version: 2024.11.0
   description: |
@@ -20,9 +20,14 @@ blueprint:
       - Frigate Cameras
       - Mobile Device (Running HA Companion App)
 
+    ### Optional Configuration Options:
+      - LLM Vision Analysis (Optional)
+        - Requires a configured `llmvision.image_analyzer` service. 
+
     ### Features:
       - Easily select the camera entities or mobile device using a drop-down menu.
       - Configure multiple cameras in one automation. 
+      - Optionally analyzes images with a configured LLM to provide richer notification details.
 
       For the full features list visit the [GitHub Repository][1]
 
@@ -78,6 +83,101 @@ blueprint:
       name: Client ID (Optional-Advanced)
       description: Used to support multiple instances of Frigate. Leave blank if you don't know what to do.
       default: ""
+    llm_vision_analysis:
+      name: '# LLM Vision Analysis (Optional)'
+      description: 'Configure Large Language Model Vision Analysis to add descriptive text to notifications. Requires a configured `llmvision.image_analyzer` service.'
+      icon: mdi:brain
+      collapsed: true
+      input:
+        llm_enable:
+          name: Enable LLM Vision Analysis
+          description: 'If true, an LLM will analyze images from selected cameras. The response text will be appended to the notification message.'
+          default: false
+          selector:
+            boolean: {}
+        llm_image_entity:
+          name: LLM Image Entities
+          description: 'Select camera entities for LLM analysis. These images will be sent to the LLM.'
+          default: []
+          selector:
+            entity:
+              filter:
+                - domain: camera
+              multiple: true
+        llm_provider:
+          name: LLM Provider
+          description: 'Enter the Provider ID for your LLM vision service (e.g., Google Gemini config entry ID).'
+          default: '' 
+          selector:
+            text: {}
+        llm_message_prompt:
+          name: LLM Message Prompt
+          description: 'The prompt for the LLM image analysis. You can use variables like {{camera_name}}. Instruct the LLM on desired output format and length.'
+          default: >-
+            Tell me about the image. Include the camera name and a short description of the image.
+          selector:
+            text:
+              multiline: true
+        llm_remember:
+          name: LLM Remember
+          description: 'Corresponds to the "remember" parameter of `llmvision.image_analyzer`.'
+          default: false
+          selector:
+            boolean: {}
+        llm_use_memory:
+          name: LLM Use Memory
+          description: 'Corresponds to the "use_memory" parameter of `llmvision.image_analyzer`.'
+          default: false
+          selector:
+            boolean: {}
+        llm_include_filename:
+          name: LLM Include Filename
+          description: 'Corresponds to the "include_filename" parameter of `llmvision.image_analyzer`.'
+          default: false
+          selector:
+            boolean: {}
+        llm_target_width:
+          name: LLM Target Width
+          description: 'Target width for image resizing before analysis (pixels).'
+          default: 1280
+          selector:
+            number:
+              min: 0
+              max: 4096
+              step: 1
+              mode: box
+        llm_max_tokens:
+          name: LLM Max Tokens
+          description: 'Maximum number of tokens for the LLM response.'
+          default: 98
+          selector:
+            number:
+              min: 1
+              max: 1024
+              step: 1
+              mode: box
+        llm_temperature:
+          name: LLM Temperature
+          description: 'Controls randomness in LLM generation (e.g., 0.0 to 1.0+). Lower is more deterministic.'
+          default: 0.2
+          selector:
+            number:
+              min: 0.0
+              max: 2.0
+              step: 0.1
+              mode: slider
+        llm_generate_title:
+          name: LLM Generate Title
+          description: 'Corresponds to the "generate_title" parameter of `llmvision.image_analyzer`.'
+          default: false
+          selector:
+            boolean: {}
+        llm_expose_images:
+          name: LLM Expose Images
+          description: 'Corresponds to the "expose_images" parameter of `llmvision.image_analyzer`.'
+          default: false
+          selector:
+            boolean: {}
     telegram:
       name: |
         # Telegram Configuration
@@ -119,7 +219,7 @@ blueprint:
             You can use variables such as {{camera_name}} and {{label}}
             e.g., A {{ label }} {{ ' was' if type == 'end' else '' }} detected on the {{ camera_name }} camera.
 
-          default: "A {{ label }} {{ 'was detected' }} on the {{ camera_name }} camera."
+          default: "" #"A {{ label }} {{ 'was detected' }} on the {{ camera_name }} camera."
           selector:
             select:
               options:
@@ -1037,6 +1137,19 @@ variables:
   before_zones: "{{ trigger.payload_json['before']['data']['zones'] | list | lower if trigger.id == 'frigate-event' }}"
   after_zones: "{{ trigger.payload_json['after']['data']['zones'] | list | lower if trigger.id == 'frigate-event' }}"
   zone_multi_filter: "{{zone_only and zone_multi and after_zones|length and zones and zones |reject('in', after_zones) |list |length == 0 }}"
+  llm_enable: !input llm_enable
+  llm_image_entity: !input llm_image_entity
+  llm_provider: !input llm_provider
+  llm_message_prompt: !input llm_message_prompt
+  llm_remember: !input llm_remember
+  llm_use_memory: !input llm_use_memory
+  llm_include_filename: !input llm_include_filename
+  llm_target_width: !input llm_target_width
+  llm_max_tokens: !input llm_max_tokens
+  llm_temperature: !input llm_temperature
+  llm_generate_title: !input llm_generate_title
+  llm_expose_images: !input llm_expose_images
+  llm_analysis_response_text: ""
 conditions:
   condition: or
   conditions:
@@ -1147,6 +1260,9 @@ actions:
               title: !input title
               message: !input message
               subtitle: !input subtitle
+              raw_title: !input title
+              raw_message: !input message 
+              raw_subtitle: !input subtitle
               tap_action: !input tap_action
               button_1: !input button_1
               button_2: !input button_2
@@ -1171,6 +1287,49 @@ actions:
               attachment: !input attachment
               video: !input video
               custom_action_auto: !input custom_action_auto
+          - choose:
+            - conditions:
+              - '{{ llm_enable }}'
+              - '{{ llm_image_entity | length > 0 }}'
+              - '{{ llm_provider | length > 0 }}'
+              alias: "LLM Vision Analysis Enabled and Configured"
+              sequence:
+                - service: llmvision.image_analyzer
+                  data:
+                    remember: '{{ llm_remember }}'
+                    use_memory: '{{ llm_use_memory }}'
+                    include_filename: '{{ llm_include_filename }}'
+                    target_width: '{{ llm_target_width }}'
+                    max_tokens: '{{ llm_max_tokens }}'
+                    temperature: '{{ llm_temperature }}'
+                    generate_title: '{{ llm_generate_title }}'
+                    expose_images: '{{ llm_expose_images }}'
+                    provider: '{{ llm_provider }}'
+                    message: '{{ llm_message_prompt | replace("{{camera_name}}", camera_name) | replace("{{label}}", label) }}'
+                    image_entity: '{{ llm_image_entity }}'
+                  response_variable: llm_service_response
+                  continue_on_error: true
+                - variables:
+                    llm_analysis_response_text: >-
+                      {{ llm_service_response.response_text if llm_service_response is defined and llm_service_response.response_text is defined else "" }}
+                - if: '{{ debug }}'
+                  then:
+                    - action: logbook.log
+                      data:
+                        name: Frigate Notification - LLM Debug
+                        message: "LLM Analysis for {{ camera_name }} ({{ label }}). Prompt: {{ llm_message_prompt | replace('{{camera_name}}', camera_name) | replace('{{label}}', label) | truncate(150) }}. Entities: {{ llm_image_entity }}. Response: {{ llm_analysis_response_text if llm_analysis_response_text | trim | length > 0 else 'No response or error' }}"
+          - variables:
+              final_notification_title: >-
+                {{ raw_title }}
+              final_notification_message: >-
+                {% set base_msg = raw_message %}
+                {% if llm_enable and llm_analysis_response_text is defined and llm_analysis_response_text | trim | length > 0 %}
+                  {{ base_msg }} {{ llm_analysis_response_text | trim }}
+                {% else %}
+                  {{ base_msg }}
+                {% endif %}
+              final_notification_subtitle: >-
+                {{ raw_subtitle }} 
           - alias: "Debug: Initial Output"
             choose:
               - conditions:
@@ -1210,9 +1369,9 @@ actions:
                             Group: {{group}}, 
                             Channel: {{channel}} {{' - overridden by alarm_stream' if critical}}, 
                             Sticky: {{sticky}}, 
-                            Title: {{title}}, 
-                            Message: {{message}},
-                            Subtitle: {{subtitle}}, 
+                            Title: {{final_notification_title}},
+                            Message: {{final_notification_message}},
+                            Subtitle: {{final_notification_subtitle}},
                             Tap Action: {{tap_action if not redacted or not base_url else tap_action |replace(base_url, 'REDACTED')}}, 
                             Action Button 1 Text/URL/Icon: {{iif(button_1, button_1, 'unset')}} ({{url_1 if not redacted or not base_url else url_1 |replace(base_url, 'REDACTED')}}) {{icon_1}}, 
                             Action Button 2 Text/URL/Icon: {{iif(button_2, button_2, 'unset')}} ({{url_2 if not redacted or not base_url else url_2 |replace(base_url, 'REDACTED')}}) {{icon_2}}, 
@@ -1277,33 +1436,33 @@ actions:
                         sequence:
                           - delay:
                               seconds: "{{initial_delay}}"
-                  - alias: "Custom Action Auto"
-                    choose:
-                      - conditions: "{{ custom_action_auto |length > 0 }}"
-                        sequence: !input "custom_action_auto"
-                  - alias: "Send Notification"
-                    sequence:
+                  # - alias: "Custom Action Auto"
+                  #   choose:
+                  #     - conditions: "{{ custom_action_auto |length > 0 }}"
+                  #       sequence: !input "custom_action_auto"
+                  # - alias: "Send Notification"
+                  #   sequence:
                       - choose:
                           - conditions: "{{ telegram }}"
                             sequence:
                               - action: telegram_bot.send_photo
                                 data:
                                   target: "{{telegram_chat_id}}"
-                                  caption: "{{message}}"
+                                  caption: "{{final_notification_message}}"
                                   url: "{{attachment|replace( base_url, telegram_base_url )}}"
                           - conditions: "{{ not notify_group_target }}"
                             sequence:
                               - device_id: !input notify_device
                                 domain: mobile_app
                                 type: notify
-                                title: "{{title}}"
-                                message: "{{message}}"
+                                title: "{{final_notification_title}}"
+                                message: "{{final_notification_message}}"
                                 data:
                                   tag: "{{ tag }}"
                                   group: "{{ group }}"
                                   color: "{{color}}"
                                   # Android Specific
-                                  subject: "{{subtitle}}"
+                                  subject: "{{final_notification_subtitle}}"
                                   image: "{{attachment}}"
                                   video: "{{video}}"
                                   clickAction: "{{tap_action}}"
@@ -1314,7 +1473,7 @@ actions:
                                   channel: "{{'alarm_stream' if critical else channel}}"
                                   car_ui: "{{android_auto}}"
                                   # iOS Specific
-                                  subtitle: "{{subtitle}}"
+                                  subtitle: "{{final_notification_subtitle}}"
                                   url: "{{tap_action}}"
                                   attachment:
                                     url: "{{video if video else attachment }}"
@@ -1346,8 +1505,8 @@ actions:
                             sequence:
                               - action: "notify.{{ notify_group_target }}"
                                 data:
-                                  title: "{{title}}"
-                                  message: "{{message}}"
+                                  title: "{{final_notification_title}}"
+                                  message: "{{final_notification_message}}"
                                   data:
                                     tag: "{{ tag }}"
                                     group: "{{ group }}"
@@ -1403,14 +1562,14 @@ actions:
                         default:
                           - action: "notify.{{ notify_group_target }}"
                             data:
-                              title: "{{title}}"
-                              message: "{{message}}"
+                              title: "{{final_notification_title}}"
+                              message: "{{final_notification_message}}"
                               data:
                                 tag: "{{ tag }}"
                                 group: "{{ group }}"
                                 color: "{{color}}"
                                 # Android Specific
-                                subject: "{{subtitle}}"
+                                subject: "{{final_notification_subtitle}}"
                                 image: "{{attachment}}"
                                 video: "{{video}}"
                                 clickAction: "{{tap_action}}"
@@ -1421,7 +1580,7 @@ actions:
                                 channel: "{{'alarm_stream' if critical else channel}}"
                                 car_ui: "{{android_auto}}"
                                 # Android/Fire TV
-                                subtitle: "{{subtitle}}"
+                                subtitle: "{{final_notification_subtitle}}"
                                 fontsize: "{{tv_size}}"
                                 position: "{{tv_position}}"
                                 duration: "{{tv_duration}}"
@@ -1469,7 +1628,7 @@ actions:
                                         tag: "{{ tag }}{{'-tts'}}"
                                         channel: "{{'alarm_stream' if critical else channel}}"
                                         alert_once: "{{ alert_once }}"
-                                        tts_text: "{{message}}"
+                                        tts_text: "{{final_notification_message}}"
                               default:
                                 - action: "notify.{{ notify_group_target }}"
                                   data:
@@ -1478,7 +1637,7 @@ actions:
                                       tag: "{{ tag }}{{'-tts'}}"
                                       channel: "{{'alarm_stream' if critical else channel}}"
                                       alert_once: "{{ alert_once }}"
-                                      tts_text: "{{message}}"
+                                      tts_text: "{{final_notification_message}}"
                             - action: input_text.set_value
                               data:
                                 value: |
@@ -1486,6 +1645,10 @@ actions:
                                   {{ newIds[:250] }}
                               target:
                                 entity_id: "{{tts_helper}}"
+                      - alias: Custom Action Auto
+                        choose:
+                        - conditions: '{{ custom_action_auto |length > 0 }}'
+                          sequence: !input custom_action_auto       
           ########################################################
           #################### LOOP for updates ##################
           ########################################################
