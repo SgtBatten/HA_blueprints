@@ -7,4 +7,4 @@ This blueprint will send a notification to your device when a Frigate event for 
 
 STABLE: [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https://raw.githubusercontent.com/SgtBatten/HA_blueprints/main/Frigate_Camera_Notifications/Stable.yaml)
 
-BETA: [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://github.com/hqnicolas/Home_Assistait_blueprints/blob/main/Frigate_Camera_Notifications/frigate_rockchip.yaml)
+BETA: [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https://raw.githubusercontent.com/hqnicolas/Home_Assistait_blueprints/blob/main/Frigate_Camera_Notifications/frigate_rockchip.yaml)
