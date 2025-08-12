@@ -1610,10 +1610,10 @@ actions:
                     # import the title and message again so any sublabel, object or zone changes are captured.
                     title: !input title
                     message: >-
-                      {% if wait.trigger.topic == 'frigate/tracked_object_update' and {{use_frigate_gen_ai}} %}
+                      {% if wait.trigger.topic == 'frigate/tracked_object_update' and use_frigate_gen_ai %}
                         {{ wait.trigger.payload_json.description }}
                       {% else %}
-                        !input message
+                        {{ message }}
                       {% endif %}
                     subtitle: !input subtitle
 
