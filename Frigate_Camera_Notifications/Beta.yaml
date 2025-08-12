@@ -1187,6 +1187,23 @@ actions:
               attachment: !input attachment
               video: !input video
               custom_action_auto: !input custom_action_auto
+          - alias: "Update message with frigate gen ai"
+            if:
+              - condition: template
+                value_template: "{{ use_frigate_gen_ai }}"
+            then:
+              - repeat:
+                  sequence:
+                    - wait_for_trigger:
+                        - trigger: mqtt
+                          topic: "{{ gen_ai_mqtt_topic }}"
+                      continue_on_timeout: false
+                  until:
+                    - condition: template
+                      value_template: >-
+                        {{ not wait.trigger or wait.trigger.payload_json['id'] == id}}
+              - variables:
+                  message: "{{ wait.trigger.payload_json.description }}"
           - alias: "Debug: Initial Output"
             choose:
               - conditions:
@@ -1512,10 +1529,6 @@ actions:
                       topic: "{{mqtt_topic}}"
                       payload: "{{ review_id }}"
                       value_template: "{{ value_json['after']['id'] }}"
-                    - trigger: mqtt
-                      topic: "{{gen_ai_mqtt_topic}}"
-                      payload: "{{ id }}"
-                      value_template: "{{ value_json['after']['id'] }}"
                   timeout:
                     minutes: "{{timeout}}"
                   continue_on_timeout: false
@@ -1631,6 +1644,23 @@ actions:
                     silent_update: "{{ alert_once or (not presence_changed and not zone_updated and not object_updated and not sub_label_updated) }}"
 
                     custom_action_auto_multi: !input custom_action_auto_multi
+                - alias: "Update message with frigate gen ai"
+                  if:
+                    - condition: template
+                      value_template: "{{ use_frigate_gen_ai }}"
+                  then:
+                    - repeat:
+                        sequence:
+                          - wait_for_trigger:
+                              - trigger: mqtt
+                                topic: "{{ gen_ai_mqtt_topic }}"
+                            continue_on_timeout: false
+                        until:
+                          - condition: template
+                            value_template: >-
+                              {{ not wait.trigger or wait.trigger.payload_json['id'] == id}}
+                    - variables:
+                        message: "{{ wait.trigger.payload_json.description }}"
                 - alias: "Debug: Loop Output"
                   choose:
                     - conditions:
