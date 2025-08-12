@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.3h)
+  name: Frigate Notifications (0.15.0.0h)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -112,6 +112,22 @@ blueprint:
           name: Notification Title (Optional)
           description: The title of the notification.
           default: ""
+        use_frigate_gen_ai:
+          name: Use Frigate GenAI Message
+          description: |
+            Enable to use Frigate GenAI to generate a custom message for the notification.
+            This will override the message below.
+            Requires Frigate GenAI to be configured in the Frigate integration.
+          default: false
+          selector:
+            boolean:
+        gen_ai_mqtt_topic:
+          name: GenAI Message MQTT Topic
+          description: |
+            The MQTT topic to use for the GenAI description.
+            This is used to send the generated message to the GenAI service.
+            If left empty, it will default to `frigate/tracked_object_update`.
+          default: "frigate/tracked_object_update"
         message:
           name: Notification Message
           description: |
@@ -991,6 +1007,8 @@ variables:
   android_auto: !input android_auto
   notify_group: !input notify_group
   notify_group_target: "{{ notify_group | lower | regex_replace('^notify\\.', '') | replace(' ','_') }}"
+  use_frigate_gen_ai: !input use_frigate_gen_ai
+  gen_ai_mqtt_topic: !input gen_ai_mqtt_topic
   telegram_chat_id: !input notify_telegram_chat_id
   telegram: "{{true if (telegram_chat_id | length > 0) else false}}"
   zone_only: !input zone_filter
@@ -1171,6 +1189,23 @@ actions:
               attachment: !input attachment
               video: !input video
               custom_action_auto: !input custom_action_auto
+          - alias: "Update message with frigate gen ai"
+            if:
+              - condition: template
+                value_template: "{{ use_frigate_gen_ai }}"
+            then:
+              - repeat:
+                  sequence:
+                    - wait_for_trigger:
+                        - trigger: mqtt
+                          topic: "{{ gen_ai_mqtt_topic }}"
+                      continue_on_timeout: false
+                  until:
+                    - condition: template
+                      value_template: >-
+                        {{ not wait.trigger or wait.trigger.payload_json['id'] == id}}
+              - variables:
+                  message: "{{ wait.trigger.payload_json.description }}"
           - alias: "Debug: Initial Output"
             choose:
               - conditions:
@@ -1606,6 +1641,23 @@ actions:
                     silent_update: "{{ alert_once or (not presence_changed and not zone_updated and not object_updated and not sub_label_updated) }}"
 
                     custom_action_auto_multi: !input custom_action_auto_multi
+                - alias: "Update message with frigate gen ai"
+                  if:
+                    - condition: template
+                      value_template: "{{ use_frigate_gen_ai }}"
+                  then:
+                    - repeat:
+                        sequence:
+                          - wait_for_trigger:
+                              - trigger: mqtt
+                                topic: "{{ gen_ai_mqtt_topic }}"
+                            continue_on_timeout: false
+                        until:
+                          - condition: template
+                            value_template: >-
+                              {{ not wait.trigger or wait.trigger.payload_json['id'] == id}}
+                    - variables:
+                        message: "{{ wait.trigger.payload_json.description }}"
                 - alias: "Debug: Loop Output"
                   choose:
                     - conditions:
