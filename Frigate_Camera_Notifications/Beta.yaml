@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.3h)
+  name: Frigate Notifications (0.15.0.0h)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -112,6 +112,23 @@ blueprint:
           name: Notification Title (Optional)
           description: The title of the notification.
           default: ""
+        use_frigate_gen_ai:
+          name: Frigate GenAI Topic
+          selector:
+            boolean:
+              name: GenAI Message
+              description: |
+                Enable to use Frigate GenAI to generate a custom message for the notification.
+                This will override the message below.
+                Requires Frigate GenAI to be configured in the Frigate integration.
+              default: false
+        gen_ai_mqtt_topic:
+          name: GenAI Description MQTT Topic
+          description: |
+            The MQTT topic to use for the GenAI description.
+            This is used to send the generated message to the GenAI service.
+            If left empty, it will default to `frigate/tracked_object_update`.
+          default: "frigate/tracked_object_update"
         message:
           name: Notification Message
           description: |
@@ -1496,6 +1513,10 @@ actions:
                       topic: "{{mqtt_topic}}"
                       payload: "{{ review_id }}"
                       value_template: "{{ value_json['after']['id'] }}"
+                    - trigger: mqtt
+                      topic: "{{gen_ai_mqtt_topic}}"
+                      payload: "{{ id }}"
+                      value_template: "{{ value_json['after']['id'] }}"
                   timeout:
                     minutes: "{{timeout}}"
                   continue_on_timeout: false
@@ -1589,7 +1610,12 @@ actions:
                       {% endif %}
                     # import the title and message again so any sublabel, object or zone changes are captured.
                     title: !input title
-                    message: !input message
+                    message: >-
+                      {% if wait.trigger.topic == 'frigate/tracked_object_update' and {{use_frigate_gen_ai}} %}
+                        {{ wait.trigger.payload_json.description }}
+                      {% else %}
+                        !input message
+                      {% endif %}
                     subtitle: !input subtitle
 
                     critical_input: !input critical
