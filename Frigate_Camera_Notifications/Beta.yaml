@@ -113,17 +113,16 @@ blueprint:
           description: The title of the notification.
           default: ""
         use_frigate_gen_ai:
-          name: Frigate GenAI Topic
+          name: Use Frigate GenAI Message
+          description: |
+            Enable to use Frigate GenAI to generate a custom message for the notification.
+            This will override the message below.
+            Requires Frigate GenAI to be configured in the Frigate integration.
+          default: false
           selector:
             boolean:
-              name: GenAI Message
-              description: |
-                Enable to use Frigate GenAI to generate a custom message for the notification.
-                This will override the message below.
-                Requires Frigate GenAI to be configured in the Frigate integration.
-              default: false
         gen_ai_mqtt_topic:
-          name: GenAI Description MQTT Topic
+          name: GenAI Message MQTT Topic
           description: |
             The MQTT topic to use for the GenAI description.
             This is used to send the generated message to the GenAI service.
