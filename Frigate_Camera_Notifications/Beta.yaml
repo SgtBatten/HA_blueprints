@@ -1007,6 +1007,8 @@ variables:
   android_auto: !input android_auto
   notify_group: !input notify_group
   notify_group_target: "{{ notify_group | lower | regex_replace('^notify\\.', '') | replace(' ','_') }}"
+  use_frigate_gen_ai: !input use_frigate_gen_ai
+  gen_ai_mqtt_topic: !input gen_ai_mqtt_topic
   telegram_chat_id: !input notify_telegram_chat_id
   telegram: "{{true if (telegram_chat_id | length > 0) else false}}"
   zone_only: !input zone_filter
