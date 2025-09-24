@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.3h)
+  name: Frigate Notifications (0.14.0.3i)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -74,6 +74,10 @@ blueprint:
       name: MQTT Topic (Advanced)
       description: The MQTT topic Frigate sends review messages in.
       default: frigate/reviews
+    mqtt_payload:
+      name: MQTT Payload (Advanced)
+      description: The Frigate MQTT payload to use.
+      default: new
     client_id:
       name: Client ID (Optional-Advanced)
       description: Used to support multiple instances of Frigate. Leave blank if you don't know what to do.
@@ -369,7 +373,7 @@ blueprint:
               options:
                 - mdi:homeassistant
                 - mdi:cctv
-                - "mdi:{{'account-outline' if label == 'Person' else 'dog' if label == 'Dog' else 'cat' if label == 'Cat' else 'car' if label == 'Car' else 'home-assistant'}}"
+                - "mdi:{{'account-outline' if label == 'Person' else 'dog' if label == 'Dog' else 'cat' if label == 'Cat' else 'car' if label == 'Car' else 'paw' if label == 'Animal' else 'home-assistant'}}"
               custom_value: true
         group:
           name: Group
@@ -947,7 +951,7 @@ trigger_variables:
 triggers:
   - trigger: mqtt
     topic: "{{mqtt_topic}}"
-    payload: "new"
+    payload: !input mqtt_payload
     value_template: "{{value_json['type']}}"
     id: frigate-event
   - trigger: event
