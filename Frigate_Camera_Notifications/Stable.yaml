@@ -683,6 +683,10 @@ blueprint:
                   value: /ccab4aaf_frigate-fa/dashboard
                 - label: Open Frigate (proxy)
                   value: /ccab4aaf_frigate-proxy/dashboard
+                - label: View Stream (Frigate Ingress)
+                  value: /frigate?index=%23{{camera}}
+                - label: View Event (Frigate Ingress)
+                  value: /frigate?index=review?id={{review_id}}
                 - label: Open Reolink App (Android)
                   value: app://com.mcu.reolink
                 - label: None (Android)
@@ -721,6 +725,10 @@ blueprint:
                   value: /ccab4aaf_frigate-fa/dashboard
                 - label: Open Frigate (proxy)
                   value: /ccab4aaf_frigate-proxy/dashboard
+                - label: View Stream (Frigate Ingress)
+                  value: /frigate?index=%23{{camera}}
+                - label: View Event (Frigate Ingress)
+                  value: /frigate?index=review?id={{review_id}}
                 - label: Open Reolink App (Android)
                   value: app://com.mcu.reolink
               custom_value: true
@@ -757,6 +765,10 @@ blueprint:
                   value: /ccab4aaf_frigate-fa/dashboard
                 - label: Open Frigate (proxy)
                   value: /ccab4aaf_frigate-proxy/dashboard
+                - label: View Stream (Frigate Ingress)
+                  value: /frigate?index=%23{{camera}}
+                - label: View Event (Frigate Ingress)
+                  value: /frigate?index=review?id={{review_id}}
                 - label: Open Reolink App (Android)
                   value: app://com.mcu.reolink
                 - label: Custom Action (Manual Trigger)
@@ -797,6 +809,10 @@ blueprint:
                   value: /ccab4aaf_frigate-fa/dashboard
                 - label: Open Frigate (proxy)
                   value: /ccab4aaf_frigate-proxy/dashboard
+                - label: View Stream (Frigate Ingress)
+                  value: /frigate?index=%23{{camera}}
+                - label: View Event (Frigate Ingress)
+                  value: /frigate?index=review?id={{review_id}}
                 - label: Open Reolink App (Android)
                   value: app://com.mcu.reolink
                 - label: Custom Action (Manual Trigger)
