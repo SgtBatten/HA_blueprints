@@ -1756,6 +1756,7 @@ actions:
                                             name: "{{ iif(silent_update, 'none', sound) }}"
                                             volume: "{{ iif((silent_update or sound == 'none'), 0, volume) }}"
                                             critical: "{{ iif(critical, 1, 0) }}"
+                                            interruption-level: "{{ iif((silent_update or sound == 'none'), 'passive', 'active') }}"
                                         entity_id: "{{ios_live_view}}"
                                         # Actions
                                         actions:
@@ -1813,6 +1814,7 @@ actions:
                                               name: "{{ iif(silent_update, 'none', sound) }}"
                                               volume: "{{ iif((silent_update or sound == 'none'), 0, volume) }}"
                                               critical: "{{ iif(critical, 1, 0) }}"
+                                              interruption-level: "{{ iif((silent_update or sound == 'none'), 'passive', 'active') }}"
                                           entity_id: "{{ios_live_view}}"
                                           # Actions
                                           actions:
@@ -1867,6 +1869,7 @@ actions:
                                           name: "{{ iif(silent_update, 'none', sound) }}"
                                           volume: "{{ iif((silent_update or sound == 'none'), 0, volume) }}"
                                           critical: "{{ iif(critical, 1, 0) }}"
+                                          interruption-level: "{{ iif((silent_update or sound == 'none'), 'passive', 'active') }}"
                                       entity_id: "{{ios_live_view}}"
                                       # Actions
                                       actions:
