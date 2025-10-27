@@ -1327,7 +1327,7 @@ actions:
                                     sound:
                                       name: "{{sound}}"
                                       volume: "{{ iif(sound == 'none', 0, volume) }}"
-                                    interruption-level: "{{ iif(critical, 1, interruption_level) }}"
+                                    interruption-level: "{{ iif(critical, 'critical', interruption_level) }}"
                                   entity_id: "{{ios_live_view}}"
                                   # Actions
                                   actions:
@@ -1385,7 +1385,7 @@ actions:
                                       sound:
                                         name: "{{sound}}"
                                         volume: "{{ iif(sound == 'none', 0, volume) }}"
-                                      interruption-level: "{{ iif(critical, 1, interruption_level) }}"
+                                      interruption-level: "{{ iif(critical, 'critical', interruption_level) }}"
                                     entity_id: "{{ios_live_view}}"
                                     # Actions
                                     actions:
@@ -1440,7 +1440,7 @@ actions:
                                   sound:
                                     name: "{{sound}}"
                                     volume: "{{ iif(sound == 'none', 0, volume) }}"
-                                  interruption-level: "{{ iif(critical, 1, interruption_level) }}"
+                                  interruption-level: "{{ iif(critical, 'critical', interruption_level) }}"
                                 entity_id: "{{ios_live_view}}"
                                 # Actions
                                 actions:
@@ -1805,7 +1805,7 @@ actions:
                                           sound:
                                             name: "{{ iif(silent_update, 'none', sound) }}"
                                             volume: "{{ iif((silent_update or sound == 'none'), 0, volume) }}"
-                                          interruption-level: "{{ iif(critical, 1, interruption_level) }}"
+                                          interruption-level: "{{ iif(critical, 'critical', interruption_level) }}"
                                         entity_id: "{{ios_live_view}}"
                                         # Actions
                                         actions:
@@ -1864,7 +1864,7 @@ actions:
                                             sound:
                                               name: "{{ iif(silent_update, 'none', sound) }}"
                                               volume: "{{ iif((silent_update or sound == 'none'), 0, volume) }}"
-                                            interruption-level: "{{ iif(critical, 1, interruption_level) }}"
+                                            interruption-level: "{{ iif(critical, 'critical', interruption_level) }}"
                                           entity_id: "{{ios_live_view}}"
                                           # Actions
                                           actions:
@@ -1920,7 +1920,7 @@ actions:
                                         sound:
                                           name: "{{ iif(silent_update, 'none', sound) }}"
                                           volume: "{{ iif((silent_update or sound == 'none'), 0, volume) }}"
-                                        interruption-level: "{{ iif(critical, 1, interruption_level) }}"
+                                        interruption-level: "{{ iif(critical, 'critical', interruption_level) }}"
                                       entity_id: "{{ios_live_view}}"
                                       # Actions
                                       actions:
