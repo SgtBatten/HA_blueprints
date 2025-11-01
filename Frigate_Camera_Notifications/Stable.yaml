@@ -405,6 +405,12 @@ blueprint:
           name: Notification Channel - Android only (Optional)
           description: Create a new channel for notifications to allow custom notification sounds, vibration patterns, and override of Do Not Disturb mode. Configured directly on the device.
           default: ""
+        stop_updates_after_tap:
+          name: Stop Updates After Tap/Dismiss - Android only (Optional)
+          description: When enabled, if the notification for this event is tapped or dismissed, all further updates for that same event will stop. New detections will still trigger normally.
+          default: false
+          selector:
+            boolean:
     filters:
       name: |
         # Filters
@@ -983,6 +989,7 @@ variables:
   input_volume: !input volume
   volume: "{{ (1 * input_volume|int(100))/100 }}"
   sticky: !input sticky
+  stop_updates_after_tap: !input stop_updates_after_tap
   tv: !input tv
   tv_position: !input tv_position
   tv_size: !input tv_size
@@ -1445,475 +1452,494 @@ actions:
           ########################################################
           #################### LOOP for updates ##################
           ########################################################
-          - repeat:
-              sequence:
-                - wait_for_trigger:
-                    - trigger: mqtt
-                      topic: "{{mqtt_topic}}"
-                      payload: "{{ review_id }}"
-                      value_template: "{{ value_json['after']['id'] }}"
-                  timeout:
-                    minutes: "{{timeout}}"
-                  continue_on_timeout: false
-                - variables:
-                    # use the subsequent attchment variable if set
-                    attachment_2: !input attachment_2
-                    attachment: "{{iif(attachment_2, attachment_2, attachment)}}"
-
-                    event: "{{ wait.trigger.payload_json }}"
-                    type: "{{event['type']}}"
-
-                    initial_severity: "{{severity}}"
-                    old_objects: "{{objects}}"
-                    last_zones: "{{after_zones}}"
-                    # Sometimes mqtt messages are missed so we keep the previous iteration severity, objects and zones to compare against the new ones,
-                    # rather than comparing the new before and after which may match despite a change between mqtt messages
-
-                    severity: "{{event['after']['severity']}}"
-                    severity_updated: "{{initial_severity != severity}}"
-                    severity_satisfied: "{{((input_severity | select('equalto', severity) | list | length) > 0) }}"
-
-                    objects: "{{ event['after']['data']['objects'] }}"
-                    objects_satisfied: "{{ not labels|length or labels|select('in', objects)|list|length > 0 or ('person-verified' in objects and 'person' in labels) }}"
-                    #loitering: "{{ loiter_timer and event['before']['motionless_count']/fps/60 < loiter_timer and event['after']['motionless_count']/fps/60 >= loiter_timer }}"
-                    home: "{{presence_entity |reject('in', '') |select('is_state', 'home') |list |length != 0 }}"
-                    #new_snapshot: "{{ update_thumbnail and event['before']['snapshot']['frame_time'] != event['after']['snapshot']['frame_time'] }}"
-                    presence_changed: "{{ presence_entity |reject('in', '') |expand |map(attribute='last_changed') |list |select('gt', as_datetime(event['before']['start_time'])) |list |length != 0 }}"
-
-                    # Zones Variables
-
-                    before_zones: "{{ event['before']['data']['zones'] | default([]) }}"
-                    after_zones: "{{ event['after']['data']['zones'] | default([]) }}"
-                    # If no zones defined, or any zones have been entered
-                    any_zones_entered: "{{ zones | length == 0 or ((zones | select('in', after_zones) | list | length) > 0) }}"
-                    zone_single_satisfied: "{{ any_zones_entered if zone_only else true}}"
-
-                    # If no zones defined, or all zones have been entered
-                    all_zones_entered: "{{ zones | length == 0 or ((zones | reject('in', after_zones) | list | length) == 0) }}"
-                    zone_multi_satisfied: "{{ all_zones_entered if zone_only and zone_multi else true}}"
-
-                    # Compare the joined strings for equality is the simplest solution, due to both variables being defined in band.
-                    ordered_zones_match: >
-                      {% set ns = namespace(intersection=[]) %}
-                      {% for item in after_zones %}
-                          {% if item in zones %}
-                              {% set ns.intersection = ns.intersection + [item] %}
-                          {% endif %}
-                      {% endfor %}
-                      {{ ns.intersection == zones }}
-                    # Fails fast if prerequisite of zone or zone_multi is false, as they are pre-requisites
-                    zone_order_satisfied: "{{ (zone_only and zone_multi and ordered_zones_match) if zone_order_enforced else true }}"
-
-                    zones_satisfied: "{{zone_single_satisfied and zone_multi_satisfied and zone_order_satisfied}}"
-
-                    new_entered_zones: "{{ zones | select('in', after_zones) | list }}"
-                    last_entered_zones: "{{ zones | select('in', last_zones) | list }}"
-                    entered_new_zones: "{{ not zone_only and after_zones | length > last_zones | length }}"
-                    entered_new_filter_zones: "{{ zone_only and zones | length > 0 and (new_entered_zones | length > last_entered_zones | length) }}"
-
-                    # stationary_moved: "{{ event['after']['position_changes'] > event['before']['position_changes'] }}"
-
-                    state_satisfied: "{{ not state_only or states(input_entity)|lower in states_filter }}"
-
-                    before_sub_labels: "{{ sub_labels }}"
-                    sub_labels: "{{ event['after']['data']['sub_labels'] | default([]) }}"
-                    # assess the sub labels from the mqtt message.
-                    # If the user has configured specific objects we eliminate objects not in that list
-                    # Otherwise we loop through all objects and replace any verified objects with the sub label
-                    label: >-
-                      {% if update_sub_label %}
-                        {% set data = namespace(labels=[]) %} 
-                        {% if labels|length %}
-                          {% for obj in objects|select('in', labels) %}
-                            {% if "-verified" in obj %}
-                            {% else %}
-                              {% set data.labels = data.labels + [obj] %}
-                            {% endif %}
-                          {% endfor %} {% set data.labels = data.labels + sub_labels %} 
-                          {{ data.labels | unique | list | sort | join(", ") | title }}
-                        {% else %}
-                          {% for obj in objects %}
-                            {% if "-verified" in obj %}
-                            {% else %}
-                              {% set data.labels = data.labels + [obj] %}
-                            {% endif %}
-                          {% endfor %} {% set data.labels = data.labels + sub_labels %} 
-                          {{ data.labels | unique | list | sort | join(", ") | title }}
-                        {% endif %}
-                      {% else %}
-                        {{objects | list | join(', ') | title}}
-                      {% endif %}
-                    # import the title and message again so any sublabel, object or zone changes are captured.
-                    title: !input title
-                    message: !input message
-                    subtitle: !input subtitle
-
-                    critical_input: !input critical
-                    critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
-                    tts: !input tts
-
-                    sub_label_updated: "{{ update_sub_label and sub_labels != before_sub_labels }}"
-                    # If we are filtering based on zones, and zone conditions are met and there is a new zone added.
-                    zone_updated: "{{ (entered_new_filter_zones and zones_satisfied) or entered_new_zones }}"
-                    object_updated: "{{ old_objects | select('in', labels) | list | length  != objects | select('in', labels) | list | length }}"
-
-                    # update is used to determine if we should play a sound. if it returns true, we should be silent.
-                    silent_update: "{{ alert_once or (not presence_changed and not zone_updated and not object_updated and not sub_label_updated) }}"
-
-                    custom_action_auto_multi: !input custom_action_auto_multi
-                - alias: "Debug: Loop Output"
-                  choose:
-                    - conditions:
-                        - "{{debug}}"
+          - variables:
+              cleared_flag: false
+          - parallel:
+              - sequence:
+                  - wait_for_trigger:
+                      - trigger: event
+                        event_type: mobile_app_notification_cleared
+                        event_data:
+                          tag: "{{ id }}"
+                    timeout:
+                      minutes: "{{ timeout }}"
+                    continue_on_timeout: false
+                  - variables:
+                      cleared_flag: true
+              - sequence:
+                  - repeat:
                       sequence:
-                        - action: logbook.log
-                          data_template:
-                            name: Frigate Notification
-                            message: |
-                              DEBUG (in loop):
-                                Send Notification: {{custom_filter and not home and zones_satisfied and state_satisfied and objects_satisfied and severity_satisfied and ((final_update and type == 'end') or (severity_updated or presence_changed or zone_updated or object_updated or sub_label_updated)) }}
-                                Info:
-                                  Sub Label: {{sub_labels}},
-                                  Image: "{{attachment if not redacted or not base_url else attachment |replace(base_url, 'REDACTED')}}"
-                                  Title: {{title}}
-                                  Message: {{message}}
-                                  iOS sound: {{'Critical' if critical else 'disabled by alert once' if alert_once else 'Silent' if silent_update else sound}},
-                                  Android Sound: {{'disabled by alert once' if alert_once else 'enabled'}},
-                                  iOS url: "{{(video if not redacted or not base_url else video |replace(base_url, 'REDACTED')) if video else attachment if not redacted or not base_url else attachment |replace(base_url, 'REDACTED')}}", 
-                                  Video: "{{video if not redacted or not base_url else video |replace(base_url, 'REDACTED')}}", 
-
-                                  Critical: {{critical}},
-                                  TTS: {{tts}}
-                                Triggers:
-                                  New Snapshot: False (not functional with reviews)
-                                  Severity Changed: {{severity_updated}},
-                                  Presence Changed: {{presence_changed}},
-                                  Object changed: {{object_updated}},
-                                  Zones Changed: {{'True' if entered_new_filter_zones and zones_satisfied else 'True - zone filter disabled' if entered_new_zones and not zone_only else 'True - Filter Criteria not met' if entered_new_zones else 'False'}},
-                                  Sublabel changed: {{ sub_label_updated }}{{' - Disabled' if not update_sub_label}},
-                                  Final Update: {{final_update and type == 'end'}}
-                                Conditions:
-                                  Filters:
-                                    Severity:
-                                      Required Severity: {{input_severity}}
-                                      TEST: {{'PASS' if severity_satisfied else 'FAIL'}} - {{severity}}, 
-                                    Zones:
-                                      Zone Filter toggle on: {{zone_only}},
-                                      Multi-Zone toggle on: {{zone_multi}},
-                                      Required zones: {{input_zones}},
-                                      Zone Order toggle on: {{zone_order_enforced}}
-                                      Last Zones: {{ last_zones | list | length }} - {{last_zones}},
-                                      New Zones: {{ after_zones | list | length }} - {{after_zones}},
-                                      TEST: {{'PASS' if zones_satisfied else 'FAIL' }} {{'(Multi)' if zone_only and zone_multi}} {{'(Order-Enforced)' if zone_only and zone_multi and zone_order_enforced}},
-                                    Object Filter:
-                                      Input: {{input_labels}},
-                                      TEST: {{'PASS' if objects_satisfied else 'FAIL'}} - {{objects}},
-                                    Presence entity (not home):
-                                      Entity: {{presence_entity}},
-                                      TEST:  {{'PASS' if not home else 'FAIL'}},
-                                    Time Filter:
-                                      Disabled times: {{disable_times}},
-                                      TEST: {{'PASS' if now().hour not in disable_times else 'FAIL'}}
-                                    State Filter:
-                                      State Filter toggle on: {{state_only}},
-                                      State Filter Entity: {{input_entity}},
-                                      Required States: {{input_states}},
-                                      TEST: {{'PASS' if state_satisfied else 'FAIL'}},
-                                    Custom Filter: {{'PASS' if custom_filter else 'FAIL'}},
-                - choose:
-                    - conditions:
-                        - and:
-                            - alias: Severity Filter
-                              condition: template
-                              value_template: "{{severity_satisfied}}"
-                            - alias: Object Filter
-                              condition: template
-                              value_template: "{{ objects_satisfied }}"
-                            - alias: Zone Filter
-                              condition: template
-                              value_template: "{{zones_satisfied}}"
-                            - alias: State Filter
-                              condition: template
-                              value_template: "{{state_satisfied}}"
-                            - alias: Custom Filter
-                              condition: template
-                              value_template: "{{custom_filter}}"
-                            - alias: Presence Filter
-                              condition: template
-                              value_template: "{{not home}}"
-                            - or:
-                                - alias: Presence Changed
-                                  condition: template
-                                  value_template: "{{presence_changed}}"
-                                - alias: Zone Changed
-                                  condition: template
-                                  value_template: "{{zone_updated}}"
-                                - alias: Sub Label Changed
-                                  condition: template
-                                  value_template: "{{sub_label_updated}}"
-                                - alias: Object Changed
-                                  condition: template
-                                  value_template: "{{object_updated}}"
-                                - alias: Severity Changed
-                                  condition: template
-                                  value_template: "{{severity_updated}}"
-                                - and:
-                                    - alias: Final Update
-                                      condition: template
-                                      value_template: "{{final_update}}"
-                                    - alias: End of Event
-                                      condition: template
-                                      value_template: "{{event['type'] == 'end'}}"
-                      sequence:
-                        - alias: "Custom Action Auto Multi"
+                        - wait_for_trigger:
+                            - trigger: mqtt
+                              topic: "{{mqtt_topic}}"
+                              payload: "{{ review_id }}"
+                              value_template: "{{ value_json['after']['id'] }}"
+                          timeout:
+                            minutes: "{{timeout}}"
+                          continue_on_timeout: false
+                        - if:
+                            - "{{ cleared_flag and stop_updates_after_tap }}"
+                          then:
+                            - stop: "Notification cleared; stopping further updates for this event."
+                        - variables:
+                            # use the subsequent attchment variable if set
+                            attachment_2: !input attachment_2
+                            attachment: "{{iif(attachment_2, attachment_2, attachment)}}"
+        
+                            event: "{{ wait.trigger.payload_json }}"
+                            type: "{{event['type']}}"
+        
+                            initial_severity: "{{severity}}"
+                            old_objects: "{{objects}}"
+                            last_zones: "{{after_zones}}"
+                            # Sometimes mqtt messages are missed so we keep the previous iteration severity, objects and zones to compare against the new ones,
+                            # rather than comparing the new before and after which may match despite a change between mqtt messages
+        
+                            severity: "{{event['after']['severity']}}"
+                            severity_updated: "{{initial_severity != severity}}"
+                            severity_satisfied: "{{((input_severity | select('equalto', severity) | list | length) > 0) }}"
+        
+                            objects: "{{ event['after']['data']['objects'] }}"
+                            objects_satisfied: "{{ not labels|length or labels|select('in', objects)|list|length > 0 or ('person-verified' in objects and 'person' in labels) }}"
+                            #loitering: "{{ loiter_timer and event['before']['motionless_count']/fps/60 < loiter_timer and event['after']['motionless_count']/fps/60 >= loiter_timer }}"
+                            home: "{{presence_entity |reject('in', '') |select('is_state', 'home') |list |length != 0 }}"
+                            #new_snapshot: "{{ update_thumbnail and event['before']['snapshot']['frame_time'] != event['after']['snapshot']['frame_time'] }}"
+                            presence_changed: "{{ presence_entity |reject('in', '') |expand |map(attribute='last_changed') |list |select('gt', as_datetime(event['before']['start_time'])) |list |length != 0 }}"
+        
+                            # Zones Variables
+        
+                            before_zones: "{{ event['before']['data']['zones'] | default([]) }}"
+                            after_zones: "{{ event['after']['data']['zones'] | default([]) }}"
+                            # If no zones defined, or any zones have been entered
+                            any_zones_entered: "{{ zones | length == 0 or ((zones | select('in', after_zones) | list | length) > 0) }}"
+                            zone_single_satisfied: "{{ any_zones_entered if zone_only else true}}"
+        
+                            # If no zones defined, or all zones have been entered
+                            all_zones_entered: "{{ zones | length == 0 or ((zones | reject('in', after_zones) | list | length) == 0) }}"
+                            zone_multi_satisfied: "{{ all_zones_entered if zone_only and zone_multi else true}}"
+        
+                            # Compare the joined strings for equality is the simplest solution, due to both variables being defined in band.
+                            ordered_zones_match: >
+                              {% set ns = namespace(intersection=[]) %}
+                              {% for item in after_zones %}
+                                  {% if item in zones %}
+                                      {% set ns.intersection = ns.intersection + [item] %}
+                                  {% endif %}
+                              {% endfor %}
+                              {{ ns.intersection == zones }}
+                            # Fails fast if prerequisite of zone or zone_multi is false, as they are pre-requisites
+                            zone_order_satisfied: "{{ (zone_only and zone_multi and ordered_zones_match) if zone_order_enforced else true }}"
+        
+                            zones_satisfied: "{{zone_single_satisfied and zone_multi_satisfied and zone_order_satisfied}}"
+        
+                            new_entered_zones: "{{ zones | select('in', after_zones) | list }}"
+                            last_entered_zones: "{{ zones | select('in', last_zones) | list }}"
+                            entered_new_zones: "{{ not zone_only and after_zones | length > last_zones | length }}"
+                            entered_new_filter_zones: "{{ zone_only and zones | length > 0 and (new_entered_zones | length > last_entered_zones | length) }}"
+        
+                            # stationary_moved: "{{ event['after']['position_changes'] > event['before']['position_changes'] }}"
+        
+                            state_satisfied: "{{ not state_only or states(input_entity)|lower in states_filter }}"
+        
+                            before_sub_labels: "{{ sub_labels }}"
+                            sub_labels: "{{ event['after']['data']['sub_labels'] | default([]) }}"
+                            # assess the sub labels from the mqtt message.
+                            # If the user has configured specific objects we eliminate objects not in that list
+                            # Otherwise we loop through all objects and replace any verified objects with the sub label
+                            label: >-
+                              {% if update_sub_label %}
+                                {% set data = namespace(labels=[]) %} 
+                                {% if labels|length %}
+                                  {% for obj in objects|select('in', labels) %}
+                                    {% if "-verified" in obj %}
+                                    {% else %}
+                                      {% set data.labels = data.labels + [obj] %}
+                                    {% endif %}
+                                  {% endfor %} {% set data.labels = data.labels + sub_labels %} 
+                                  {{ data.labels | unique | list | sort | join(", ") | title }}
+                                {% else %}
+                                  {% for obj in objects %}
+                                    {% if "-verified" in obj %}
+                                    {% else %}
+                                      {% set data.labels = data.labels + [obj] %}
+                                    {% endif %}
+                                  {% endfor %} {% set data.labels = data.labels + sub_labels %} 
+                                  {{ data.labels | unique | list | sort | join(", ") | title }}
+                                {% endif %}
+                              {% else %}
+                                {{objects | list | join(', ') | title}}
+                              {% endif %}
+                            # import the title and message again so any sublabel, object or zone changes are captured.
+                            title: !input title
+                            message: !input message
+                            subtitle: !input subtitle
+        
+                            critical_input: !input critical
+                            critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
+                            tts: !input tts
+        
+                            sub_label_updated: "{{ update_sub_label and sub_labels != before_sub_labels }}"
+                            # If we are filtering based on zones, and zone conditions are met and there is a new zone added.
+                            zone_updated: "{{ (entered_new_filter_zones and zones_satisfied) or entered_new_zones }}"
+                            object_updated: "{{ old_objects | select('in', labels) | list | length  != objects | select('in', labels) | list | length }}"
+        
+                            # update is used to determine if we should play a sound. if it returns true, we should be silent.
+                            silent_update: "{{ alert_once or (not presence_changed and not zone_updated and not object_updated and not sub_label_updated) }}"
+        
+                            custom_action_auto_multi: !input custom_action_auto_multi
+                        - alias: "Debug: Loop Output"
                           choose:
                             - conditions:
-                                - "{{ custom_action_auto_multi | length > 0 }}"
-                              sequence: !input "custom_action_auto_multi"
-                        - alias: "Delay for Final Update"
-                          choose:
-                            - conditions:
-                                - "{{ event['type'] == 'end' }}"
-                                - "{{ final_update }}"
+                                - "{{debug}}"
                               sequence:
-                                - delay:
-                                    seconds: "{{final_delay}}"
-                        - alias: "Update Notification"
-                          sequence:
-                            - choose:
-                                - conditions: "{{ telegram }}"
+                                - action: logbook.log
+                                  data_template:
+                                    name: Frigate Notification
+                                    message: |
+                                      DEBUG (in loop):
+                                        Send Notification: {{custom_filter and not home and zones_satisfied and state_satisfied and objects_satisfied and severity_satisfied and ((final_update and type == 'end') or (severity_updated or presence_changed or zone_updated or object_updated or sub_label_updated)) }}
+                                        Info:
+                                          Sub Label: {{sub_labels}},
+                                          Image: "{{attachment if not redacted or not base_url else attachment |replace(base_url, 'REDACTED')}}"
+                                          Title: {{title}}
+                                          Message: {{message}}
+                                          iOS sound: {{'Critical' if critical else 'disabled by alert once' if alert_once else 'Silent' if silent_update else sound}},
+                                          Android Sound: {{'disabled by alert once' if alert_once else 'enabled'}},
+                                          iOS url: "{{(video if not redacted or not base_url else video |replace(base_url, 'REDACTED')) if video else attachment if not redacted or not base_url else attachment |replace(base_url, 'REDACTED')}}", 
+                                          Video: "{{video if not redacted or not base_url else video |replace(base_url, 'REDACTED')}}", 
+        
+                                          Critical: {{critical}},
+                                          TTS: {{tts}}
+                                        Triggers:
+                                          New Snapshot: False (not functional with reviews)
+                                          Severity Changed: {{severity_updated}},
+                                          Presence Changed: {{presence_changed}},
+                                          Object changed: {{object_updated}},
+                                          Zones Changed: {{'True' if entered_new_filter_zones and zones_satisfied else 'True - zone filter disabled' if entered_new_zones and not zone_only else 'True - Filter Criteria not met' if entered_new_zones else 'False'}},
+                                          Sublabel changed: {{ sub_label_updated }}{{' - Disabled' if not update_sub_label}},
+                                          Final Update: {{final_update and type == 'end'}}
+                                        Conditions:
+                                          Filters:
+                                            Severity:
+                                              Required Severity: {{input_severity}}
+                                              TEST: {{'PASS' if severity_satisfied else 'FAIL'}} - {{severity}}, 
+                                            Zones:
+                                              Zone Filter toggle on: {{zone_only}},
+                                              Multi-Zone toggle on: {{zone_multi}},
+                                              Required zones: {{input_zones}},
+                                              Zone Order toggle on: {{zone_order_enforced}}
+                                              Last Zones: {{ last_zones | list | length }} - {{last_zones}},
+                                              New Zones: {{ after_zones | list | length }} - {{after_zones}},
+                                              TEST: {{'PASS' if zones_satisfied else 'FAIL' }} {{'(Multi)' if zone_only and zone_multi}} {{'(Order-Enforced)' if zone_only and zone_multi and zone_order_enforced}},
+                                            Object Filter:
+                                              Input: {{input_labels}},
+                                              TEST: {{'PASS' if objects_satisfied else 'FAIL'}} - {{objects}},
+                                            Presence entity (not home):
+                                              Entity: {{presence_entity}},
+                                              TEST:  {{'PASS' if not home else 'FAIL'}},
+                                            Time Filter:
+                                              Disabled times: {{disable_times}},
+                                              TEST: {{'PASS' if now().hour not in disable_times else 'FAIL'}}
+                                            State Filter:
+                                              State Filter toggle on: {{state_only}},
+                                              State Filter Entity: {{input_entity}},
+                                              Required States: {{input_states}},
+                                              TEST: {{'PASS' if state_satisfied else 'FAIL'}},
+                                            Custom Filter: {{'PASS' if custom_filter else 'FAIL'}},
+                        - choose:
+                            - conditions:
+                                - and:
+                                    - alias: Severity Filter
+                                      condition: template
+                                      value_template: "{{severity_satisfied}}"
+                                    - alias: Object Filter
+                                      condition: template
+                                      value_template: "{{ objects_satisfied }}"
+                                    - alias: Zone Filter
+                                      condition: template
+                                      value_template: "{{zones_satisfied}}"
+                                    - alias: State Filter
+                                      condition: template
+                                      value_template: "{{state_satisfied}}"
+                                    - alias: Custom Filter
+                                      condition: template
+                                      value_template: "{{custom_filter}}"
+                                    - alias: Presence Filter
+                                      condition: template
+                                      value_template: "{{not home}}"
+                                    - or:
+                                        - alias: Presence Changed
+                                          condition: template
+                                          value_template: "{{presence_changed}}"
+                                        - alias: Zone Changed
+                                          condition: template
+                                          value_template: "{{zone_updated}}"
+                                        - alias: Sub Label Changed
+                                          condition: template
+                                          value_template: "{{sub_label_updated}}"
+                                        - alias: Object Changed
+                                          condition: template
+                                          value_template: "{{object_updated}}"
+                                        - alias: Severity Changed
+                                          condition: template
+                                          value_template: "{{severity_updated}}"
+                                        - and:
+                                            - alias: Final Update
+                                              condition: template
+                                              value_template: "{{final_update}}"
+                                            - alias: End of Event
+                                              condition: template
+                                              value_template: "{{event['type'] == 'end'}}"
+                              sequence:
+                                - alias: "Custom Action Auto Multi"
+                                  choose:
+                                    - conditions:
+                                        - "{{ custom_action_auto_multi | length > 0 }}"
+                                      sequence: !input "custom_action_auto_multi"
+                                - alias: "Delay for Final Update"
+                                  choose:
+                                    - conditions:
+                                        - "{{ event['type'] == 'end' }}"
+                                        - "{{ final_update }}"
+                                      sequence:
+                                        - delay:
+                                            seconds: "{{final_delay}}"
+                                - alias: "Update Notification"
                                   sequence:
                                     - choose:
-                                        - conditions:
-                                            - "{{ event['type'] == 'end' }}"
-                                            - "{{ video | length > 0 }}"
+                                        - conditions: "{{ telegram }}"
                                           sequence:
-                                            - action: telegram_bot.send_video
+                                            - choose:
+                                                - conditions:
+                                                    - "{{ event['type'] == 'end' }}"
+                                                    - "{{ video | length > 0 }}"
+                                                  sequence:
+                                                    - action: telegram_bot.send_video
+                                                      data:
+                                                        target: "{{telegram_chat_id}}"
+                                                        caption: "{{message}}"
+                                                        url: "{{ video | replace(base_url, telegram_base_url) }}"
+                                                        inline_keyboard:
+                                                          - [
+                                                              [
+                                                                "{{button_1}}",
+                                                                "{{url_1}}",
+                                                              ],
+                                                              [
+                                                                "{{button_2}}",
+                                                                "{{url_2}}",
+                                                              ],
+                                                            ]
+                                                          - [
+                                                              [
+                                                                "{{button_3}}",
+                                                                "{{url_3}}",
+                                                              ],
+                                                            ]
+                                              default:
+                                                - action: telegram_bot.send_photo
+                                                  data:
+                                                    target: "{{telegram_chat_id}}"
+                                                    caption: "{{message}}"
+                                                    url: "{{attachment | replace(base_url,telegram_base_url)}}"
+                                                    inline_keyboard:
+                                                      - [
+                                                          ["{{button_1}}", "{{url_1}}"],
+                                                          ["{{button_2}}", "{{url_2}}"],
+                                                        ]
+                                                      - [["{{button_3}}", "{{url_3}}"]]
+                                        - conditions: "{{ not notify_group_target }}"
+                                          sequence:
+                                            - device_id: !input notify_device
+                                              domain: mobile_app
+                                              type: notify
+                                              title: "{{title}}"
+                                              message: "{{message}}"
                                               data:
-                                                target: "{{telegram_chat_id}}"
-                                                caption: "{{message}}"
-                                                url: "{{ video | replace(base_url, telegram_base_url) }}"
-                                                inline_keyboard:
-                                                  - [
-                                                      [
-                                                        "{{button_1}}",
-                                                        "{{url_1}}",
-                                                      ],
-                                                      [
-                                                        "{{button_2}}",
-                                                        "{{url_2}}",
-                                                      ],
-                                                    ]
-                                                  - [
-                                                      [
-                                                        "{{button_3}}",
-                                                        "{{url_3}}",
-                                                      ],
-                                                    ]
+                                                tag: "{{ id }}"
+                                                group: "{{ group }}"
+                                                color: "{{color}}"
+                                                # Android Specific
+                                                subject: "{{subtitle}}"
+                                                image: "{{attachment}}"
+                                                video: "{{video}}"
+                                                clickAction: "{{tap_action}}"
+                                                ttl: 0
+                                                priority: high
+                                                alert_once: "{{ alert_once }}"
+                                                notification_icon: "{{icon}}"
+                                                sticky: "{{sticky}}"
+                                                channel: "{{'alarm_stream' if critical else channel}}"
+                                                car_ui: "{{android_auto}}"
+                                                # iOS Specific
+                                                subtitle: "{{subtitle}}"
+                                                url: "{{tap_action}}"
+                                                attachment:
+                                                  url: "{{video if video else attachment }}"
+                                                  content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
+                                                push:
+                                                  sound:
+                                                    name: "{{ iif(silent_update, 'none', sound) }}"
+                                                    volume: "{{ iif((silent_update or sound == 'none'), 0, volume) }}"
+                                                    critical: "{{ iif(critical, 1, 0) }}"
+                                                entity_id: "{{ios_live_view}}"
+                                                # Actions
+                                                actions:
+                                                  - action: URI
+                                                    title: "{{button_1}}"
+                                                    uri: "{{url_1}}"
+                                                    icon: "{{icon_1}}"
+                                                  - action: URI
+                                                    title: "{{button_2}}"
+                                                    uri: "{{url_2}}"
+                                                    icon: "{{icon_2}}"
+                                                  - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
+                                                    title: "{{button_3}}"
+                                                    uri: "{{url_3}}"
+                                                    icon: "{{icon_3}}"
+                                                    destructive: true
+                                        - conditions: "{{ tv }}"
+                                          sequence:
+                                            - action: "notify.{{ notify_group_target }}"
+                                              data:
+                                                title: "{{title}}"
+                                                message: "{{message}}"
+                                                data:
+                                                  tag: "{{ id }}"
+                                                  group: "{{ group }}"
+                                                  color: "{{color}}"
+                                                  # Android Specific
+                                                  subject: "{{subtitle}}"
+                                                  clickAction: "{{tap_action}}"
+                                                  ttl: 0
+                                                  priority: high
+                                                  alert_once: "{{ alert_once }}"
+                                                  notification_icon: "{{icon}}"
+                                                  sticky: "{{sticky}}"
+                                                  channel: "{{'alarm_stream' if critical else channel}}"
+                                                  car_ui: "{{android_auto}}"
+                                                  # Android/Fire TV
+                                                  image:
+                                                    url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
+                                                  video: "{{video}}"
+                                                  fontsize: "{{tv_size}}"
+                                                  position: "{{tv_position}}"
+                                                  duration: "{{tv_duration}}"
+                                                  transparency: "{{tv_transparency}}"
+                                                  interrupt: "{{tv_interrupt}}"
+                                                  timeout: 30
+                                                  # iOS Specific
+                                                  subtitle: "{{subtitle}}"
+                                                  url: "{{tap_action}}"
+                                                  attachment:
+                                                    url: "{{video if video else attachment }}"
+                                                    content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
+                                                  push:
+                                                    sound:
+                                                      name: "{{ iif(silent_update, 'none', sound) }}"
+                                                      volume: "{{ iif((silent_update or sound == 'none'), 0, volume) }}"
+                                                      critical: "{{ iif(critical, 1, 0) }}"
+                                                  entity_id: "{{ios_live_view}}"
+                                                  # Actions
+                                                  actions:
+                                                    - action: URI
+                                                      title: "{{button_1}}"
+                                                      uri: "{{url_1}}"
+                                                      icon: "{{icon_1}}"
+                                                    - action: URI
+                                                      title: "{{button_2}}"
+                                                      uri: "{{url_2}}"
+                                                      icon: "{{icon_2}}"
+                                                    - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
+                                                      title: "{{button_3}}"
+                                                      uri: "{{url_3}}"
+                                                      icon: "{{icon_3}}"
+                                                      destructive: true
                                       default:
-                                        - action: telegram_bot.send_photo
+                                        - action: "notify.{{ notify_group_target }}"
                                           data:
-                                            target: "{{telegram_chat_id}}"
-                                            caption: "{{message}}"
-                                            url: "{{attachment | replace(base_url,telegram_base_url)}}"
-                                            inline_keyboard:
-                                              - [
-                                                  ["{{button_1}}", "{{url_1}}"],
-                                                  ["{{button_2}}", "{{url_2}}"],
-                                                ]
-                                              - [["{{button_3}}", "{{url_3}}"]]
-                                - conditions: "{{ not notify_group_target }}"
-                                  sequence:
-                                    - device_id: !input notify_device
-                                      domain: mobile_app
-                                      type: notify
-                                      title: "{{title}}"
-                                      message: "{{message}}"
-                                      data:
-                                        tag: "{{ id }}"
-                                        group: "{{ group }}"
-                                        color: "{{color}}"
-                                        # Android Specific
-                                        subject: "{{subtitle}}"
-                                        image: "{{attachment}}"
-                                        video: "{{video}}"
-                                        clickAction: "{{tap_action}}"
-                                        ttl: 0
-                                        priority: high
-                                        alert_once: "{{ alert_once }}"
-                                        notification_icon: "{{icon}}"
-                                        sticky: "{{sticky}}"
-                                        channel: "{{'alarm_stream' if critical else channel}}"
-                                        car_ui: "{{android_auto}}"
-                                        # iOS Specific
-                                        subtitle: "{{subtitle}}"
-                                        url: "{{tap_action}}"
-                                        attachment:
-                                          url: "{{video if video else attachment }}"
-                                          content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
-                                        push:
-                                          sound:
-                                            name: "{{ iif(silent_update, 'none', sound) }}"
-                                            volume: "{{ iif((silent_update or sound == 'none'), 0, volume) }}"
-                                            critical: "{{ iif(critical, 1, 0) }}"
-                                        entity_id: "{{ios_live_view}}"
-                                        # Actions
-                                        actions:
-                                          - action: URI
-                                            title: "{{button_1}}"
-                                            uri: "{{url_1}}"
-                                            icon: "{{icon_1}}"
-                                          - action: URI
-                                            title: "{{button_2}}"
-                                            uri: "{{url_2}}"
-                                            icon: "{{icon_2}}"
-                                          - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
-                                            title: "{{button_3}}"
-                                            uri: "{{url_3}}"
-                                            icon: "{{icon_3}}"
-                                            destructive: true
-                                - conditions: "{{ tv }}"
-                                  sequence:
-                                    - action: "notify.{{ notify_group_target }}"
-                                      data:
-                                        title: "{{title}}"
-                                        message: "{{message}}"
-                                        data:
-                                          tag: "{{ id }}"
-                                          group: "{{ group }}"
-                                          color: "{{color}}"
-                                          # Android Specific
-                                          subject: "{{subtitle}}"
-                                          clickAction: "{{tap_action}}"
-                                          ttl: 0
-                                          priority: high
-                                          alert_once: "{{ alert_once }}"
-                                          notification_icon: "{{icon}}"
-                                          sticky: "{{sticky}}"
-                                          channel: "{{'alarm_stream' if critical else channel}}"
-                                          car_ui: "{{android_auto}}"
-                                          # Android/Fire TV
-                                          image:
-                                            url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
-                                          video: "{{video}}"
-                                          fontsize: "{{tv_size}}"
-                                          position: "{{tv_position}}"
-                                          duration: "{{tv_duration}}"
-                                          transparency: "{{tv_transparency}}"
-                                          interrupt: "{{tv_interrupt}}"
-                                          timeout: 30
-                                          # iOS Specific
-                                          subtitle: "{{subtitle}}"
-                                          url: "{{tap_action}}"
-                                          attachment:
-                                            url: "{{video if video else attachment }}"
-                                            content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
-                                          push:
-                                            sound:
-                                              name: "{{ iif(silent_update, 'none', sound) }}"
-                                              volume: "{{ iif((silent_update or sound == 'none'), 0, volume) }}"
-                                              critical: "{{ iif(critical, 1, 0) }}"
-                                          entity_id: "{{ios_live_view}}"
-                                          # Actions
-                                          actions:
-                                            - action: URI
-                                              title: "{{button_1}}"
-                                              uri: "{{url_1}}"
-                                              icon: "{{icon_1}}"
-                                            - action: URI
-                                              title: "{{button_2}}"
-                                              uri: "{{url_2}}"
-                                              icon: "{{icon_2}}"
-                                            - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
-                                              title: "{{button_3}}"
-                                              uri: "{{url_3}}"
-                                              icon: "{{icon_3}}"
-                                              destructive: true
-                              default:
-                                - action: "notify.{{ notify_group_target }}"
-                                  data:
-                                    title: "{{title}}"
-                                    message: "{{message}}"
-                                    data:
-                                      tag: "{{ id }}"
-                                      group: "{{ group }}"
-                                      color: "{{color}}"
-                                      # Android Specific
-                                      subject: "{{subtitle}}"
-                                      image: "{{attachment}}"
-                                      video: "{{video}}"
-                                      clickAction: "{{tap_action}}"
-                                      ttl: 0
-                                      priority: high
-                                      alert_once: "{{ alert_once }}"
-                                      notification_icon: "{{icon}}"
-                                      sticky: "{{sticky}}"
-                                      channel: "{{'alarm_stream' if critical else channel}}"
-                                      car_ui: "{{android_auto}}"
-                                      # Android/Fire TV
-                                      fontsize: "{{tv_size}}"
-                                      position: "{{tv_position}}"
-                                      duration: "{{tv_duration}}"
-                                      transparency: "{{tv_transparency}}"
-                                      interrupt: "{{tv_interrupt}}"
-                                      # iOS Specific
-                                      subtitle: "{{subtitle}}"
-                                      url: "{{tap_action}}"
-                                      attachment:
-                                        url: "{{video if video else attachment }}"
-                                        content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
-                                      push:
-                                        sound:
-                                          name: "{{ iif(silent_update, 'none', sound) }}"
-                                          volume: "{{ iif((silent_update or sound == 'none'), 0, volume) }}"
-                                          critical: "{{ iif(critical, 1, 0) }}"
-                                      entity_id: "{{ios_live_view}}"
-                                      # Actions
-                                      actions:
-                                        - action: URI
-                                          title: "{{button_1}}"
-                                          uri: "{{url_1}}"
-                                          icon: "{{icon_1}}"
-                                        - action: URI
-                                          title: "{{button_2}}"
-                                          uri: "{{url_2}}"
-                                          icon: "{{icon_2}}"
-                                        - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
-                                          title: "{{button_3}}"
-                                          uri: "{{url_3}}"
-                                          icon: "{{icon_3}}"
-                                          destructive: true
-
-                            - if: "{{tts and (not tts_helper or not alert_once or (tts_helper and id not in states(tts_helper)))}}"
-                              then:
-                                sequence:
-                                  - choose:
-                                      - conditions: "{{ not notify_group_target }}"
-                                        sequence:
-                                          - device_id: !input notify_device
-                                            domain: mobile_app
-                                            type: notify
-                                            message: "{{'TTS'}}"
+                                            title: "{{title}}"
+                                            message: "{{message}}"
                                             data:
-                                              tag: "{{ id }}{{'-loitering-tts' if loitering}}"
-                                              channel: "{{'alarm_stream' if critical else channel}}"
+                                              tag: "{{ id }}"
+                                              group: "{{ group }}"
+                                              color: "{{color}}"
+                                              # Android Specific
+                                              subject: "{{subtitle}}"
+                                              image: "{{attachment}}"
+                                              video: "{{video}}"
+                                              clickAction: "{{tap_action}}"
+                                              ttl: 0
+                                              priority: high
                                               alert_once: "{{ alert_once }}"
-                                              tts_text: "{{message}}"
-
-                                    default:
-                                      - action: "notify.{{ notify_group_target }}"
-                                        data:
-                                          message: "{{'TTS'}}"
-                                          data:
-                                            tag: "{{ id }}{{'-loitering-tts' if loitering}}"
-                                            channel: "{{'alarm_stream' if critical else channel}}"
-                                            alert_once: "{{ alert_once }}"
-                                            tts_text: "{{message}}"
-                                  - action: input_text.set_value
-                                    data:
-                                      value: |
-                                        {% set newIds = id + '|' + states(tts_helper) %}
-                                        {{ newIds[:250] }}
-                                    target:
-                                      entity_id: "{{tts_helper}}"
-              until: "{{ not wait.trigger or wait.trigger.payload_json['type'] == 'end' }}"
+                                              notification_icon: "{{icon}}"
+                                              sticky: "{{sticky}}"
+                                              channel: "{{'alarm_stream' if critical else channel}}"
+                                              car_ui: "{{android_auto}}"
+                                              # Android/Fire TV
+                                              fontsize: "{{tv_size}}"
+                                              position: "{{tv_position}}"
+                                              duration: "{{tv_duration}}"
+                                              transparency: "{{tv_transparency}}"
+                                              interrupt: "{{tv_interrupt}}"
+                                              # iOS Specific
+                                              subtitle: "{{subtitle}}"
+                                              url: "{{tap_action}}"
+                                              attachment:
+                                                url: "{{video if video else attachment }}"
+                                                content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
+                                              push:
+                                                sound:
+                                                  name: "{{ iif(silent_update, 'none', sound) }}"
+                                                  volume: "{{ iif((silent_update or sound == 'none'), 0, volume) }}"
+                                                  critical: "{{ iif(critical, 1, 0) }}"
+                                              entity_id: "{{ios_live_view}}"
+                                              # Actions
+                                              actions:
+                                                - action: URI
+                                                  title: "{{button_1}}"
+                                                  uri: "{{url_1}}"
+                                                  icon: "{{icon_1}}"
+                                                - action: URI
+                                                  title: "{{button_2}}"
+                                                  uri: "{{url_2}}"
+                                                  icon: "{{icon_2}}"
+                                                - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
+                                                  title: "{{button_3}}"
+                                                  uri: "{{url_3}}"
+                                                  icon: "{{icon_3}}"
+                                                  destructive: true
+        
+                                    - if: "{{tts and (not tts_helper or not alert_once or (tts_helper and id not in states(tts_helper)))}}"
+                                      then:
+                                        sequence:
+                                          - choose:
+                                              - conditions: "{{ not notify_group_target }}"
+                                                sequence:
+                                                  - device_id: !input notify_device
+                                                    domain: mobile_app
+                                                    type: notify
+                                                    message: "{{'TTS'}}"
+                                                    data:
+                                                      tag: "{{ id }}{{'-loitering-tts' if loitering}}"
+                                                      channel: "{{'alarm_stream' if critical else channel}}"
+                                                      alert_once: "{{ alert_once }}"
+                                                      tts_text: "{{message}}"
+        
+                                            default:
+                                              - action: "notify.{{ notify_group_target }}"
+                                                data:
+                                                  message: "{{'TTS'}}"
+                                                  data:
+                                                    tag: "{{ id }}{{'-loitering-tts' if loitering}}"
+                                                    channel: "{{'alarm_stream' if critical else channel}}"
+                                                    alert_once: "{{ alert_once }}"
+                                                    tts_text: "{{message}}"
+                                          - action: input_text.set_value
+                                            data:
+                                              value: |
+                                                {% set newIds = id + '|' + states(tts_helper) %}
+                                                {{ newIds[:250] }}
+                                            target:
+                                              entity_id: "{{tts_helper}}"
+                      until: "{{ not wait.trigger or wait.trigger.payload_json['type'] == 'end' }}"
