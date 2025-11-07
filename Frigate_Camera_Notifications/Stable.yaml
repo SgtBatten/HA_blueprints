@@ -9,7 +9,7 @@ blueprint:
     A highly customisable Notification template for Frigate Camera Notifications.
 
     ### Software Version Requirements
-      - Minimum Home Assistant Version: 2024.10
+      - Minimum Home Assistant Version: 2024.11.0
       - Minimum Frigate Version: 0.14.0
       - Minimum Frigate Integration Version: 5.7.0
         - **Note:** "Enable the unauthenticated notification event proxy" must be ticked during setup
