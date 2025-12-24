@@ -1057,7 +1057,7 @@ actions:
               metadata: "{{ event['after']['data']['metadata'] | default({}) }}"
               review_id: "{{ event['after']['id'] }}"
               genai_title: "{{ metadata.title | default('') }}"
-              genai_scene: "{{ metadata.scene | default('') }}"
+              genai_shortSummary: "{{ metadata.shortSummary | default('') }}"
               genai_threat_level: "{{ metadata.potential_threat_level | int(0) }}"
               title: >-
                 {% if genai_threat_level == 2 %}
@@ -1067,7 +1067,7 @@ actions:
                 {% else %}
                   {{ genai_title }}
                 {% endif %}
-              message: "{{ genai_scene }}"
+              message: "{{ genai_shortSummary }}"
               subtitle: !input subtitle
               critical_input: !input critical
               critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
