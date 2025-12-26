@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.3i)
+  name: Frigate Notifications (0.14.0.3j)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -11,7 +11,7 @@ blueprint:
     ### Software Version Requirements
       - Minimum Home Assistant Version: 2024.11
       - Minimum Frigate Version: 0.14.0
-      - Minimum Frigate Integration Version: 5.7.0
+      - Minimum Frigate Integration Version: 5.14.0
         - **Note:** "Enable the unauthenticated notification event proxy" must be ticked during setup
       - An MQTT broker connected to Home Assistant and Frigate.
       - Minimum iOS Version: 15.0
@@ -217,6 +217,8 @@ blueprint:
                 # format=android converts it to a 2:1 ratio for mobile display.
                 - label: Thumbnail
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/thumbnail.jpg"
+                - label: Review Thumbnail
+                  value: '{{base_url}}/api/frigate{{client_id}}/notifications/{{camera}}-{{review_id}}/review_thumbnail.webp'
                 - label: Snapshot
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
                 - label: Snapshot with bounding box
@@ -257,6 +259,8 @@ blueprint:
                 # format=android converts it to a 2:1 ratio for mobile display.
                 - label: Thumbnail
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/thumbnail.jpg"
+                - label: Review Thumbnail
+                  value: '{{base_url}}/api/frigate{{client_id}}/notifications/{{camera}}-{{review_id}}/review_thumbnail.webp'
                 - label: Snapshot
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
                 - label: Snapshot with bounding box
