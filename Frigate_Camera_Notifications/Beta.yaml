@@ -1523,6 +1523,12 @@ actions:
                                   target: "{{telegram_chat_id}}"
                                   caption: "{{message}}"
                                   url: "{{attachment|replace( base_url, telegram_base_url )}}"
+                                  inline_keyboard:
+                                    - [
+                                        ["{{button_1}}", "{{url_1}}"],
+                                        ["{{button_2}}", "{{url_2}}"],
+                                      ]
+                                    - [["{{button_3}}", "{{url_3}}"]]
                           - conditions: "{{ not notify_group_target }}"
                             sequence:
                               - device_id: !input notify_device
