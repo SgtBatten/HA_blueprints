@@ -1019,7 +1019,7 @@ conditions:
           condition: !input master_condition
         - alias: Cooldown
           condition: template
-          value_template: "{{ not this.attributes.last_triggered or (now() - this.attributes.last_triggered).seconds > cooldown }}"
+          value_template: "{{ not this.attributes.last_triggered or this.attributes.last_triggered + timedelta(seconds=cooldown) < now() }}"
         - alias: Disable Times
           condition: template
           value_template: "{{ not disable_times|length or not now().hour in disable_times|map('int')|list }}"
