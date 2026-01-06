@@ -924,6 +924,10 @@ triggers:
     payload: "new"
     value_template: "{{value_json['type']}}"
     id: frigate-event
+  - trigger: mqtt
+    topic: "{{mqtt_topic}}"
+    value_template: "{{value_json['type'] == 'genai'}}"
+    id: genai-event
   - trigger: event
     event_type: mobile_app_notification_action
     event_data:
@@ -1048,9 +1052,7 @@ actions:
       - alias: "GenAI Summary"
         conditions:
           - condition: trigger
-            id: "frigate-event"
-          - condition: template
-            value_template: "{{ trigger.payload_json['type'] == 'genai' }}"
+            id: "genai-event"
         sequence:
           - variables:
               event: "{{ trigger.payload_json }}"
