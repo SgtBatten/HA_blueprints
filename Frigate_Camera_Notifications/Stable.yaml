@@ -926,7 +926,8 @@ triggers:
     id: frigate-event
   - trigger: mqtt
     topic: "{{mqtt_topic}}"
-    value_template: "{{value_json['type'] == 'genai'}}"
+    payload: genai
+    value_template: "{{value_json['type']}}"
     id: genai-event
   - trigger: event
     event_type: mobile_app_notification_action
