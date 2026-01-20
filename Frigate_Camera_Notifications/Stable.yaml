@@ -1013,6 +1013,8 @@ conditions:
       id: silence
     - condition: trigger
       id: custom
+    - condition: trigger
+      id: genai-event
     - condition: and
       conditions:
         - condition: trigger
