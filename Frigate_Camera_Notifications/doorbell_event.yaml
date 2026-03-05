@@ -1,0 +1,66 @@
+blueprint:
+  name: Frigate Doorbell Notifications (0.14.0.4)
+  author: SgtBatten/broyuken
+  homeassistant:
+    min_version: 2024.11.0
+  description: |
+    ## Frigate Doorbell Notifications
+
+    Creates a doorbell event within frigate to trigger doorbell notifications
+
+    ### Required Configuration Options:
+      - Frigate Cameras
+      - Doorbell Button Press Entity (binary sensor to let frigate know the doorbell has been pressed)
+  domain: automation
+  source_url: https://github.com/SgtBatten/HA_blueprints/blob/main/Frigate_Camera_Notifications/doorbell_event.yaml
+  input:
+    doorbell_camera:
+      name: Frigate Doorbell Cameras
+      description: |
+        Select the cameras that frigate will create the event under. 
+        If you do not see cameras listed in the drop-down, check you have the Frigate integration installed.
+        To more effectively customise the notifications you may need to create one automation per camera.
+      selector:
+        entity:
+          filter:
+            integration: frigate
+            domain: camera
+          multiple: false
+    frigate_doorbell_event_name:
+      name: Frigate Doorbell Event Name
+      description: 'The name of the event you want created in Frigate when a doorbell press occurs e.g. visitor. This name must be entered exactly the same in the object filter in the notification blueprint under the "Filters" heading if you are filtering events'
+      default: visitor
+    doorbell_press_entity:
+      name: Doorbell Press Entity
+      description: 'The binary_sensor that changes from off to on when the doorbell is pressed'
+      selector:
+        entity:
+          filter:
+          - domain:
+            - binary_sensor
+          multiple: false
+mode: parallel
+triggers:
+- trigger: state
+  entity_id: !input doorbell_press_entity
+  id: doorbell-press
+  from: 'off'
+  to: 'on'
+variables:
+  input_doorbell_camera: !input doorbell_camera
+  input_frigate_doorbell_event_name: !input frigate_doorbell_event_name
+actions:
+- choose:
+  - alias: Create Doorbell Pressed Event in Frigate
+    conditions:
+    - condition: trigger
+      id: doorbell-event
+    sequence:
+    - action: frigate.create_event
+      metadata: {}
+      data:
+        label: '{{input_frigate_doorbell_event_name}}'
+        duration: 2
+        include_recording: true
+      target:
+        entity_id: '{{input_doorbell_camera}}'
