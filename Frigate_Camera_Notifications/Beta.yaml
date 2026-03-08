@@ -1153,7 +1153,7 @@ actions:
                     sequence:
                       - action: telegram_bot.send_photo
                         data:
-                          target: "{{telegram_chat_id}}"
+                          chat_id: "{{telegram_chat_id}}"
                           caption: "{{message}}"
                           url: "{{attachment|replace( base_url, telegram_base_url )}}"
                   - conditions: "{{ not notify_group_target }}"
@@ -1527,7 +1527,7 @@ actions:
                             sequence:
                               - action: telegram_bot.send_photo
                                 data:
-                                  target: "{{telegram_chat_id}}"
+                                  chat_id: "{{telegram_chat_id}}"
                                   caption: "{{message}}"
                                   url: "{{attachment|replace( base_url, telegram_base_url )}}"
                                   inline_keyboard:
@@ -1981,7 +1981,7 @@ actions:
                                           sequence:
                                             - action: telegram_bot.send_video
                                               data:
-                                                target: "{{telegram_chat_id}}"
+                                                chat_id: "{{telegram_chat_id}}"
                                                 caption: "{{message}}"
                                                 url: "{{ video | replace(base_url, telegram_base_url) }}"
                                                 inline_keyboard:
@@ -2004,7 +2004,7 @@ actions:
                                       default:
                                         - action: telegram_bot.send_photo
                                           data:
-                                            target: "{{telegram_chat_id}}"
+                                            chat_id: "{{telegram_chat_id}}"
                                             caption: "{{message}}"
                                             url: "{{attachment | replace(base_url,telegram_base_url)}}"
                                             inline_keyboard:
