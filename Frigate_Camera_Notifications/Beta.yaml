@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.3k)
+  name: Frigate Notifications (0.14.0.3l)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -22,7 +22,8 @@ blueprint:
 
     ### Features:
       - Easily select the camera entities or mobile device using a drop-down menu.
-      - Configure multiple cameras in one automation. 
+      - Configure multiple cameras in one automation.
+      - Optional Sprinter and Final GenAI notification updates with separate attachment and description toggles.
 
       For the full features list visit the [GitHub Repository][1]
 
@@ -54,6 +55,15 @@ blueprint:
         device:
           filter:
             integration: mobile_app
+    notify_all_devices:
+      name: Notify All Devices
+      description: |
+        Send notifications via notify.notify instead of a single mobile device.
+
+        If enabled, this overrides the Mobile Device option, but Notification Group / Android/Fire TV below will still take priority when set.
+      default: false
+      selector:
+        boolean:
     notify_group:
       name: Notification Group or Android/Fire TV (Optional)
       description: |
@@ -253,7 +263,7 @@ blueprint:
             select:
               options:
                 - label: None
-                  value: ""
+                  value: "none"
                 # format=android converts it to a 2:1 ratio for mobile display.
                 - label: Thumbnail
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/thumbnail.jpg"
@@ -429,6 +439,105 @@ blueprint:
           name: Notification Channel - Android only (Optional)
           description: Create a new channel for notifications to allow custom notification sounds, vibration patterns, and override of Do Not Disturb mode. Configured directly on the device.
           default: ""
+    genai_updates:
+      name: |
+        # GenAI Updates
+      description: These are optional GenAI update options
+      icon: mdi:robot
+      collapsed: true
+      input:
+        genai_sprinter:
+          name: Enable Sprinter GenAI Update
+          description: |
+            Update the existing notification when Frigate publishes a tracked object description on `frigate/tracked_object_update`.
+
+            This update is sent silently to avoid repeated buzzes.
+          default: false
+          selector:
+            boolean:
+        genai_sprinter_description:
+          name: Include Sprinter Description
+          description: Include the tracked object description text in the Sprinter update message body.
+          default: true
+          selector:
+            boolean:
+        genai_sprinter_attachment:
+          name: Sprinter Attachment
+          description: Choose which media to attach to the Sprinter update.
+          default: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/event_preview.gif"
+          selector:
+            select:
+              options:
+                - label: Thumbnail
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/thumbnail.jpg"
+                - label: Snapshot
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
+                - label: Snapshot with bounding box
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1"
+                - label: Snapshot cropped
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?crop=1"
+                - label: Snapshot cropped with bounding box
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1&crop=1"
+                - label: Object 1 Event GIF
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/event_preview.gif"
+                - label: Thumbnail (2:1)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/thumbnail.jpg?format=android"
+                - label: Snapshot (2:1)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?format=android"
+                - label: Snapshot with bounding box (2:1)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1&format=android"
+                - label: Snapshot cropped (2:1)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?crop=1&format=android"
+                - label: Snapshot cropped with bounding box (2:1)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1&crop=1&format=android"
+              mode: dropdown
+        genai_final:
+          name: Enable Final GenAI Review Summary
+          description: |
+            Update the existing notification when Frigate publishes a review-summary GenAI message on the reviews topic.
+
+            Requires Frigate review summaries.
+          default: false
+          selector:
+            boolean:
+        genai_final_description:
+          name: Include Final Description
+          description: Include the final GenAI review summary text in the update message body.
+          default: true
+          selector:
+            boolean:
+        genai_final_attachment:
+          name: Final GenAI Attachment
+          description: Choose which media to attach to the Final GenAI update.
+          default: "{{base_url}}/api/frigate{{client_id}}/notifications/{{review_id}}/review_preview.gif"
+          selector:
+            select:
+              options:
+                - label: Thumbnail
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/thumbnail.jpg"
+                - label: Snapshot
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
+                - label: Snapshot with bounding box
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1"
+                - label: Snapshot cropped
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?crop=1"
+                - label: Snapshot cropped with bounding box
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1&crop=1"
+                - label: Review GIF
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{review_id}}/review_preview.gif"
+                - label: Object 1 Event GIF
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/event_preview.gif"
+                - label: Thumbnail (2:1)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/thumbnail.jpg?format=android"
+                - label: Snapshot (2:1)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?format=android"
+                - label: Snapshot with bounding box (2:1)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1&format=android"
+                - label: Snapshot cropped (2:1)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?crop=1&format=android"
+                - label: Snapshot cropped with bounding box (2:1)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1&crop=1&format=android"
+              mode: dropdown
     filters:
       name: |
         # Filters
@@ -955,10 +1064,13 @@ triggers:
     value_template: "{{value_json['type']}}"
     id: frigate-event
   - trigger: mqtt
+    topic: frigate/tracked_object_update
+    id: genai-sprinter
+  - trigger: mqtt
     topic: "{{mqtt_topic}}"
     payload: genai
     value_template: "{{value_json['type']}}"
-    id: genai-event
+    id: genai-final
   - trigger: event
     event_type: mobile_app_notification_action
     event_data:
@@ -982,11 +1094,18 @@ triggers:
 variables:
   input_camera: !input camera
   input_camera_name: "{{input_camera|expand|map(attribute='attributes.camera_name', default='none')|list}}"
-  camera: "{{trigger.payload_json['after']['camera'] if trigger.id == 'frigate-event'}}"
+  camera: >
+    {% if trigger.id == 'frigate-event' %}
+      {{ trigger.payload_json['after']['camera'] }}
+    {% elif trigger.id == 'genai-sprinter' %}
+      {{ trigger.payload_json['camera'] }}
+    {% elif trigger.id == 'genai-final' %}
+      {{ trigger.payload_json['after']['camera'] }}
+    {% endif %}
   camera_name: "{{ camera | replace('_', ' ') | title }}"
   input_severity: !input review_severity
   severity: "{{trigger.payload_json['after']['severity'] if trigger.id == 'frigate-event'}}"
-  type: "{{trigger.payload_json['type'] if trigger.id == 'frigate-event'}}"
+  type: "{{trigger.payload_json['type'] if trigger.id in ['frigate-event', 'genai-sprinter', 'genai-final']}}"
   input_base_url: !input base_url
   base_url: "{{ input_base_url.rstrip('/')}}"
   input_telegram_base_url: !input telegram_base_url
@@ -996,12 +1115,27 @@ variables:
   client_id: "{{input_client_id if not input_client_id else '/' + input_client_id if '/' not in input_client_id else input_client_id }}"
   alert_once: !input alert_once
   final_update: !input final_update
+  genai_sprinter: !input genai_sprinter
+  genai_sprinter_description: !input genai_sprinter_description
+  genai_sprinter_attachment: !input genai_sprinter_attachment
+  genai_final: !input genai_final
+  genai_final_description: !input genai_final_description
+  genai_final_attachment: !input genai_final_attachment
   ios_live_view: !input ios_live_view
   android_auto: !input android_auto
+  notify_all_devices: !input notify_all_devices
   notify_group: !input notify_group
-  notify_group_target: "{{ notify_group | lower | regex_replace('^notify\\.', '') | replace(' ','_') }}"
+  notify_group_target: >
+    {% if notify_all_devices and not notify_group %}
+      notify
+    {% else %}
+      {{ notify_group | lower | regex_replace('^notify\.', '') | replace(' ','_') }}
+    {% endif %}
   telegram_chat_id: !input notify_telegram_chat_id
   telegram: "{{true if (telegram_chat_id | length > 0) else false}}"
+  telegram_photo_service: "{{ 'telegram_bot' ~ '.send_photo' }}"
+  telegram_animation_service: "{{ 'telegram_bot' ~ '.send_animation' }}"
+  telegram_video_service: "{{ 'telegram_bot' ~ '.send_video' }}"
   zone_only: !input zone_filter
   input_zones: !input zones
   zones: "{{ input_zones | list | lower }}"
@@ -1013,6 +1147,7 @@ variables:
   disable_times: !input disable_times
   cooldown: !input cooldown
   timeout: !input timeout
+  silence_minutes: !input silence_timer
   loitering: false
   loiter_timer: !input loiter_timer
   initial_delay: !input initial_delay
@@ -1053,8 +1188,36 @@ conditions:
       id: silence
     - condition: trigger
       id: custom
-    - condition: trigger
-      id: genai-event
+    - condition: and
+      conditions:
+        - condition: trigger
+          id: genai-sprinter
+        - alias: Sprinter Enabled
+          condition: template
+          value_template: "{{ genai_sprinter }}"
+        - alias: Sprinter Type Match
+          condition: template
+          value_template: "{{ type == 'description' }}"
+        - alias: Camera Match
+          condition: template
+          value_template: "{{ input_camera_name|select('equalto', camera)|list|length>0 }}"
+        - alias: Master Condition
+          condition: !input master_condition
+    - condition: and
+      conditions:
+        - condition: trigger
+          id: genai-final
+        - alias: Final GenAI Enabled
+          condition: template
+          value_template: "{{ genai_final }}"
+        - alias: Final Type Match
+          condition: template
+          value_template: "{{ type == 'genai' }}"
+        - alias: Camera Match
+          condition: template
+          value_template: "{{ input_camera_name|select('equalto', camera)|list|length>0 }}"
+        - alias: Master Condition
+          condition: !input master_condition
     - condition: and
       conditions:
         - condition: trigger
@@ -1092,50 +1255,34 @@ actions:
           - condition: trigger
             id: custom
         sequence: !input "custom_action_manual"
-      - alias: "GenAI Summary"
+      - alias: "GenAI Sprinter Update"
         conditions:
           - condition: trigger
-            id: "genai-event"
+            id: genai-sprinter
+          - "{{ genai_sprinter }}"
+          - "{{ type == 'description' }}"
+          - "{{ input_camera_name|select('equalto', camera)|list|length>0 }}"
         sequence:
           - variables:
-              event: "{{ trigger.payload_json }}"
-              detections: "{{ event['after']['data']['detections'] }}"
-              review_id: "{{ event['after']['id'] }}"
-              id: "{{ detections[0] }}"
-              metadata: "{{ event['after']['data']['metadata'] | default({}) }}"
-              genai_title: "{{ metadata.title | default('') }}"
-              genai_shortSummary: "{{ metadata.shortSummary | default('') }}"
-              genai_threat_level: "{{ metadata.potential_threat_level | int(0) }}"
-              title: >-
-                {% if genai_threat_level == 2 %}
-                  Security Concern: {{ genai_title }}
-                {% elif genai_threat_level == 1 %}
-                  Needs Review: {{ genai_title }}
-                {% else %}
-                  {{ genai_title }}
-                {% endif %}
-              message: "{{ genai_shortSummary }}"
+              id: "{{ trigger.payload_json['id'] }}"
+              review_id: "{{ trigger.payload_json.get('review_id', trigger.payload_json['id']) }}"
+              label: "{{ trigger.payload_json.get('label', 'GenAI') | replace('_', ' ') | title }}"
+              title: "Detection at {{ trigger.payload_json['camera'] | replace('_', ' ') | title }}"
+              message: "{{ trigger.payload_json['description'] if genai_sprinter_description else '' }}"
               subtitle: !input subtitle
-              critical_input: !input critical
-              critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
-              interruption_level: !input interruption_level
               icon: !input icon
               group: !input group
-              tag: "{{ review_id }}"
+              tag: !input tag
               channel: !input channel
               color: !input color
               sticky: !input sticky
-              sound: !input sound
-              tap_action: !input tap_action
-              button_1: !input button_1
-              button_2: !input button_2
-              button_3: !input button_3
-              url_1: !input url_1
-              url_2: !input url_2
-              url_3: !input url_3
-              icon_1: !input icon_1
-              icon_2: !input icon_2
-              icon_3: !input icon_3
+              attachment: !input genai_sprinter_attachment
+              tap_action: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
+              button_1: View Clip
+              button_2: View Snapshot
+              url_1: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
+              url_2: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
+              url_3: "silence-{{ this.entity_id }}"
               ios_live_view: !input ios_live_view
               android_auto: !input android_auto
               tv: !input tv
@@ -1144,128 +1291,81 @@ actions:
               tv_duration: !input tv_duration
               tv_transparency: !input tv_transparency
               tv_interrupt: !input tv_interrupt
-              attachment: !input attachment
-              video: !input video
-          - alias: "Send GenAI Notification"
-            sequence:
-              - choose:
-                  - conditions: "{{ telegram }}"
-                    sequence:
-                      - action: telegram_bot.send_photo
+              tv_image: >
+                {% if 'event_preview.gif' in attachment %}
+                  {{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg
+                {% else %}
+                  {{attachment}}
+                {% endif %}
+              telegram_caption: "{{ title ~ ('\n' ~ message if message else '') }}"
+              attachment_content_type: "{{ 'jpeg' if 'jpg' in attachment else 'gif' }}"
+          - choose:
+              - conditions: "{{ telegram }}"
+                sequence:
+                  - choose:
+                      - conditions: "{{ 'gif' in attachment }}"
+                        sequence:
+                          - service: "{{ telegram_animation_service }}"
+                            data:
+                              chat_id: "{{telegram_chat_id}}"
+                              caption: "{{telegram_caption}}"
+                              url: "{{attachment|replace(base_url, telegram_base_url)}}"
+                              inline_keyboard:
+                                - [["{{button_1}}", "{{url_1}}"], ["{{button_2}}", "{{url_2}}"]]
+                                - [["Silence {{ silence_minutes }}m", "{{url_3}}"]]
+                    default:
+                      - service: "{{ telegram_photo_service }}"
                         data:
                           chat_id: "{{telegram_chat_id}}"
-                          caption: "{{message}}"
-                          url: "{{attachment|replace( base_url, telegram_base_url )}}"
-                  - conditions: "{{ not notify_group_target }}"
-                    sequence:
-                      - device_id: !input notify_device
-                        domain: mobile_app
-                        type: notify
-                        title: "{{title}}"
-                        message: "{{message}}"
-                        data:
-                          tag: "{{ tag }}"
-                          group: "{{ group }}"
-                          color: "{{color}}"
-                          # Android Specific
-                          subject: "{{subtitle}}"
-                          image: "{{attachment}}"
-                          video: "{{video}}"
-                          clickAction: "{{tap_action}}"
-                          ttl: 0
-                          priority: high
-                          notification_icon: "{{icon}}"
-                          sticky: "{{sticky}}"
-                          channel: "{{'alarm_stream' if critical else channel}}"
-                          car_ui: "{{android_auto}}"
-                          # iOS Specific
-                          subtitle: "{{subtitle}}"
-                          url: "{{tap_action}}"
-                          attachment:
-                            url: "{{video if video else attachment }}"
-                            content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
-                          push:
-                            sound:
-                              name: "{{sound}}"
-                              volume: "{{ iif(sound == 'none', 0, volume) }}"
-                            interruption-level: "{{ iif(critical, 1, interruption_level) }}"
-                          entity_id: "{{ios_live_view}}"
-                          # Actions
-                          actions:
-                            - action: "{{ 'URI' if '/' in url_1 else url_1 }}"
-                              title: "{{button_1}}"
-                              uri: "{{url_1}}"
-                              icon: "{{icon_1}}"
-                              destructive: "{{not '/' in url_1}}"
-                            - action: "{{ 'URI' if '/' in url_2 else url_2 }}"
-                              title: "{{button_2}}"
-                              uri: "{{url_2}}"
-                              icon: "{{icon_2}}"
-                              destructive: "{{not '/' in url_2}}"
-                            - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
-                              title: "{{button_3}}"
-                              uri: "{{url_3}}"
-                              icon: "{{icon_3}}"
-                              destructive: "{{not '/' in url_3}}"
-                  - conditions: "{{ tv }}"
-                    sequence:
-                      - action: "notify.{{ notify_group_target }}"
-                        data:
-                          title: "{{title}}"
-                          message: "{{message}}"
-                          data:
-                            tag: "{{ tag }}"
-                            group: "{{ group }}"
-                            color: "{{color}}"
-                            # Android Specific
-                            subject: "{{subtitle}}"
-                            clickAction: "{{tap_action}}"
-                            ttl: 0
-                            priority: high
-                            notification_icon: "{{icon}}"
-                            sticky: "{{sticky}}"
-                            channel: "{{'alarm_stream' if critical else channel}}"
-                            car_ui: "{{android_auto}}"
-                            # Android/Fire TV
-                            image:
-                              #only send still images to TV
-                              url: "{{attachment | replace('review_preview.gif','snapshot.jpg') | replace('event_preview.gif','snapshot.jpg')}}"
-                            fontsize: "{{tv_size}}"
-                            position: "{{tv_position}}"
-                            duration: "{{tv_duration}}"
-                            transparency: "{{tv_transparency}}"
-                            interrupt: "{{tv_interrupt}}"
-                            timeout: 30
-                            # iOS Specific
-                            subtitle: "{{subtitle}}"
-                            url: "{{tap_action}}"
-                            attachment:
-                              url: "{{video if video else attachment }}"
-                              content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
-                            push:
-                              sound:
-                                name: "{{sound}}"
-                                volume: "{{ iif(sound == 'none', 0, volume) }}"
-                              interruption-level: "{{ iif(critical, 1, interruption_level) }}"
-                            entity_id: "{{ios_live_view}}"
-                            # Actions
-                            actions:
-                              - action: "{{ 'URI' if '/' in url_1 else url_1 }}"
-                                title: "{{button_1}}"
-                                uri: "{{url_1}}"
-                                icon: "{{icon_1}}"
-                                destructive: "{{not '/' in url_1}}"
-                              - action: "{{ 'URI' if '/' in url_2 else url_2 }}"
-                                title: "{{button_2}}"
-                                uri: "{{url_2}}"
-                                icon: "{{icon_2}}"
-                                destructive: "{{not '/' in url_2}}"
-                              - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
-                                title: "{{button_3}}"
-                                uri: "{{url_3}}"
-                                icon: "{{icon_3}}"
-                                destructive: "{{not '/' in url_3}}"
-                default:
+                          caption: "{{telegram_caption}}"
+                          url: "{{attachment|replace(base_url, telegram_base_url)}}"
+                          inline_keyboard:
+                            - [["{{button_1}}", "{{url_1}}"], ["{{button_2}}", "{{url_2}}"]]
+                            - [["Silence {{ silence_minutes }}m", "{{url_3}}"]]
+              - conditions: "{{ not notify_group_target }}"
+                sequence:
+                  - device_id: !input notify_device
+                    domain: mobile_app
+                    type: notify
+                    title: "{{title}}"
+                    message: "{{message}}"
+                    data:
+                      tag: "{{ tag }}"
+                      group: "{{ group }}"
+                      color: "{{color}}"
+                      subject: "{{subtitle}}"
+                      image: "{{attachment}}"
+                      clickAction: "{{tap_action}}"
+                      ttl: 0
+                      priority: high
+                      alert_once: true
+                      notification_icon: "{{icon}}"
+                      sticky: "{{sticky}}"
+                      channel: "{{channel}}"
+                      car_ui: "{{android_auto}}"
+                      subtitle: "{{subtitle}}"
+                      url: "{{tap_action}}"
+                      attachment:
+                        url: "{{attachment}}"
+                        content-type: "{{attachment_content_type}}"
+                        hide-thumbnail: false
+                      push:
+                        sound:
+                          name: none
+                          volume: 0
+                        interruption-level: passive
+                      entity_id: "{{ios_live_view}}"
+                      actions:
+                        - action: URI
+                          title: "{{button_1}}"
+                          uri: "{{url_1}}"
+                        - action: URI
+                          title: "{{button_2}}"
+                          uri: "{{url_2}}"
+                        - action: "{{url_3}}"
+                          title: "Silence {{ silence_minutes }}m"
+              - conditions: "{{ tv }}"
+                sequence:
                   - action: "notify.{{ notify_group_target }}"
                     data:
                       title: "{{title}}"
@@ -1274,52 +1374,335 @@ actions:
                         tag: "{{ tag }}"
                         group: "{{ group }}"
                         color: "{{color}}"
-                        # Android Specific
                         subject: "{{subtitle}}"
-                        image: "{{attachment}}"
-                        video: "{{video}}"
                         clickAction: "{{tap_action}}"
                         ttl: 0
                         priority: high
+                        alert_once: true
                         notification_icon: "{{icon}}"
                         sticky: "{{sticky}}"
-                        channel: "{{'alarm_stream' if critical else channel}}"
+                        channel: "{{channel}}"
                         car_ui: "{{android_auto}}"
-                        # Android/Fire TV
-                        subtitle: "{{subtitle}}"
+                        image:
+                          url: "{{tv_image}}"
                         fontsize: "{{tv_size}}"
                         position: "{{tv_position}}"
                         duration: "{{tv_duration}}"
                         transparency: "{{tv_transparency}}"
                         interrupt: "{{tv_interrupt}}"
-                        # iOS Specific
+                        timeout: 30
+                        subtitle: "{{subtitle}}"
                         url: "{{tap_action}}"
                         attachment:
-                          url: "{{video if video else attachment }}"
-                          content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
+                          url: "{{attachment}}"
+                          content-type: "{{attachment_content_type}}"
+                          hide-thumbnail: false
                         push:
                           sound:
-                            name: "{{sound}}"
-                            volume: "{{ iif(sound == 'none', 0, volume) }}"
-                          interruption-level: "{{ iif(critical, 1, interruption_level) }}"
+                            name: none
+                            volume: 0
+                          interruption-level: passive
                         entity_id: "{{ios_live_view}}"
-                        # Actions
                         actions:
-                          - action: "{{ 'URI' if '/' in url_1 else url_1 }}"
+                          - action: URI
                             title: "{{button_1}}"
                             uri: "{{url_1}}"
-                            icon: "{{icon_1}}"
-                            destructive: "{{not '/' in url_1}}"
-                          - action: "{{ 'URI' if '/' in url_2 else url_2 }}"
+                          - action: URI
                             title: "{{button_2}}"
                             uri: "{{url_2}}"
-                            icon: "{{icon_2}}"
-                            destructive: "{{not '/' in url_2}}"
-                          - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
-                            title: "{{button_3}}"
-                            uri: "{{url_3}}"
-                            icon: "{{icon_3}}"
-                            destructive: "{{not '/' in url_3}}"
+                          - action: "{{url_3}}"
+                            title: "Silence {{ silence_minutes }}m"
+            default:
+              - action: "notify.{{ notify_group_target }}"
+                data:
+                  title: "{{title}}"
+                  message: "{{message}}"
+                  data:
+                    tag: "{{ tag }}"
+                    group: "{{ group }}"
+                    color: "{{color}}"
+                    subject: "{{subtitle}}"
+                    image: "{{attachment}}"
+                    clickAction: "{{tap_action}}"
+                    ttl: 0
+                    priority: high
+                    alert_once: true
+                    notification_icon: "{{icon}}"
+                    sticky: "{{sticky}}"
+                    channel: "{{channel}}"
+                    car_ui: "{{android_auto}}"
+                    subtitle: "{{subtitle}}"
+                    fontsize: "{{tv_size}}"
+                    position: "{{tv_position}}"
+                    duration: "{{tv_duration}}"
+                    transparency: "{{tv_transparency}}"
+                    interrupt: "{{tv_interrupt}}"
+                    url: "{{tap_action}}"
+                    attachment:
+                      url: "{{attachment}}"
+                      content-type: "{{attachment_content_type}}"
+                      hide-thumbnail: false
+                    push:
+                      sound:
+                        name: none
+                        volume: 0
+                      interruption-level: passive
+                    entity_id: "{{ios_live_view}}"
+                    actions:
+                      - action: URI
+                        title: "{{button_1}}"
+                        uri: "{{url_1}}"
+                      - action: URI
+                        title: "{{button_2}}"
+                        uri: "{{url_2}}"
+                      - action: "{{url_3}}"
+                        title: "Silence {{ silence_minutes }}m"
+      - alias: "Final GenAI Review Summary"
+        conditions:
+          - condition: trigger
+            id: genai-final
+          - "{{ genai_final }}"
+          - "{{ type == 'genai' }}"
+          - "{{ input_camera_name|select('equalto', camera)|list|length>0 }}"
+        sequence:
+          - variables:
+              event: "{{ trigger.payload_json }}"
+              detections: "{{ event['after']['data']['detections'] | default([]) }}"
+              review_id: "{{ event['after']['id'] }}"
+              id: "{{ detections[0] if detections | count > 0 else event['after']['id'] }}"
+              objects: "{{ event['after']['data']['objects'] | default([]) }}"
+              label: "{{ (objects | first | default('GenAI')) | replace('_', ' ') | title }}"
+              severity: "{{ event['after']['severity'] }}"
+              after_zones: "{{ event['after']['data']['zones'] | default([]) | list | lower }}"
+              any_zones_entered: "{{ zones | length == 0 or ((zones | select('in', after_zones) | list | length) > 0) }}"
+              zone_single_satisfied: "{{ any_zones_entered if zone_only else true }}"
+              all_zones_entered: "{{ zones | length == 0 or ((zones | reject('in', after_zones) | list | length) == 0) }}"
+              zone_multi_satisfied: "{{ all_zones_entered if zone_only and zone_multi else true }}"
+              ordered_zones_match: >
+                {% set ns = namespace(intersection=[]) %}
+                {% for item in after_zones %}
+                    {% if item in zones %}
+                        {% set ns.intersection = ns.intersection + [item] %}
+                    {% endif %}
+                {% endfor %}
+                {{ ns.intersection == zones }}
+              zone_order_satisfied: "{{ (zone_only and zone_multi and ordered_zones_match) if zone_order_enforced else true }}"
+              zones_satisfied: "{{ zone_single_satisfied and zone_multi_satisfied and zone_order_satisfied }}"
+              severity_satisfied: "{{ ((input_severity | select('equalto', severity) | list | length) > 0) }}"
+              objects_satisfied: "{{ not labels|length or labels|select('in', objects)|list|length > 0 or ('person-verified' in objects and 'person' in labels) }}"
+              home: "{{ presence_entity != '' and presence_entity|expand|selectattr('state','eq','home')|list|length != 0 }}"
+              state_satisfied: "{{ not state_only or states(input_entity)|lower in states_filter }}"
+              custom_filter: !input custom_filter
+              metadata: "{{ event['after']['data']['metadata'] | default({}) }}"
+              genai_title: "{{ metadata.title | default('') }}"
+              genai_threat_level: "{{ metadata.get('potential_threat_level', 0) | int(0) }}"
+              title: >-
+                {% if genai_threat_level == 2 %}
+                  Security Concern: {{ genai_title }}
+                {% elif genai_threat_level == 1 %}
+                  Needs Review: {{ genai_title }}
+                {% else %}
+                  {{ genai_title }}
+                {% endif %}
+              message: "{{ metadata.scene | default('') if genai_final_description else '' }}"
+              subtitle: !input subtitle
+              icon: !input icon
+              group: !input group
+              tag: !input tag
+              channel: !input channel
+              color: !input color
+              sticky: !input sticky
+              attachment: !input genai_final_attachment
+              tap_action: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
+              button_1: View Clip
+              button_2: View Snapshot
+              url_1: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
+              url_2: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
+              url_3: "silence-{{ this.entity_id }}"
+              ios_live_view: !input ios_live_view
+              android_auto: !input android_auto
+              tv: !input tv
+              tv_position: !input tv_position
+              tv_size: !input tv_size
+              tv_duration: !input tv_duration
+              tv_transparency: !input tv_transparency
+              tv_interrupt: !input tv_interrupt
+              tv_image: >
+                {% if 'review_preview.gif' in attachment or 'event_preview.gif' in attachment %}
+                  {{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg
+                {% else %}
+                  {{attachment}}
+                {% endif %}
+              telegram_caption: "{{ title ~ ('\n' ~ message if message else '') }}"
+              attachment_content_type: "{{ 'jpeg' if 'jpg' in attachment else 'gif' }}"
+          - choose:
+              - conditions:
+                  - "{{ detections | count > 0 }}"
+                  - "{{ severity_satisfied }}"
+                  - "{{ objects_satisfied }}"
+                  - "{{ zones_satisfied }}"
+                  - "{{ not home }}"
+                  - "{{ state_satisfied }}"
+                  - "{{ custom_filter }}"
+                sequence:
+                  - choose:
+                      - conditions: "{{ telegram }}"
+                        sequence:
+                          - choose:
+                              - conditions: "{{ 'gif' in attachment }}"
+                                sequence:
+                                  - service: "{{ telegram_animation_service }}"
+                                    data:
+                                      chat_id: "{{telegram_chat_id}}"
+                                      caption: "{{telegram_caption}}"
+                                      url: "{{attachment|replace(base_url, telegram_base_url)}}"
+                                      inline_keyboard:
+                                        - [["{{button_1}}", "{{url_1}}"], ["{{button_2}}", "{{url_2}}"]]
+                                        - [["Silence {{ silence_minutes }}m", "{{url_3}}"]]
+                            default:
+                              - service: "{{ telegram_photo_service }}"
+                                data:
+                                  chat_id: "{{telegram_chat_id}}"
+                                  caption: "{{telegram_caption}}"
+                                  url: "{{attachment|replace(base_url, telegram_base_url)}}"
+                                  inline_keyboard:
+                                    - [["{{button_1}}", "{{url_1}}"], ["{{button_2}}", "{{url_2}}"]]
+                                    - [["Silence {{ silence_minutes }}m", "{{url_3}}"]]
+                      - conditions: "{{ not notify_group_target }}"
+                        sequence:
+                          - device_id: !input notify_device
+                            domain: mobile_app
+                            type: notify
+                            title: "{{title}}"
+                            message: "{{message}}"
+                            data:
+                              tag: "{{ tag }}"
+                              group: "{{ group }}"
+                              color: "{{color}}"
+                              subject: "{{subtitle}}"
+                              image: "{{attachment}}"
+                              clickAction: "{{tap_action}}"
+                              ttl: 0
+                              priority: high
+                              alert_once: true
+                              notification_icon: "{{icon}}"
+                              sticky: "{{sticky}}"
+                              channel: "{{channel}}"
+                              car_ui: "{{android_auto}}"
+                              subtitle: "{{subtitle}}"
+                              url: "{{tap_action}}"
+                              attachment:
+                                url: "{{attachment}}"
+                                content-type: "{{attachment_content_type}}"
+                                hide-thumbnail: false
+                              push:
+                                sound:
+                                  name: none
+                                  volume: 0
+                                interruption-level: passive
+                              entity_id: "{{ios_live_view}}"
+                              actions:
+                                - action: URI
+                                  title: "{{button_1}}"
+                                  uri: "{{url_1}}"
+                                - action: URI
+                                  title: "{{button_2}}"
+                                  uri: "{{url_2}}"
+                                - action: "{{url_3}}"
+                                  title: "Silence {{ silence_minutes }}m"
+                      - conditions: "{{ tv }}"
+                        sequence:
+                          - action: "notify.{{ notify_group_target }}"
+                            data:
+                              title: "{{title}}"
+                              message: "{{message}}"
+                              data:
+                                tag: "{{ tag }}"
+                                group: "{{ group }}"
+                                color: "{{color}}"
+                                subject: "{{subtitle}}"
+                                clickAction: "{{tap_action}}"
+                                ttl: 0
+                                priority: high
+                                alert_once: true
+                                notification_icon: "{{icon}}"
+                                sticky: "{{sticky}}"
+                                channel: "{{channel}}"
+                                car_ui: "{{android_auto}}"
+                                image:
+                                  url: "{{tv_image}}"
+                                fontsize: "{{tv_size}}"
+                                position: "{{tv_position}}"
+                                duration: "{{tv_duration}}"
+                                transparency: "{{tv_transparency}}"
+                                interrupt: "{{tv_interrupt}}"
+                                timeout: 30
+                                subtitle: "{{subtitle}}"
+                                url: "{{tap_action}}"
+                                attachment:
+                                  url: "{{attachment}}"
+                                  content-type: "{{attachment_content_type}}"
+                                  hide-thumbnail: false
+                                push:
+                                  sound:
+                                    name: none
+                                    volume: 0
+                                  interruption-level: passive
+                                entity_id: "{{ios_live_view}}"
+                                actions:
+                                  - action: URI
+                                    title: "{{button_1}}"
+                                    uri: "{{url_1}}"
+                                  - action: URI
+                                    title: "{{button_2}}"
+                                    uri: "{{url_2}}"
+                                  - action: "{{url_3}}"
+                                    title: "Silence {{ silence_minutes }}m"
+                    default:
+                      - action: "notify.{{ notify_group_target }}"
+                        data:
+                          title: "{{title}}"
+                          message: "{{message}}"
+                          data:
+                            tag: "{{ tag }}"
+                            group: "{{ group }}"
+                            color: "{{color}}"
+                            subject: "{{subtitle}}"
+                            image: "{{attachment}}"
+                            clickAction: "{{tap_action}}"
+                            ttl: 0
+                            priority: high
+                            alert_once: true
+                            notification_icon: "{{icon}}"
+                            sticky: "{{sticky}}"
+                            channel: "{{channel}}"
+                            car_ui: "{{android_auto}}"
+                            subtitle: "{{subtitle}}"
+                            fontsize: "{{tv_size}}"
+                            position: "{{tv_position}}"
+                            duration: "{{tv_duration}}"
+                            transparency: "{{tv_transparency}}"
+                            interrupt: "{{tv_interrupt}}"
+                            url: "{{tap_action}}"
+                            attachment:
+                              url: "{{attachment}}"
+                              content-type: "{{attachment_content_type}}"
+                              hide-thumbnail: false
+                            push:
+                              sound:
+                                name: none
+                                volume: 0
+                              interruption-level: passive
+                            entity_id: "{{ios_live_view}}"
+                            actions:
+                              - action: URI
+                                title: "{{button_1}}"
+                                uri: "{{url_1}}"
+                              - action: URI
+                                title: "{{button_2}}"
+                                uri: "{{url_2}}"
+                              - action: "{{url_3}}"
+                                title: "Silence {{ silence_minutes }}m"
       - alias: "Frigate Event"
         conditions:
           - condition: trigger
@@ -1525,7 +1908,7 @@ actions:
                       - choose:
                           - conditions: "{{ telegram }}"
                             sequence:
-                              - action: telegram_bot.send_photo
+                              - service: "{{ telegram_photo_service }}"
                                 data:
                                   chat_id: "{{telegram_chat_id}}"
                                   caption: "{{message}}"
@@ -1747,7 +2130,7 @@ actions:
                 - variables:
                     # use the subsequent attchment variable if set
                     attachment_2: !input attachment_2
-                    attachment: "{{iif(attachment_2, attachment_2, attachment)}}"
+                    attachment: "{{ attachment if attachment_2 in ['none', ''] else attachment_2 }}"
 
                     event: "{{ wait.trigger.payload_json }}"
                     type: "{{event['type']}}"
@@ -1979,7 +2362,7 @@ actions:
                                             - "{{ event['type'] == 'end' }}"
                                             - "{{ video | length > 0 }}"
                                           sequence:
-                                            - action: telegram_bot.send_video
+                                            - service: "{{ telegram_video_service }}"
                                               data:
                                                 chat_id: "{{telegram_chat_id}}"
                                                 caption: "{{message}}"
@@ -2002,7 +2385,7 @@ actions:
                                                       ],
                                                     ]
                                       default:
-                                        - action: telegram_bot.send_photo
+                                        - service: "{{ telegram_photo_service }}"
                                           data:
                                             chat_id: "{{telegram_chat_id}}"
                                             caption: "{{message}}"
