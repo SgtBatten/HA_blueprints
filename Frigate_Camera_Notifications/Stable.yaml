@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.2x)
+  name: Frigate Notifications (0.14.0.2y)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -1013,12 +1013,12 @@ conditions:
       id: silence
     - condition: trigger
       id: custom
-    - condition: trigger
-      id: genai-event
     - condition: and
       conditions:
         - condition: trigger
-          id: frigate-event
+          id:
+            - frigate-event
+            - genai-event
         - alias: Camera Match
           condition: template
           value_template: "{{ input_camera_name|select('equalto', camera)|list|length>0 }}"
