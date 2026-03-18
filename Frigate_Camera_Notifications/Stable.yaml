@@ -1101,7 +1101,7 @@ actions:
               critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
               icon: !input icon
               group: !input group
-              tag: "{{ review_id }}"
+              tag: "{{ id }}"
               channel: !input channel
               color: !input color
               sticky: !input sticky

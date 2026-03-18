@@ -1142,7 +1142,7 @@ actions:
               interruption_level: !input interruption_level
               icon: !input icon
               group: !input group
-              tag: "{{ review_id }}"
+              tag: "{{ id }}"
               channel: !input channel
               color: !input color
               sticky: !input sticky
