@@ -1099,6 +1099,24 @@ actions:
         conditions:
           - condition: trigger
             id: "genai-event"
+          - alias: "Severity Filter"
+            condition: template
+            value_template: "{{ severity_satisfied }}"
+          - alias: "Object Filter"
+            condition: template
+            value_template: "{{ objects_satisfied }}"
+          - alias: "Zone Filter"
+            condition: template
+            value_template: "{{ not zone_only or after_zones | select('in', zones) | list | length > 0 }}"
+          - alias: "Presence Filter"
+            condition: template
+            value_template: "{{ not initial_home }}"
+          - alias: "State Filter"
+            condition: template
+            value_template: "{{ state_satisfied }}"
+          - alias: "Custom Filter"
+            condition: template
+            value_template: "{{ custom_filter }}"
         sequence:
           - variables:
               event: "{{ trigger.payload_json }}"
