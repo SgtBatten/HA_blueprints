@@ -1125,11 +1125,9 @@ actions:
                 {% endif %}
               message: "{{ genai_shortSummary }}"
               subtitle: !input subtitle
-              icon: ""
               group: !input group
-              tag: "{{ id }}"
+              tag: "{{ review_id }}"
               channel: !input channel
-              color: ""
               sticky: false
               sound: "none"
               critical: false
@@ -1174,7 +1172,6 @@ actions:
                         data:
                           tag: "{{ tag }}"
                           group: "{{ group }}"
-                          color: "{{color}}"
                           # Android Specific
                           subject: "{{subtitle}}"
                           image: "{{attachment}}"
@@ -1182,7 +1179,6 @@ actions:
                           clickAction: "{{tap_action}}"
                           ttl: 0
                           priority: high
-                          notification_icon: "{{icon}}"
                           sticky: "{{sticky}}"
                           channel: "{{'alarm_stream' if critical else channel}}"
                           car_ui: "{{android_auto}}"
@@ -1224,13 +1220,11 @@ actions:
                           data:
                             tag: "{{ tag }}"
                             group: "{{ group }}"
-                            color: "{{color}}"
                             # Android Specific
                             subject: "{{subtitle}}"
                             clickAction: "{{tap_action}}"
                             ttl: 0
                             priority: high
-                            notification_icon: "{{icon}}"
                             sticky: "{{sticky}}"
                             channel: "{{'alarm_stream' if critical else channel}}"
                             car_ui: "{{android_auto}}"
@@ -1281,7 +1275,6 @@ actions:
                       data:
                         tag: "{{ tag }}"
                         group: "{{ group }}"
-                        color: "{{color}}"
                         # Android Specific
                         subject: "{{subtitle}}"
                         image: "{{attachment}}"
@@ -1289,7 +1282,6 @@ actions:
                         clickAction: "{{tap_action}}"
                         ttl: 0
                         priority: high
-                        notification_icon: "{{icon}}"
                         sticky: "{{sticky}}"
                         channel: "{{'alarm_stream' if critical else channel}}"
                         car_ui: "{{android_auto}}"
