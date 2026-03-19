@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.4m-genai-custom)
+  name: Frigate Notifications (0.15.0.1)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -49,7 +49,7 @@ blueprint:
           multiple: true
     notify_device:
       name: Mobile Device
-      description: Select a device that runs the official Home Assistant app to receive notifications. If you wish to notify a group of devices and/or Android/Fire TV use the field below to override this selection. This will be ignored in that case but is still required.
+      description: Select a device that runs the official Home Assistant app to receive notifications. When this is the only notification target, Frigate clip links are automatically adjusted for that device platform (Android uses clip.mp4, iOS uses master.m3u8). If you wish to notify a group of devices and/or Android/Fire TV use the field below to override this selection. This will be ignored in that case but is still required.
       default: false
       selector:
         device:
@@ -61,6 +61,8 @@ blueprint:
         Send notifications via notify.notify instead of a single mobile device.
 
         If enabled, this overrides the Mobile Device option, but Notification Group / Android/Fire TV below will still take priority when set.
+
+        Important: when using Notify All Devices or a notification group that includes iOS devices, set Tap Action URL and any clip action button URLs to View Clip (iOS). The blueprint can only auto-select the correct Frigate clip URL when sending to one selected mobile app device.
       default: false
       selector:
         boolean:
@@ -324,10 +326,10 @@ blueprint:
                 - label: Object 1 Event GIF
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/event_preview.gif?format=ts"
                 - label: Clip mp4
-                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
-                - label: Clip m3u8 (IOS)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/clip.mp4"
+                - label: Clip m3u8 (iOS)
                   # requires frigate integration 5.7.0+
-                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/master.m3u8"
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/master.m3u8"
               mode: dropdown
         final_update:
           name: Final update (Optional)
@@ -412,6 +414,8 @@ blueprint:
               options:
                 - "{{camera}}-frigate-notification"
                 - "{{camera}}-frigate-doorbell-notification"
+                - "frigate-notification"
+              custom_value: true
         tag:
           name: Tag
           description: The Tag is used to identify individual notifications in order to replace them with updated images/text. Default is the Event ID 
@@ -815,21 +819,23 @@ blueprint:
           description:
             The URL to open when tapping on the notification. Some presets are provided, you can also set your own by typing in the box.
 
+            When sending to one selected mobile app device, Frigate clip links are auto-adjusted for Android or iOS. When using Notify All Devices or a notification group that includes iOS devices, choose View Clip (iOS) for clip playback on iPhone/iPad.
+
             These options define the text and URLs associated with the three action buttons at the bottom of the notification.
-          default: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
+          default: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/clip.mp4"
           selector:
             select:
               options:
                 - label: View Clip
-                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
-                - label: View Clip (IOS)
-                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/master.m3u8"
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/clip.mp4"
+                - label: View Clip (iOS)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/master.m3u8"
                 - label: View GIF
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{review_id}}/review_preview.gif"
                 - label: View Snapshot
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
                 - label: View Stream
-                  value: "{{base_url}}/api/camera_proxy_stream/camera.{{trigger.payload_json['after']['camera'] | lower | replace('-','_')}}?token={{state_attr( 'camera.' ~ camera, 'access_token')}}"
+                  value: "{{base_url}}/api/camera_proxy_stream/camera.{{ camera | default('') | lower | replace('-','_') }}?token={{ state_attr('camera.' ~ (camera | default('')), 'access_token') }}"
                 - label: Open Home Assistant (web)
                   value: "{{base_url}}/lovelace"
                 - label: Open Home Assistant (app)
@@ -857,23 +863,23 @@ blueprint:
           default: "View Clip"
         url_1:
           name: Action Button 1 URL
-          description: Customise what happens when you press the first Action Button. Select from one of the preconfigured options or enter your own custom URL.
-          default: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
+          description: Customise what happens when you press the first Action Button. Select from one of the preconfigured options or enter your own custom URL. When sending to one selected mobile app device, Frigate clip links are auto-adjusted for Android or iOS. When using Notify All Devices or a notification group that includes iOS devices, choose View Clip (iOS) for clip playback on iPhone/iPad.
+          default: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/clip.mp4"
           selector:
             select:
               options:
                 - label: Silence New Notifications
-                  value: silence-{{ this.entity_id }}
+                  value: silence-{{ this.entity_id if this is defined and this.entity_id is defined else '' }}
                 - label: View Clip
-                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
-                - label: View Clip (IOS)
-                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/master.m3u8"
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/clip.mp4"
+                - label: View Clip (iOS)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/master.m3u8"
                 - label: View GIF
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{review_id}}/review_preview.gif"
                 - label: View Snapshot
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
                 - label: View Stream
-                  value: "{{base_url}}/api/camera_proxy_stream/camera.{{trigger.payload_json['after']['camera'] | lower | replace('-','_')}}?token={{state_attr( 'camera.' ~ camera, 'access_token')}}"
+                  value: "{{base_url}}/api/camera_proxy_stream/camera.{{ camera | default('') | lower | replace('-','_') }}?token={{ state_attr('camera.' ~ (camera | default('')), 'access_token') }}"
                 - label: Open Home Assistant (web)
                   value: "{{base_url}}/lovelace"
                 - label: Open Home Assistant (app)
@@ -891,7 +897,7 @@ blueprint:
                 - label: Open Reolink App (Android)
                   value: app://com.mcu.reolink
                 - label: Custom Action (Manual Trigger)
-                  value: custom-{{ this.entity_id }}
+                  value: custom-{{ this.entity_id if this is defined and this.entity_id is defined else '' }}
               custom_value: true
         icon_1:
           name: Action Button 1 icon - iOS Only
@@ -909,15 +915,15 @@ blueprint:
             select:
               options:
                 - label: Silence New Notifications
-                  value: silence-{{ this.entity_id }}
+                  value: silence-{{ this.entity_id if this is defined and this.entity_id is defined else '' }}
                 - label: View Clip
-                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
-                - label: View Clip (IOS)
-                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/master.m3u8"
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/clip.mp4"
+                - label: View Clip (iOS)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/master.m3u8"
                 - label: View Snapshot
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
                 - label: View Stream
-                  value: "{{base_url}}/api/camera_proxy_stream/camera.{{trigger.payload_json['after']['camera'] | lower | replace('-','_')}}?token={{state_attr( 'camera.' ~ camera, 'access_token')}}"
+                  value: "{{base_url}}/api/camera_proxy_stream/camera.{{ camera | default('') | lower | replace('-','_') }}?token={{ state_attr('camera.' ~ (camera | default('')), 'access_token') }}"
                 - label: Open Home Assistant (web)
                   value: "{{base_url}}/lovelace"
                 - label: Open Home Assistant (app)
@@ -935,7 +941,7 @@ blueprint:
                 - label: Open Reolink App (Android)
                   value: app://com.mcu.reolink
                 - label: Custom Action (Manual Trigger)
-                  value: custom-{{ this.entity_id }}
+                  value: custom-{{ this.entity_id if this is defined and this.entity_id is defined else '' }}
               custom_value: true
         icon_2:
           name: Action Button 2 icon - iOS Only
@@ -948,20 +954,20 @@ blueprint:
         url_3:
           name: Action Button 3 URL
           description: Customise what happens when you press the third Action Button. Select from one of the preconfigured options or enter your own custom URL.
-          default: silence-{{ this.entity_id }}
+          default: silence-{{ this.entity_id if this is defined and this.entity_id is defined else '' }}
           selector:
             select:
               options:
                 - label: Silence New Notifications
-                  value: silence-{{ this.entity_id }}
+                  value: silence-{{ this.entity_id if this is defined and this.entity_id is defined else '' }}
                 - label: View Clip
-                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/clip.mp4"
-                - label: View Clip (IOS)
-                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/{{camera}}/master.m3u8"
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/clip.mp4"
+                - label: View Clip (iOS)
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/master.m3u8"
                 - label: View Snapshot
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
                 - label: View Stream
-                  value: "{{base_url}}/api/camera_proxy_stream/camera.{{trigger.payload_json['after']['camera'] | lower | replace('-','_')}}?token={{state_attr( 'camera.' ~ camera, 'access_token')}}"
+                  value: "{{base_url}}/api/camera_proxy_stream/camera.{{ camera | default('') | lower | replace('-','_') }}?token={{ state_attr('camera.' ~ (camera | default('')), 'access_token') }}"
                 - label: Open Home Assistant (web)
                   value: "{{base_url}}/lovelace"
                 - label: Open Home Assistant (app)
@@ -979,7 +985,7 @@ blueprint:
                 - label: Open Reolink App (Android)
                   value: app://com.mcu.reolink
                 - label: Custom Action (Manual Trigger)
-                  value: custom-{{ this.entity_id }}
+                  value: custom-{{ this.entity_id if this is defined and this.entity_id is defined else '' }}
               custom_value: true
         icon_3:
           name: Action Button 3 icon - iOS Only
@@ -1114,35 +1120,61 @@ triggers:
   - trigger: event
     event_type: mobile_app_notification_action
     event_data:
-      action: "silence-{{ this.entity_id }}"
+      action: "silence-{{ this.entity_id if this is defined and this.entity_id is defined else '' }}"
     id: silence
   - trigger: event
     event_type: telegram_callback
     event_data:
-      data: "silence-{{ this.entity_id }}"
+      data: "silence-{{ this.entity_id if this is defined and this.entity_id is defined else '' }}"
     id: silence
   - trigger: event
     event_type: mobile_app_notification_action
     event_data:
-      action: "custom-{{ this.entity_id}}"
+      action: 'custom-{{ this.entity_id if this is defined and this.entity_id is defined else "" }}'
     id: custom
   - trigger: event
     event_type: telegram_callback
     event_data:
-      action: "custom-{{ this.entity_id}}"
+      action: 'custom-{{ this.entity_id if this is defined and this.entity_id is defined else "" }}'
     id: custom
 variables:
   input_camera: !input camera
   input_camera_name: "{{input_camera|expand|map(attribute='attributes.camera_name', default='none')|list}}"
+  trigger_payload: "{{ trigger.payload_json if trigger is defined and trigger.payload_json is defined else dict() }}"
+  event: "{{ trigger_payload }}"
+  trigger_after: "{{ trigger_payload.get('after', dict()) if trigger_payload is mapping else dict() }}"
+  trigger_detections: "{{ trigger_after.get('data', {}).get('detections', []) if trigger_after is mapping else [] }}"
   camera: >
     {% if trigger.id == 'frigate-event' %}
-      {{ trigger.payload_json['after']['camera'] }}
+      {{ trigger_after.get('camera', '') }}
     {% elif trigger.id == 'genai-sprinter' %}
-      {{ trigger.payload_json['camera'] }}
+      {{ trigger_payload.get('camera', '') }}
     {% elif trigger.id == 'genai-final' %}
-      {{ trigger.payload_json['after']['camera'] }}
+      {{ trigger_after.get('camera', '') }}
+    {% else %}
+      {{ '' }}
     {% endif %}
   camera_name: "{{ camera | replace('_', ' ') | title }}"
+  review_id: >
+    {% if trigger.id == 'frigate-event' %}
+      {{ trigger_after.get('id', '') }}
+    {% elif trigger.id == 'genai-sprinter' %}
+      {{ trigger_payload.get('review_id', trigger_payload.get('id', '')) }}
+    {% elif trigger.id == 'genai-final' %}
+      {{ trigger_after.get('id', '') }}
+    {% else %}
+      {{ '' }}
+    {% endif %}
+  id: >
+    {% if trigger.id == 'frigate-event' %}
+      {{ trigger_detections[0] if trigger_detections | count > 0 else trigger_after.get('id', '') }}
+    {% elif trigger.id == 'genai-sprinter' %}
+      {{ trigger_payload.get('id', '') }}
+    {% elif trigger.id == 'genai-final' %}
+      {{ trigger_detections[0] if trigger_detections | count > 0 else trigger_after.get('id', '') }}
+    {% else %}
+      {{ '' }}
+    {% endif %}
   input_severity: !input review_severity
   severity: "{{trigger.payload_json['after']['severity'] if trigger.id == 'frigate-event'}}"
   type: "{{trigger.payload_json['type'] if trigger.id in ['frigate-event', 'genai-sprinter', 'genai-final']}}"
@@ -1162,6 +1194,7 @@ variables:
   genai_final_description: !input genai_final_description
   genai_final_attachment: !input genai_final_attachment
   ios_live_view: !input ios_live_view
+  ios_live_view_entity: "{{ ios_live_view if ios_live_view | string | length > 0 and states(ios_live_view) not in ['unknown', 'unavailable'] else '' }}"
   android_auto: !input android_auto
   notify_all_devices: !input notify_all_devices
   notify_group: !input notify_group
@@ -1171,6 +1204,19 @@ variables:
     {% else %}
       {{ notify_group | lower | regex_replace('^notify\.', '') | replace(' ','_') }}
     {% endif %}
+  selected_notify_device: !input notify_device
+  notify_device_manufacturer: "{{ device_attr(selected_notify_device, 'manufacturer') if selected_notify_device else '' }}"
+  notify_device_model: "{{ device_attr(selected_notify_device, 'model') if selected_notify_device else '' }}"
+  notify_device_name: "{{ device_attr(selected_notify_device, 'name') if selected_notify_device else '' }}"
+  notify_device_is_ios: >-
+    {{
+      (notify_device_manufacturer | lower == 'apple')
+      or ('iphone' in (notify_device_model | lower))
+      or ('ipad' in (notify_device_model | lower))
+      or ('iphone' in (notify_device_name | lower))
+      or ('ipad' in (notify_device_name | lower))
+      or ('ios' in (notify_device_model | lower))
+    }}
   telegram_chat_id: !input notify_telegram_chat_id
   telegram: "{{true if (telegram_chat_id | length > 0) else false}}"
   telegram_photo_service: "{{ 'telegram_bot' ~ '.send_photo' }}"
@@ -1318,12 +1364,32 @@ actions:
               sticky: !input sticky
               attachment: !input genai_sprinter_attachment
               tap_action: !input tap_action
+              tap_action_normalized: >-
+                {{ tap_action | regex_replace('(.*?/notifications/[^/]+)/[^/]+/(clip\.mp4|master\.m3u8)$', '\1/\2') }}
+              tap_action_android: "{{ tap_action_normalized | replace('/master.m3u8', '/clip.mp4') }}"
+              tap_action_ios: "{{ tap_action_normalized | replace('/clip.mp4', '/master.m3u8') }}"
+              tap_action_single: "{{ tap_action_ios if notify_device_is_ios | bool else tap_action_android }}"
               button_1: !input button_1
               button_2: !input button_2
               button_3: !input button_3
               url_1: !input url_1
+              url_1_normalized: >-
+                {{ url_1 | regex_replace('(.*?/notifications/[^/]+)/[^/]+/(clip\.mp4|master\.m3u8)$', '\1/\2') }}
+              url_1_android: "{{ url_1_normalized | replace('/master.m3u8', '/clip.mp4') }}"
+              url_1_ios: "{{ url_1_normalized | replace('/clip.mp4', '/master.m3u8') }}"
+              url_1_single: "{{ url_1_ios if notify_device_is_ios | bool else url_1_android }}"
               url_2: !input url_2
+              url_2_normalized: >-
+                {{ url_2 | regex_replace('(.*?/notifications/[^/]+)/[^/]+/(clip\.mp4|master\.m3u8)$', '\1/\2') }}
+              url_2_android: "{{ url_2_normalized | replace('/master.m3u8', '/clip.mp4') }}"
+              url_2_ios: "{{ url_2_normalized | replace('/clip.mp4', '/master.m3u8') }}"
+              url_2_single: "{{ url_2_ios if notify_device_is_ios | bool else url_2_android }}"
               url_3: !input url_3
+              url_3_normalized: >-
+                {{ url_3 | regex_replace('(.*?/notifications/[^/]+)/[^/]+/(clip\.mp4|master\.m3u8)$', '\1/\2') }}
+              url_3_android: "{{ url_3_normalized | replace('/master.m3u8', '/clip.mp4') }}"
+              url_3_ios: "{{ url_3_normalized | replace('/clip.mp4', '/master.m3u8') }}"
+              url_3_single: "{{ url_3_ios if notify_device_is_ios | bool else url_3_android }}"
               icon_1: !input icon_1
               icon_2: !input icon_2
               icon_3: !input icon_3
@@ -1332,6 +1398,7 @@ actions:
               interruption_level_updates: !input interruption_level_updates
               sound: !input sound
               ios_live_view: !input ios_live_view
+              ios_live_view_entity: "{{ ios_live_view if ios_live_view | string | length > 0 and states(ios_live_view) not in ['unknown', 'unavailable'] else '' }}"
               android_auto: !input android_auto
               tv: !input tv
               tv_position: !input tv_position
@@ -1383,7 +1450,7 @@ actions:
                       color: "{{color}}"
                       subject: "{{subtitle}}"
                       image: "{{attachment}}"
-                      clickAction: "{{tap_action}}"
+                      clickAction: "{{tap_action_android}}"
                       ttl: 0
                       priority: high
                       alert_once: "{{ alert_once }}"
@@ -1392,7 +1459,7 @@ actions:
                       channel: "{{'alarm_stream' if critical else channel}}"
                       car_ui: "{{android_auto}}"
                       subtitle: "{{subtitle}}"
-                      url: "{{tap_action}}"
+                      url: "{{tap_action_single}}"
                       attachment:
                         url: "{{attachment}}"
                         content-type: "{{attachment_content_type}}"
@@ -1402,23 +1469,23 @@ actions:
                           name: none
                           volume: 0
                         interruption-level: "{{ iif(critical, 1, interruption_level_updates) }}"
-                      entity_id: "{{ios_live_view}}"
+                      entity_id: "{{ios_live_view_entity}}"
                       actions:
-                        - action: "{{ 'URI' if '/' in url_1 else url_1 }}"
+                        - action: "{{ 'URI' if '/' in url_1_single else url_1_single }}"
                           title: "{{button_1}}"
-                          uri: "{{url_1}}"
+                          uri: "{{url_1_single}}"
                           icon: "{{icon_1}}"
-                          destructive: "{{not '/' in url_1}}"
-                        - action: "{{ 'URI' if '/' in url_2 else url_2 }}"
+                          destructive: "{{not '/' in url_1_single}}"
+                        - action: "{{ 'URI' if '/' in url_2_single else url_2_single }}"
                           title: "{{button_2}}"
-                          uri: "{{url_2}}"
+                          uri: "{{url_2_single}}"
                           icon: "{{icon_2}}"
-                          destructive: "{{not '/' in url_2}}"
-                        - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
+                          destructive: "{{not '/' in url_2_single}}"
+                        - action: "{{ 'URI' if '/' in url_3_single else url_3_single }}"
                           title: "{{button_3}}"
-                          uri: "{{url_3}}"
+                          uri: "{{url_3_single}}"
                           icon: "{{icon_3}}"
-                          destructive: "{{not '/' in url_3}}"
+                          destructive: "{{not '/' in url_3_single}}"
               - conditions: "{{ tv }}"
                 sequence:
                   - action: "notify.{{ notify_group_target }}"
@@ -1430,7 +1497,7 @@ actions:
                         group: "{{ group }}"
                         color: "{{color}}"
                         subject: "{{subtitle}}"
-                        clickAction: "{{tap_action}}"
+                        clickAction: "{{tap_action_android}}"
                         ttl: 0
                         priority: high
                         alert_once: "{{ alert_once }}"
@@ -1447,7 +1514,7 @@ actions:
                         interrupt: "{{tv_interrupt}}"
                         timeout: 30
                         subtitle: "{{subtitle}}"
-                        url: "{{tap_action}}"
+                        url: "{{tap_action_ios}}"
                         attachment:
                           url: "{{attachment}}"
                           content-type: "{{attachment_content_type}}"
@@ -1457,23 +1524,23 @@ actions:
                             name: none
                             volume: 0
                           interruption-level: "{{ iif(critical, 1, interruption_level_updates) }}"
-                        entity_id: "{{ios_live_view}}"
+                        entity_id: "{{ios_live_view_entity}}"
                         actions:
-                          - action: "{{ 'URI' if '/' in url_1 else url_1 }}"
+                          - action: "{{ 'URI' if '/' in url_1_normalized else url_1 }}"
                             title: "{{button_1}}"
-                            uri: "{{url_1}}"
+                            uri: "{{url_1_normalized}}"
                             icon: "{{icon_1}}"
-                            destructive: "{{not '/' in url_1}}"
-                          - action: "{{ 'URI' if '/' in url_2 else url_2 }}"
+                            destructive: "{{not '/' in url_1_normalized}}"
+                          - action: "{{ 'URI' if '/' in url_2_normalized else url_2 }}"
                             title: "{{button_2}}"
-                            uri: "{{url_2}}"
+                            uri: "{{url_2_normalized}}"
                             icon: "{{icon_2}}"
-                            destructive: "{{not '/' in url_2}}"
-                          - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
+                            destructive: "{{not '/' in url_2_normalized}}"
+                          - action: "{{ 'URI' if '/' in url_3_normalized else url_3 }}"
                             title: "{{button_3}}"
-                            uri: "{{url_3}}"
+                            uri: "{{url_3_normalized}}"
                             icon: "{{icon_3}}"
-                            destructive: "{{not '/' in url_3}}"
+                            destructive: "{{not '/' in url_3_normalized}}"
             default:
               - action: "notify.{{ notify_group_target }}"
                 data:
@@ -1485,7 +1552,7 @@ actions:
                     color: "{{color}}"
                     subject: "{{subtitle}}"
                     image: "{{attachment}}"
-                    clickAction: "{{tap_action}}"
+                    clickAction: "{{tap_action_android}}"
                     ttl: 0
                     priority: high
                     alert_once: "{{ alert_once }}"
@@ -1499,7 +1566,7 @@ actions:
                     duration: "{{tv_duration}}"
                     transparency: "{{tv_transparency}}"
                     interrupt: "{{tv_interrupt}}"
-                    url: "{{tap_action}}"
+                    url: "{{tap_action_ios}}"
                     attachment:
                       url: "{{attachment}}"
                       content-type: "{{attachment_content_type}}"
@@ -1509,23 +1576,23 @@ actions:
                         name: none
                         volume: 0
                       interruption-level: "{{ iif(critical, 1, interruption_level_updates) }}"
-                    entity_id: "{{ios_live_view}}"
+                    entity_id: "{{ios_live_view_entity}}"
                     actions:
-                      - action: "{{ 'URI' if '/' in url_1 else url_1 }}"
+                      - action: "{{ 'URI' if '/' in url_1_normalized else url_1 }}"
                         title: "{{button_1}}"
-                        uri: "{{url_1}}"
+                        uri: "{{url_1_normalized}}"
                         icon: "{{icon_1}}"
-                        destructive: "{{not '/' in url_1}}"
-                      - action: "{{ 'URI' if '/' in url_2 else url_2 }}"
+                        destructive: "{{not '/' in url_1_normalized}}"
+                      - action: "{{ 'URI' if '/' in url_2_normalized else url_2 }}"
                         title: "{{button_2}}"
-                        uri: "{{url_2}}"
+                        uri: "{{url_2_normalized}}"
                         icon: "{{icon_2}}"
-                        destructive: "{{not '/' in url_2}}"
-                      - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
+                        destructive: "{{not '/' in url_2_normalized}}"
+                      - action: "{{ 'URI' if '/' in url_3_normalized else url_3 }}"
                         title: "{{button_3}}"
-                        uri: "{{url_3}}"
+                        uri: "{{url_3_normalized}}"
                         icon: "{{icon_3}}"
-                        destructive: "{{not '/' in url_3}}"
+                        destructive: "{{not '/' in url_3_normalized}}"
       - alias: "Final GenAI Review Summary"
         conditions:
           - condition: trigger
@@ -1583,12 +1650,32 @@ actions:
               sticky: !input sticky
               attachment: !input genai_final_attachment
               tap_action: !input tap_action
+              tap_action_normalized: >-
+                {{ tap_action | regex_replace('(.*?/notifications/[^/]+)/[^/]+/(clip\.mp4|master\.m3u8)$', '\1/\2') }}
+              tap_action_android: "{{ tap_action_normalized | replace('/master.m3u8', '/clip.mp4') }}"
+              tap_action_ios: "{{ tap_action_normalized | replace('/clip.mp4', '/master.m3u8') }}"
+              tap_action_single: "{{ tap_action_ios if notify_device_is_ios | bool else tap_action_android }}"
               button_1: !input button_1
               button_2: !input button_2
               button_3: !input button_3
               url_1: !input url_1
+              url_1_normalized: >-
+                {{ url_1 | regex_replace('(.*?/notifications/[^/]+)/[^/]+/(clip\.mp4|master\.m3u8)$', '\1/\2') }}
+              url_1_android: "{{ url_1_normalized | replace('/master.m3u8', '/clip.mp4') }}"
+              url_1_ios: "{{ url_1_normalized | replace('/clip.mp4', '/master.m3u8') }}"
+              url_1_single: "{{ url_1_ios if notify_device_is_ios | bool else url_1_android }}"
               url_2: !input url_2
+              url_2_normalized: >-
+                {{ url_2 | regex_replace('(.*?/notifications/[^/]+)/[^/]+/(clip\.mp4|master\.m3u8)$', '\1/\2') }}
+              url_2_android: "{{ url_2_normalized | replace('/master.m3u8', '/clip.mp4') }}"
+              url_2_ios: "{{ url_2_normalized | replace('/clip.mp4', '/master.m3u8') }}"
+              url_2_single: "{{ url_2_ios if notify_device_is_ios | bool else url_2_android }}"
               url_3: !input url_3
+              url_3_normalized: >-
+                {{ url_3 | regex_replace('(.*?/notifications/[^/]+)/[^/]+/(clip\.mp4|master\.m3u8)$', '\1/\2') }}
+              url_3_android: "{{ url_3_normalized | replace('/master.m3u8', '/clip.mp4') }}"
+              url_3_ios: "{{ url_3_normalized | replace('/clip.mp4', '/master.m3u8') }}"
+              url_3_single: "{{ url_3_ios if notify_device_is_ios | bool else url_3_android }}"
               icon_1: !input icon_1
               icon_2: !input icon_2
               icon_3: !input icon_3
@@ -1597,6 +1684,7 @@ actions:
               interruption_level_updates: !input interruption_level_updates
               sound: !input sound
               ios_live_view: !input ios_live_view
+              ios_live_view_entity: "{{ ios_live_view if ios_live_view | string | length > 0 and states(ios_live_view) not in ['unknown', 'unavailable'] else '' }}"
               android_auto: !input android_auto
               tv: !input tv
               tv_position: !input tv_position
@@ -1658,7 +1746,7 @@ actions:
                               color: "{{color}}"
                               subject: "{{subtitle}}"
                               image: "{{attachment}}"
-                              clickAction: "{{tap_action}}"
+                              clickAction: "{{tap_action_android}}"
                               ttl: 0
                               priority: high
                               alert_once: "{{ alert_once }}"
@@ -1667,7 +1755,7 @@ actions:
                               channel: "{{'alarm_stream' if critical else channel}}"
                               car_ui: "{{android_auto}}"
                               subtitle: "{{subtitle}}"
-                              url: "{{tap_action}}"
+                              url: "{{tap_action_single}}"
                               attachment:
                                 url: "{{attachment}}"
                                 content-type: "{{attachment_content_type}}"
@@ -1677,23 +1765,23 @@ actions:
                                   name: none
                                   volume: 0
                                 interruption-level: "{{ iif(critical, 1, interruption_level_updates) }}"
-                              entity_id: "{{ios_live_view}}"
+                              entity_id: "{{ios_live_view_entity}}"
                               actions:
-                                - action: "{{ 'URI' if '/' in url_1 else url_1 }}"
+                                - action: "{{ 'URI' if '/' in url_1_single else url_1_single }}"
                                   title: "{{button_1}}"
-                                  uri: "{{url_1}}"
+                                  uri: "{{url_1_single}}"
                                   icon: "{{icon_1}}"
-                                  destructive: "{{not '/' in url_1}}"
-                                - action: "{{ 'URI' if '/' in url_2 else url_2 }}"
+                                  destructive: "{{not '/' in url_1_single}}"
+                                - action: "{{ 'URI' if '/' in url_2_single else url_2_single }}"
                                   title: "{{button_2}}"
-                                  uri: "{{url_2}}"
+                                  uri: "{{url_2_single}}"
                                   icon: "{{icon_2}}"
-                                  destructive: "{{not '/' in url_2}}"
-                                - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
+                                  destructive: "{{not '/' in url_2_single}}"
+                                - action: "{{ 'URI' if '/' in url_3_single else url_3_single }}"
                                   title: "{{button_3}}"
-                                  uri: "{{url_3}}"
+                                  uri: "{{url_3_single}}"
                                   icon: "{{icon_3}}"
-                                  destructive: "{{not '/' in url_3}}"
+                                  destructive: "{{not '/' in url_3_single}}"
                       - conditions: "{{ tv }}"
                         sequence:
                           - action: "notify.{{ notify_group_target }}"
@@ -1705,7 +1793,7 @@ actions:
                                 group: "{{ group }}"
                                 color: "{{color}}"
                                 subject: "{{subtitle}}"
-                                clickAction: "{{tap_action}}"
+                                clickAction: "{{tap_action_android}}"
                                 ttl: 0
                                 priority: high
                                 alert_once: "{{ alert_once }}"
@@ -1722,7 +1810,7 @@ actions:
                                 interrupt: "{{tv_interrupt}}"
                                 timeout: 30
                                 subtitle: "{{subtitle}}"
-                                url: "{{tap_action}}"
+                                url: "{{tap_action_ios}}"
                                 attachment:
                                   url: "{{attachment}}"
                                   content-type: "{{attachment_content_type}}"
@@ -1732,23 +1820,23 @@ actions:
                                     name: none
                                     volume: 0
                                   interruption-level: "{{ iif(critical, 1, interruption_level_updates) }}"
-                                entity_id: "{{ios_live_view}}"
+                                entity_id: "{{ios_live_view_entity}}"
                                 actions:
-                                  - action: "{{ 'URI' if '/' in url_1 else url_1 }}"
+                                  - action: "{{ 'URI' if '/' in url_1_normalized else url_1 }}"
                                     title: "{{button_1}}"
-                                    uri: "{{url_1}}"
+                                    uri: "{{url_1_normalized}}"
                                     icon: "{{icon_1}}"
-                                    destructive: "{{not '/' in url_1}}"
-                                  - action: "{{ 'URI' if '/' in url_2 else url_2 }}"
+                                    destructive: "{{not '/' in url_1_normalized}}"
+                                  - action: "{{ 'URI' if '/' in url_2_normalized else url_2 }}"
                                     title: "{{button_2}}"
-                                    uri: "{{url_2}}"
+                                    uri: "{{url_2_normalized}}"
                                     icon: "{{icon_2}}"
-                                    destructive: "{{not '/' in url_2}}"
-                                  - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
+                                    destructive: "{{not '/' in url_2_normalized}}"
+                                  - action: "{{ 'URI' if '/' in url_3_normalized else url_3 }}"
                                     title: "{{button_3}}"
-                                    uri: "{{url_3}}"
+                                    uri: "{{url_3_normalized}}"
                                     icon: "{{icon_3}}"
-                                    destructive: "{{not '/' in url_3}}"
+                                    destructive: "{{not '/' in url_3_normalized}}"
                     default:
                       - action: "notify.{{ notify_group_target }}"
                         data:
@@ -1760,7 +1848,7 @@ actions:
                             color: "{{color}}"
                             subject: "{{subtitle}}"
                             image: "{{attachment}}"
-                            clickAction: "{{tap_action}}"
+                            clickAction: "{{tap_action_android}}"
                             ttl: 0
                             priority: high
                             alert_once: "{{ alert_once }}"
@@ -1774,7 +1862,7 @@ actions:
                             duration: "{{tv_duration}}"
                             transparency: "{{tv_transparency}}"
                             interrupt: "{{tv_interrupt}}"
-                            url: "{{tap_action}}"
+                            url: "{{tap_action_ios}}"
                             attachment:
                               url: "{{attachment}}"
                               content-type: "{{attachment_content_type}}"
@@ -1784,23 +1872,23 @@ actions:
                                 name: none
                                 volume: 0
                               interruption-level: "{{ iif(critical, 1, interruption_level_updates) }}"
-                            entity_id: "{{ios_live_view}}"
+                            entity_id: "{{ios_live_view_entity}}"
                             actions:
-                              - action: "{{ 'URI' if '/' in url_1 else url_1 }}"
+                              - action: "{{ 'URI' if '/' in url_1_normalized else url_1 }}"
                                 title: "{{button_1}}"
-                                uri: "{{url_1}}"
+                                uri: "{{url_1_normalized}}"
                                 icon: "{{icon_1}}"
-                                destructive: "{{not '/' in url_1}}"
-                              - action: "{{ 'URI' if '/' in url_2 else url_2 }}"
+                                destructive: "{{not '/' in url_1_normalized}}"
+                              - action: "{{ 'URI' if '/' in url_2_normalized else url_2 }}"
                                 title: "{{button_2}}"
-                                uri: "{{url_2}}"
+                                uri: "{{url_2_normalized}}"
                                 icon: "{{icon_2}}"
-                                destructive: "{{not '/' in url_2}}"
-                              - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
+                                destructive: "{{not '/' in url_2_normalized}}"
+                              - action: "{{ 'URI' if '/' in url_3_normalized else url_3 }}"
                                 title: "{{button_3}}"
-                                uri: "{{url_3}}"
+                                uri: "{{url_3_normalized}}"
                                 icon: "{{icon_3}}"
-                                destructive: "{{not '/' in url_3}}"
+                                destructive: "{{not '/' in url_3_normalized}}"
       - alias: "Frigate Event"
         conditions:
           - condition: trigger
@@ -1868,12 +1956,32 @@ actions:
               message: !input message
               subtitle: !input subtitle
               tap_action: !input tap_action
+              tap_action_normalized: >-
+                {{ tap_action | regex_replace('(.*?/notifications/[^/]+)/[^/]+/(clip\.mp4|master\.m3u8)$', '\1/\2') }}
+              tap_action_android: "{{ tap_action_normalized | replace('/master.m3u8', '/clip.mp4') }}"
+              tap_action_ios: "{{ tap_action_normalized | replace('/clip.mp4', '/master.m3u8') }}"
+              tap_action_single: "{{ tap_action_ios if notify_device_is_ios | bool else tap_action_android }}"
               button_1: !input button_1
               button_2: !input button_2
               button_3: !input button_3
               url_1: !input url_1
+              url_1_normalized: >-
+                {{ url_1 | regex_replace('(.*?/notifications/[^/]+)/[^/]+/(clip\.mp4|master\.m3u8)$', '\1/\2') }}
+              url_1_android: "{{ url_1_normalized | replace('/master.m3u8', '/clip.mp4') }}"
+              url_1_ios: "{{ url_1_normalized | replace('/clip.mp4', '/master.m3u8') }}"
+              url_1_single: "{{ url_1_ios if notify_device_is_ios | bool else url_1_android }}"
               url_2: !input url_2
+              url_2_normalized: >-
+                {{ url_2 | regex_replace('(.*?/notifications/[^/]+)/[^/]+/(clip\.mp4|master\.m3u8)$', '\1/\2') }}
+              url_2_android: "{{ url_2_normalized | replace('/master.m3u8', '/clip.mp4') }}"
+              url_2_ios: "{{ url_2_normalized | replace('/clip.mp4', '/master.m3u8') }}"
+              url_2_single: "{{ url_2_ios if notify_device_is_ios | bool else url_2_android }}"
               url_3: !input url_3
+              url_3_normalized: >-
+                {{ url_3 | regex_replace('(.*?/notifications/[^/]+)/[^/]+/(clip\.mp4|master\.m3u8)$', '\1/\2') }}
+              url_3_android: "{{ url_3_normalized | replace('/master.m3u8', '/clip.mp4') }}"
+              url_3_ios: "{{ url_3_normalized | replace('/clip.mp4', '/master.m3u8') }}"
+              url_3_single: "{{ url_3_ios if notify_device_is_ios | bool else url_3_android }}"
               icon_1: !input icon_1
               icon_2: !input icon_2
               icon_3: !input icon_3
@@ -2032,7 +2140,7 @@ actions:
                                   subject: "{{subtitle}}"
                                   image: "{{attachment}}"
                                   video: "{{video}}"
-                                  clickAction: "{{tap_action}}"
+                                  clickAction: "{{tap_action_android}}"
                                   ttl: 0
                                   priority: high
                                   notification_icon: "{{icon}}"
@@ -2041,7 +2149,7 @@ actions:
                                   car_ui: "{{android_auto}}"
                                   # iOS Specific
                                   subtitle: "{{subtitle}}"
-                                  url: "{{tap_action}}"
+                                  url: "{{tap_action_single}}"
                                   attachment:
                                     url: "{{video if video else attachment }}"
                                     content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
@@ -2050,24 +2158,24 @@ actions:
                                       name: "{{sound}}"
                                       volume: "{{ iif(sound == 'none', 0, volume) }}"
                                     interruption-level: "{{ iif(critical, 1, interruption_level) }}"
-                                  entity_id: "{{ios_live_view}}"
+                                  entity_id: "{{ios_live_view_entity}}"
                                   # Actions
                                   actions:
-                                    - action: "{{ 'URI' if '/' in url_1 else url_1 }}"
+                                    - action: "{{ 'URI' if '/' in url_1_single else url_1_single }}"
                                       title: "{{button_1}}"
-                                      uri: "{{url_1}}"
+                                      uri: "{{url_1_single}}"
                                       icon: "{{icon_1}}"
-                                      destructive: "{{not '/' in url_1}}"
-                                    - action: "{{ 'URI' if '/' in url_2 else url_2 }}"
+                                      destructive: "{{not '/' in url_1_single}}"
+                                    - action: "{{ 'URI' if '/' in url_2_single else url_2_single }}"
                                       title: "{{button_2}}"
-                                      uri: "{{url_2}}"
+                                      uri: "{{url_2_single}}"
                                       icon: "{{icon_2}}"
-                                      destructive: "{{not '/' in url_2}}"
-                                    - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
+                                      destructive: "{{not '/' in url_2_single}}"
+                                    - action: "{{ 'URI' if '/' in url_3_single else url_3_single }}"
                                       title: "{{button_3}}"
-                                      uri: "{{url_3}}"
+                                      uri: "{{url_3_single}}"
                                       icon: "{{icon_3}}"
-                                      destructive: "{{not '/' in url_3}}"
+                                      destructive: "{{not '/' in url_3_single}}"
                           - conditions: "{{ tv }}"
                             sequence:
                               - action: "notify.{{ notify_group_target }}"
@@ -2080,7 +2188,7 @@ actions:
                                     color: "{{color}}"
                                     # Android Specific
                                     subject: "{{subtitle}}"
-                                    clickAction: "{{tap_action}}"
+                                    clickAction: "{{tap_action_android}}"
                                     ttl: 0
                                     priority: high
                                     notification_icon: "{{icon}}"
@@ -2099,7 +2207,7 @@ actions:
                                     timeout: 30
                                     # iOS Specific
                                     subtitle: "{{subtitle}}"
-                                    url: "{{tap_action}}"
+                                    url: "{{tap_action_ios}}"
                                     attachment:
                                       url: "{{video if video else attachment }}"
                                       content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
@@ -2108,24 +2216,24 @@ actions:
                                         name: "{{sound}}"
                                         volume: "{{ iif(sound == 'none', 0, volume) }}"
                                       interruption-level: "{{ iif(critical, 1, interruption_level) }}"
-                                    entity_id: "{{ios_live_view}}"
+                                    entity_id: "{{ios_live_view_entity}}"
                                     # Actions
                                     actions:
-                                      - action: "{{ 'URI' if '/' in url_1 else url_1 }}"
+                                      - action: "{{ 'URI' if '/' in url_1_normalized else url_1 }}"
                                         title: "{{button_1}}"
-                                        uri: "{{url_1}}"
+                                        uri: "{{url_1_normalized}}"
                                         icon: "{{icon_1}}"
-                                        destructive: "{{not '/' in url_1}}"
-                                      - action: "{{ 'URI' if '/' in url_2 else url_2 }}"
+                                        destructive: "{{not '/' in url_1_normalized}}"
+                                      - action: "{{ 'URI' if '/' in url_2_normalized else url_2 }}"
                                         title: "{{button_2}}"
-                                        uri: "{{url_2}}"
+                                        uri: "{{url_2_normalized}}"
                                         icon: "{{icon_2}}"
-                                        destructive: "{{not '/' in url_2}}"
-                                      - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
+                                        destructive: "{{not '/' in url_2_normalized}}"
+                                      - action: "{{ 'URI' if '/' in url_3_normalized else url_3 }}"
                                         title: "{{button_3}}"
-                                        uri: "{{url_3}}"
+                                        uri: "{{url_3_normalized}}"
                                         icon: "{{icon_3}}"
-                                        destructive: "{{not '/' in url_3}}"
+                                        destructive: "{{not '/' in url_3_normalized}}"
                         default:
                           - action: "notify.{{ notify_group_target }}"
                             data:
@@ -2139,7 +2247,7 @@ actions:
                                 subject: "{{subtitle}}"
                                 image: "{{attachment}}"
                                 video: "{{video}}"
-                                clickAction: "{{tap_action}}"
+                                clickAction: "{{tap_action_android}}"
                                 ttl: 0
                                 priority: high
                                 notification_icon: "{{icon}}"
@@ -2154,7 +2262,7 @@ actions:
                                 transparency: "{{tv_transparency}}"
                                 interrupt: "{{tv_interrupt}}"
                                 # iOS Specific
-                                url: "{{tap_action}}"
+                                url: "{{tap_action_ios}}"
                                 attachment:
                                   url: "{{video if video else attachment }}"
                                   content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
@@ -2163,24 +2271,24 @@ actions:
                                     name: "{{sound}}"
                                     volume: "{{ iif(sound == 'none', 0, volume) }}"
                                   interruption-level: "{{ iif(critical, 1, interruption_level) }}"
-                                entity_id: "{{ios_live_view}}"
+                                entity_id: "{{ios_live_view_entity}}"
                                 # Actions
                                 actions:
-                                  - action: "{{ 'URI' if '/' in url_1 else url_1 }}"
+                                  - action: "{{ 'URI' if '/' in url_1_normalized else url_1 }}"
                                     title: "{{button_1}}"
-                                    uri: "{{url_1}}"
+                                    uri: "{{url_1_normalized}}"
                                     icon: "{{icon_1}}"
-                                    destructive: "{{not '/' in url_1}}"
-                                  - action: "{{ 'URI' if '/' in url_2 else url_2 }}"
+                                    destructive: "{{not '/' in url_1_normalized}}"
+                                  - action: "{{ 'URI' if '/' in url_2_normalized else url_2 }}"
                                     title: "{{button_2}}"
-                                    uri: "{{url_2}}"
+                                    uri: "{{url_2_normalized}}"
                                     icon: "{{icon_2}}"
-                                    destructive: "{{not '/' in url_2}}"
-                                  - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
+                                    destructive: "{{not '/' in url_2_normalized}}"
+                                  - action: "{{ 'URI' if '/' in url_3_normalized else url_3 }}"
                                     title: "{{button_3}}"
-                                    uri: "{{url_3}}"
+                                    uri: "{{url_3_normalized}}"
                                     icon: "{{icon_3}}"
-                                    destructive: "{{not '/' in url_3}}"
+                                    destructive: "{{not '/' in url_3_normalized}}"
                       - if: "{{tts and (not tts_helper or not alert_once or (tts_helper and id not in states(tts_helper)))}}"
                         then:
                           sequence:
@@ -2511,7 +2619,7 @@ actions:
                                         subject: "{{subtitle}}"
                                         image: "{{attachment}}"
                                         video: "{{video}}"
-                                        clickAction: "{{tap_action}}"
+                                        clickAction: "{{tap_action_android}}"
                                         ttl: 0
                                         priority: high
                                         alert_once: "{{ alert_once }}"
@@ -2521,7 +2629,7 @@ actions:
                                         car_ui: "{{android_auto}}"
                                         # iOS Specific
                                         subtitle: "{{subtitle}}"
-                                        url: "{{tap_action}}"
+                                        url: "{{tap_action_single}}"
                                         attachment:
                                           url: "{{video if video else attachment }}"
                                           content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
@@ -2530,24 +2638,24 @@ actions:
                                             name: "{{ iif(silent_update, 'none', sound) }}"
                                             volume: "{{ iif((silent_update or sound == 'none'), 0, volume) }}"
                                           interruption-level: "{{ iif(critical, 1, interruption_level_updates) }}"
-                                        entity_id: "{{ios_live_view}}"
+                                        entity_id: "{{ios_live_view_entity}}"
                                         # Actions
                                         actions:
-                                          - action: "{{ 'URI' if '/' in url_1 else url_1 }}"
+                                          - action: "{{ 'URI' if '/' in url_1_single else url_1_single }}"
                                             title: "{{button_1}}"
-                                            uri: "{{url_1}}"
+                                            uri: "{{url_1_single}}"
                                             icon: "{{icon_1}}"
-                                            destructive: "{{not '/' in url_1}}"
-                                          - action: "{{ 'URI' if '/' in url_2 else url_2 }}"
+                                            destructive: "{{not '/' in url_1_single}}"
+                                          - action: "{{ 'URI' if '/' in url_2_single else url_2_single }}"
                                             title: "{{button_2}}"
-                                            uri: "{{url_2}}"
+                                            uri: "{{url_2_single}}"
                                             icon: "{{icon_2}}"
-                                            destructive: "{{not '/' in url_2}}"
-                                          - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
+                                            destructive: "{{not '/' in url_2_single}}"
+                                          - action: "{{ 'URI' if '/' in url_3_single else url_3_single }}"
                                             title: "{{button_3}}"
-                                            uri: "{{url_3}}"
+                                            uri: "{{url_3_single}}"
                                             icon: "{{icon_3}}"
-                                            destructive: "{{not '/' in url_3}}"
+                                            destructive: "{{not '/' in url_3_single}}"
                                 - conditions: "{{ tv }}"
                                   sequence:
                                     - action: "notify.{{ notify_group_target }}"
@@ -2560,7 +2668,7 @@ actions:
                                           color: "{{color}}"
                                           # Android Specific
                                           subject: "{{subtitle}}"
-                                          clickAction: "{{tap_action}}"
+                                          clickAction: "{{tap_action_android}}"
                                           ttl: 0
                                           priority: high
                                           alert_once: "{{ alert_once }}"
@@ -2580,7 +2688,7 @@ actions:
                                           timeout: 30
                                           # iOS Specific
                                           subtitle: "{{subtitle}}"
-                                          url: "{{tap_action}}"
+                                          url: "{{tap_action_ios}}"
                                           attachment:
                                             url: "{{video if video else attachment }}"
                                             content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
@@ -2589,24 +2697,24 @@ actions:
                                               name: "{{ iif(silent_update, 'none', sound) }}"
                                               volume: "{{ iif((silent_update or sound == 'none'), 0, volume) }}"
                                             interruption-level: "{{ iif(critical, 1, interruption_level_updates) }}"
-                                          entity_id: "{{ios_live_view}}"
+                                          entity_id: "{{ios_live_view_entity}}"
                                           # Actions
                                           actions:
-                                            - action: "{{ 'URI' if '/' in url_1 else url_1 }}"
+                                            - action: "{{ 'URI' if '/' in url_1_normalized else url_1 }}"
                                               title: "{{button_1}}"
-                                              uri: "{{url_1}}"
+                                              uri: "{{url_1_normalized}}"
                                               icon: "{{icon_1}}"
-                                              destructive: "{{not '/' in url_1}}"
-                                            - action: "{{ 'URI' if '/' in url_2 else url_2 }}"
+                                              destructive: "{{not '/' in url_1_normalized}}"
+                                            - action: "{{ 'URI' if '/' in url_2_normalized else url_2 }}"
                                               title: "{{button_2}}"
-                                              uri: "{{url_2}}"
+                                              uri: "{{url_2_normalized}}"
                                               icon: "{{icon_2}}"
-                                              destructive: "{{not '/' in url_2}}"
-                                            - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
+                                              destructive: "{{not '/' in url_2_normalized}}"
+                                            - action: "{{ 'URI' if '/' in url_3_normalized else url_3 }}"
                                               title: "{{button_3}}"
-                                              uri: "{{url_3}}"
+                                              uri: "{{url_3_normalized}}"
                                               icon: "{{icon_3}}"
-                                              destructive: "{{not '/' in url_3}}"
+                                              destructive: "{{not '/' in url_3_normalized}}"
                               default:
                                 - action: "notify.{{ notify_group_target }}"
                                   data:
@@ -2620,7 +2728,7 @@ actions:
                                       subject: "{{subtitle}}"
                                       image: "{{attachment}}"
                                       video: "{{video}}"
-                                      clickAction: "{{tap_action}}"
+                                      clickAction: "{{tap_action_android}}"
                                       ttl: 0
                                       priority: high
                                       alert_once: "{{ alert_once }}"
@@ -2636,7 +2744,7 @@ actions:
                                       interrupt: "{{tv_interrupt}}"
                                       # iOS Specific
                                       subtitle: "{{subtitle}}"
-                                      url: "{{tap_action}}"
+                                      url: "{{tap_action_ios}}"
                                       attachment:
                                         url: "{{video if video else attachment }}"
                                         content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
@@ -2645,24 +2753,24 @@ actions:
                                           name: "{{ iif(silent_update, 'none', sound) }}"
                                           volume: "{{ iif((silent_update or sound == 'none'), 0, volume) }}"
                                         interruption-level: "{{ iif(critical, 1, interruption_level_updates) }}"
-                                      entity_id: "{{ios_live_view}}"
+                                      entity_id: "{{ios_live_view_entity}}"
                                       # Actions
                                       actions:
-                                        - action: "{{ 'URI' if '/' in url_1 else url_1 }}"
+                                        - action: "{{ 'URI' if '/' in url_1_normalized else url_1 }}"
                                           title: "{{button_1}}"
-                                          uri: "{{url_1}}"
+                                          uri: "{{url_1_normalized}}"
                                           icon: "{{icon_1}}"
-                                          destructive: "{{not '/' in url_1}}"
-                                        - action: "{{ 'URI' if '/' in url_2 else url_2 }}"
+                                          destructive: "{{not '/' in url_1_normalized}}"
+                                        - action: "{{ 'URI' if '/' in url_2_normalized else url_2 }}"
                                           title: "{{button_2}}"
-                                          uri: "{{url_2}}"
+                                          uri: "{{url_2_normalized}}"
                                           icon: "{{icon_2}}"
-                                          destructive: "{{not '/' in url_2}}"
-                                        - action: "{{ 'URI' if '/' in url_3 else url_3 }}"
+                                          destructive: "{{not '/' in url_2_normalized}}"
+                                        - action: "{{ 'URI' if '/' in url_3_normalized else url_3 }}"
                                           title: "{{button_3}}"
-                                          uri: "{{url_3}}"
+                                          uri: "{{url_3_normalized}}"
                                           icon: "{{icon_3}}"
-                                          destructive: "{{not '/' in url_3}}"
+                                          destructive: "{{not '/' in url_3_normalized}}"
 
                             - if: "{{tts and (not tts_helper or not alert_once or (tts_helper and id not in states(tts_helper)))}}"
                               then:
