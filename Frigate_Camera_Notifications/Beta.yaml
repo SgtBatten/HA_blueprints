@@ -1040,7 +1040,7 @@ variables:
   # Dynamic Variables per event
   severity_satisfied: "{{input_severity|select('in', severity)|list|length > 0 if trigger.id in ['frigate-event', 'genai-event']}}"
   objects: "{{ trigger.payload_json['after']['data']['objects'] if trigger.id in ['frigate-event', 'genai-event'] }}"
-  objects_satisfied: "{{ not labels|length or labels|select('in', objects)|list|length > 0 or ('person-verified' in objects and 'person' in labels) }}"
+  objects_satisfied: "{{ not labels|length or labels|select('in', objects)|list|length > 0 or objects|map('regex_replace', '-verified$', '')|select('in', labels)|list|length > 0 }}"
   initial_home: "{{ presence_entity != '' and presence_entity|expand|selectattr('state','eq','home')|list|length != 0 }}"
   state_satisfied: "{{ not state_only or states(input_entity)|lower in states_filter }}"
   before_zones: "{{ trigger.payload_json['before']['data']['zones'] | list | lower if trigger.id in ['frigate-event', 'genai-event'] }}"
@@ -1763,7 +1763,7 @@ actions:
                     severity_satisfied: "{{((input_severity | select('equalto', severity) | list | length) > 0) }}"
 
                     objects: "{{ event['after']['data']['objects'] }}"
-                    objects_satisfied: "{{ not labels|length or labels|select('in', objects)|list|length > 0 or ('person-verified' in objects and 'person' in labels) }}"
+                    objects_satisfied: "{{ not labels|length or labels|select('in', objects)|list|length > 0 or objects|map('regex_replace', '-verified$', '')|select('in', labels)|list|length > 0 }}"
                     #loitering: "{{ loiter_timer and event['before']['motionless_count']/fps/60 < loiter_timer and event['after']['motionless_count']/fps/60 >= loiter_timer }}"
                     home: "{{presence_entity |reject('in', '') |select('is_state', 'home') |list |length != 0 }}"
                     #new_snapshot: "{{ update_thumbnail and event['before']['snapshot']['frame_time'] != event['after']['snapshot']['frame_time'] }}"
