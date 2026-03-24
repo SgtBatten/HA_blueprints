@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.3k)
+  name: Frigate Notifications (0.14.0.3l)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -982,11 +982,11 @@ triggers:
 variables:
   input_camera: !input camera
   input_camera_name: "{{input_camera|expand|map(attribute='attributes.camera_name', default='none')|list}}"
-  camera: "{{trigger.payload_json['after']['camera'] if trigger.id == 'frigate-event'}}"
+  camera: "{{trigger.payload_json['after']['camera'] if trigger.id in ['frigate-event', 'genai-event']}}"
   camera_name: "{{ camera | replace('_', ' ') | title }}"
   input_severity: !input review_severity
-  severity: "{{trigger.payload_json['after']['severity'] if trigger.id == 'frigate-event'}}"
-  type: "{{trigger.payload_json['type'] if trigger.id == 'frigate-event'}}"
+  severity: "{{trigger.payload_json['after']['severity'] if trigger.id in ['frigate-event', 'genai-event']}}"
+  type: "{{trigger.payload_json['type'] if trigger.id in ['frigate-event', 'genai-event']}}"
   input_base_url: !input base_url
   base_url: "{{ input_base_url.rstrip('/')}}"
   input_telegram_base_url: !input telegram_base_url
@@ -1038,14 +1038,15 @@ variables:
   redacted: !input redacted
   master_condition: !input master_condition
   # Dynamic Variables per event
-  severity_satisfied: "{{input_severity|select('in', severity)|list|length > 0 if trigger.id == 'frigate-event'}}"
-  objects: "{{ trigger.payload_json['after']['data']['objects'] if trigger.id == 'frigate-event' }}"
-  objects_satisfied: "{{ not labels|length or labels|select('in', objects)|list|length > 0 or ('person-verified' in objects and 'person' in labels) }}"
+  severity_satisfied: "{{input_severity|select('in', severity)|list|length > 0 if trigger.id in ['frigate-event', 'genai-event']}}"
+  objects: "{{ trigger.payload_json['after']['data']['objects'] if trigger.id in ['frigate-event', 'genai-event'] }}"
+  objects_satisfied: "{{ not labels|length or labels|select('in', objects)|list|length > 0 or objects|map('regex_replace', '-verified$', '')|select('in', labels)|list|length > 0 }}"
   initial_home: "{{ presence_entity != '' and presence_entity|expand|selectattr('state','eq','home')|list|length != 0 }}"
   state_satisfied: "{{ not state_only or states(input_entity)|lower in states_filter }}"
-  before_zones: "{{ trigger.payload_json['before']['data']['zones'] | list | lower if trigger.id == 'frigate-event' }}"
-  after_zones: "{{ trigger.payload_json['after']['data']['zones'] | list | lower if trigger.id == 'frigate-event' }}"
+  before_zones: "{{ trigger.payload_json['before']['data']['zones'] | list | lower if trigger.id in ['frigate-event', 'genai-event'] }}"
+  after_zones: "{{ trigger.payload_json['after']['data']['zones'] | list | lower if trigger.id in ['frigate-event', 'genai-event'] }}"
   zone_multi_filter: "{{zone_only and zone_multi and after_zones|length and zones and zones |reject('in', after_zones) |list |length == 0 }}"
+  filters_satisfied: "{{ severity_satisfied and objects_satisfied and not initial_home and state_satisfied and custom_filter }}"
 conditions:
   condition: or
   conditions:
@@ -1053,12 +1054,12 @@ conditions:
       id: silence
     - condition: trigger
       id: custom
-    - condition: trigger
-      id: genai-event
     - condition: and
       conditions:
         - condition: trigger
-          id: frigate-event
+          id:
+            - frigate-event
+            - genai-event
         - alias: Camera Match
           condition: template
           value_template: "{{ input_camera_name|select('equalto', camera)|list|length>0 }}"
@@ -1066,7 +1067,10 @@ conditions:
           condition: !input master_condition
         - alias: Cooldown
           condition: template
-          value_template: "{{ not this.attributes.last_triggered or (now() - this.attributes.last_triggered).seconds > cooldown }}"
+          value_template: >
+            {{ trigger.id == 'genai-event' or
+               not this.attributes.last_triggered or
+               (now() - this.attributes.last_triggered).seconds > cooldown }}
         - alias: Disable Times
           condition: template
           value_template: "{{ not disable_times|length or not now().hour in disable_times|map('int')|list }}"
@@ -1096,6 +1100,11 @@ actions:
         conditions:
           - condition: trigger
             id: "genai-event"
+          - condition: template
+            value_template: "{{ filters_satisfied }}"
+          - alias: "Zone Filter"
+            condition: template
+            value_template: "{{ not zone_only or after_zones | select('in', zones) | list | length > 0 }}"
         sequence:
           - variables:
               event: "{{ trigger.payload_json }}"
@@ -1116,16 +1125,13 @@ actions:
                 {% endif %}
               message: "{{ genai_shortSummary }}"
               subtitle: !input subtitle
-              critical_input: !input critical
-              critical: "{{ true if critical_input == 'true' else true if critical_input == True else false }}"
-              interruption_level: !input interruption_level
-              icon: !input icon
               group: !input group
               tag: "{{ review_id }}"
               channel: !input channel
-              color: !input color
-              sticky: !input sticky
-              sound: !input sound
+              sticky: false
+              sound: "none"
+              critical: false
+              interruption_level: "active"
               tap_action: !input tap_action
               button_1: !input button_1
               button_2: !input button_2
@@ -1166,7 +1172,6 @@ actions:
                         data:
                           tag: "{{ tag }}"
                           group: "{{ group }}"
-                          color: "{{color}}"
                           # Android Specific
                           subject: "{{subtitle}}"
                           image: "{{attachment}}"
@@ -1174,7 +1179,6 @@ actions:
                           clickAction: "{{tap_action}}"
                           ttl: 0
                           priority: high
-                          notification_icon: "{{icon}}"
                           sticky: "{{sticky}}"
                           channel: "{{'alarm_stream' if critical else channel}}"
                           car_ui: "{{android_auto}}"
@@ -1216,13 +1220,11 @@ actions:
                           data:
                             tag: "{{ tag }}"
                             group: "{{ group }}"
-                            color: "{{color}}"
                             # Android Specific
                             subject: "{{subtitle}}"
                             clickAction: "{{tap_action}}"
                             ttl: 0
                             priority: high
-                            notification_icon: "{{icon}}"
                             sticky: "{{sticky}}"
                             channel: "{{'alarm_stream' if critical else channel}}"
                             car_ui: "{{android_auto}}"
@@ -1273,7 +1275,6 @@ actions:
                       data:
                         tag: "{{ tag }}"
                         group: "{{ group }}"
-                        color: "{{color}}"
                         # Android Specific
                         subject: "{{subtitle}}"
                         image: "{{attachment}}"
@@ -1281,7 +1282,6 @@ actions:
                         clickAction: "{{tap_action}}"
                         ttl: 0
                         priority: high
-                        notification_icon: "{{icon}}"
                         sticky: "{{sticky}}"
                         channel: "{{'alarm_stream' if critical else channel}}"
                         car_ui: "{{android_auto}}"
@@ -1763,7 +1763,7 @@ actions:
                     severity_satisfied: "{{((input_severity | select('equalto', severity) | list | length) > 0) }}"
 
                     objects: "{{ event['after']['data']['objects'] }}"
-                    objects_satisfied: "{{ not labels|length or labels|select('in', objects)|list|length > 0 or ('person-verified' in objects and 'person' in labels) }}"
+                    objects_satisfied: "{{ not labels|length or labels|select('in', objects)|list|length > 0 or objects|map('regex_replace', '-verified$', '')|select('in', labels)|list|length > 0 }}"
                     #loitering: "{{ loiter_timer and event['before']['motionless_count']/fps/60 < loiter_timer and event['after']['motionless_count']/fps/60 >= loiter_timer }}"
                     home: "{{presence_entity |reject('in', '') |select('is_state', 'home') |list |length != 0 }}"
                     #new_snapshot: "{{ update_thumbnail and event['before']['snapshot']['frame_time'] != event['after']['snapshot']['frame_time'] }}"
