@@ -1345,18 +1345,12 @@ actions:
                   {% set data = namespace(labels=[]) %} 
                   {% if labels|length %}
                     {% for obj in objects|select('in', labels) %}
-                      {% if "-verified" in obj %}
-                      {% else %}
-                        {% set data.labels = data.labels + [obj] %}
-                      {% endif %}
+                        {% set data.labels = data.labels + [obj | regex_replace('-verified$', '')] %}
                     {% endfor %} {% set data.labels = data.labels + sub_labels %} 
                     {{ data.labels | unique | list | sort | join(", ") | title }}
                   {% else %}
                     {% for obj in objects %}
-                      {% if "-verified" in obj %}
-                      {% else %}
-                        {% set data.labels = data.labels + [obj] %}
-                      {% endif %}
+                        {% set data.labels = data.labels + [obj | regex_replace('-verified$', '')] %}
                     {% endfor %} {% set data.labels = data.labels + sub_labels %} 
                     {{ data.labels | unique | list | sort | join(", ") | title }}
                   {% endif %}
@@ -1822,18 +1816,12 @@ actions:
                         {% set data = namespace(labels=[]) %} 
                         {% if labels|length %}
                           {% for obj in objects|select('in', labels) %}
-                            {% if "-verified" in obj %}
-                            {% else %}
-                              {% set data.labels = data.labels + [obj] %}
-                            {% endif %}
+                              {% set data.labels = data.labels + [obj | regex_replace('-verified$', '')] %}
                           {% endfor %} {% set data.labels = data.labels + sub_labels %} 
                           {{ data.labels | unique | list | sort | join(", ") | title }}
                         {% else %}
                           {% for obj in objects %}
-                            {% if "-verified" in obj %}
-                            {% else %}
-                              {% set data.labels = data.labels + [obj] %}
-                            {% endif %}
+                              {% set data.labels = data.labels + [obj | regex_replace('-verified$', '')] %}
                           {% endfor %} {% set data.labels = data.labels + sub_labels %} 
                           {{ data.labels | unique | list | sort | join(", ") | title }}
                         {% endif %}
