@@ -1126,7 +1126,7 @@ actions:
               message: "{{ genai_shortSummary }}"
               subtitle: !input subtitle
               group: !input group
-              tag: "{{ review_id }}"
+              tag: !input tag
               channel: !input channel
               sticky: false
               sound: "none"
