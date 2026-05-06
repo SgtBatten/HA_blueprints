@@ -914,7 +914,7 @@ blueprint:
           default: true
           selector:
             boolean:
-mode: parallel
+mode: restart
 trigger_variables:
   # severity: !input review_severity
   mqtt_topic: !input mqtt_topic
