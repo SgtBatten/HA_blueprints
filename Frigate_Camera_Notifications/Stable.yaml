@@ -1170,7 +1170,9 @@ actions:
                               destructive: true
                   - conditions: "{{ tv }}"
                     sequence:
-                      - action: "notify.{{ notify_group_target }}"
+                      - action: notify.send_message
+                        target:
+                          entity_id: "notify.{{ notify_group_target }}"
                         data:
                           title: "{{title}}"
                           message: "{{message}}"
@@ -1223,7 +1225,9 @@ actions:
                                 icon: "{{icon_3}}"
                                 destructive: true
                 default:
-                  - action: "notify.{{ notify_group_target }}"
+                  - action: notify.send_message
+                    target:
+                      entity_id: "notify.{{ notify_group_target }}"
                     data:
                       title: "{{title}}"
                       message: "{{message}}"
@@ -1532,7 +1536,9 @@ actions:
                                       destructive: true
                           - conditions: "{{ tv }}"
                             sequence:
-                              - action: "notify.{{ notify_group_target }}"
+                              - action: notify.send_message
+                                target:
+                                  entity_id: "notify.{{ notify_group_target }}"
                                 data:
                                   title: "{{title}}"
                                   message: "{{message}}"
@@ -1587,7 +1593,9 @@ actions:
                                         icon: "{{icon_3}}"
                                         destructive: true
                         default:
-                          - action: "notify.{{ notify_group_target }}"
+                          - action: notify.send_message
+                            target:
+                              entity_id: "notify.{{ notify_group_target }}"
                             data:
                               title: "{{title}}"
                               message: "{{message}}"
@@ -1655,7 +1663,9 @@ actions:
                                         alert_once: "{{ alert_once }}"
                                         tts_text: "{{message}}"
                               default:
-                                - action: "notify.{{ notify_group_target }}"
+                                - action: notify.send_message
+                                  target:
+                                    entity_id: "notify.{{ notify_group_target }}"
                                   data:
                                     message: "{{'TTS'}}"
                                     data:
@@ -2002,7 +2012,9 @@ actions:
                                             destructive: true
                                 - conditions: "{{ tv }}"
                                   sequence:
-                                    - action: "notify.{{ notify_group_target }}"
+                                    - action: notify.send_message
+                                      target:
+                                        entity_id: "notify.{{ notify_group_target }}"
                                       data:
                                         title: "{{title}}"
                                         message: "{{message}}"
@@ -2058,7 +2070,9 @@ actions:
                                               icon: "{{icon_3}}"
                                               destructive: true
                               default:
-                                - action: "notify.{{ notify_group_target }}"
+                                - notify.send_message
+                                  target:
+                                    entity_id: "notify.{{ notify_group_target }}"
                                   data:
                                     title: "{{title}}"
                                     message: "{{message}}"
@@ -2129,7 +2143,9 @@ actions:
                                               tts_text: "{{message}}"
 
                                     default:
-                                      - action: "notify.{{ notify_group_target }}"
+                                      - notify.send_message
+                                        target:
+                                          entity_id: "notify.{{ notify_group_target }}"
                                         data:
                                           message: "{{'TTS'}}"
                                           data:
