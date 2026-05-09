@@ -101,6 +101,12 @@ blueprint:
             If set, this will override individual devices and groups above. Note: TV (far below) must be set to false.
             Base URL must start with https since telegram URL buttons only work with https.
           default: ""
+        notify_telegram_topic_id:
+          name: Telegram Topic ID (Optional)
+          description: |
+            The topic (message thread) ID to send telegram notifications to.
+            Use this if your Telegram group has topics (forum) enabled. Leave empty to send to the general topic.
+          default: ""
     notification_customisations:
       name: |
         # Notification Customisations
@@ -961,6 +967,7 @@ variables:
   notify_group: !input notify_group
   notify_group_target: "{{ notify_group | lower | regex_replace('^notify\\.', '') | replace(' ','_') }}"
   telegram_chat_id: !input notify_telegram_chat_id
+  telegram_topic_id: !input notify_telegram_topic_id
   telegram: "{{true if (telegram_chat_id | length > 0) else false}}"
   zone_only: !input zone_filter
   input_zones: !input zones
@@ -1119,6 +1126,7 @@ actions:
                       - action: telegram_bot.send_photo
                         data:
                           chat_id: "{{telegram_chat_id}}"
+                          message_thread_id: "{{telegram_topic_id if telegram_topic_id else omit}}"
                           caption: "{{message}}"
                           url: "{{attachment|replace( base_url, telegram_base_url )}}"
                   - conditions: "{{ not notify_group_target }}"
@@ -1416,6 +1424,7 @@ actions:
                               TV Interrupt: {{tv_interrupt}}, 
                             Telegram: {{telegram}},
                             Telegram_chat_id: {{telegram_chat_id}},
+                            Telegram_topic_id: {{telegram_topic_id}},
                           Filters: 
                             Severity:
                               Required Severity: {{input_severity}},
@@ -1479,6 +1488,7 @@ actions:
                               - action: telegram_bot.send_photo
                                 data:
                                   chat_id: "{{telegram_chat_id}}"
+                                  message_thread_id: "{{telegram_topic_id if telegram_topic_id else omit}}"
                                   caption: "{{message}}"
                                   url: "{{attachment|replace( base_url, telegram_base_url )}}"
                           - conditions: "{{ not notify_group_target }}"
@@ -1919,6 +1929,7 @@ actions:
                                             - action: telegram_bot.send_video
                                               data:
                                                 chat_id: "{{telegram_chat_id}}"
+                                                message_thread_id: "{{telegram_topic_id if telegram_topic_id else omit}}"
                                                 caption: "{{message}}"
                                                 url: "{{ video | replace(base_url, telegram_base_url) }}"
                                                 inline_keyboard:
@@ -1942,6 +1953,7 @@ actions:
                                         - action: telegram_bot.send_photo
                                           data:
                                             chat_id: "{{telegram_chat_id}}"
+                                            message_thread_id: "{{telegram_topic_id if telegram_topic_id else omit}}"
                                             caption: "{{message}}"
                                             url: "{{attachment | replace(base_url,telegram_base_url)}}"
                                             inline_keyboard:
