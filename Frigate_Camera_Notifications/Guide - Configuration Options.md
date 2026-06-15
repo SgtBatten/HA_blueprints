@@ -60,6 +60,32 @@ The chat ID to send telegram notifications to.
 
 If entered, will override the mobile device and send only to telegram.
 
+### ntfy Configuration Options
+
+For [ntfy](https://ntfy.sh), follow the documentation for [publishing to a
+topic](https://docs.ntfy.sh/publish/) to choose a topic and test it.
+
+Set up a shell_command in Home Assistant:
+
+```
+shell_command:
+  ntfy_send: >
+    /config/bin/ntfy-send -t '{{ topic | default("testing-mike-phone") }}'
+      -m '{{ message }}'
+      {{ "-T '" + title | default("") | string + "'" if title else "" }}
+      {{ "-g '" + tags | default("") | string + "'" if tags else "" }}
+      {{ "-p '" + priority | default("") | string + "'" if priority else "" }}
+      {{ "-A '" + actions | default("") | string + "'" if actions else "" }}
+      {{ "-a '" + attach | default("") | string + "'" if attach else "" }}
+      {{ "-c '" + click | default("") | string + "'" if click else "" }}
+      {{ "-i '" + icon | default("") | string + "'" if icon else "" }}
+```
+
+And download [ntfy-send](https://github.com/merdely/hass-ntfy-send) and
+copy to /config/bin
+
+In the Frigate Notifications Automation, set the **Topic for Ntfy notification**
+
 ## Notification Customisations
 
 ### Title

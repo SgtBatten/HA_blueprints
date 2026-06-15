@@ -1,10 +1,10 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.3l)
+  name: Frigate Notifications w/ ntfy (0.14.0.3l)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
   description: |
-    ## Frigate Notifications
+    ## Frigate Notifications w/ ntfy
 
     A highly customisable Notification template for Frigate Camera Notifications.
 
@@ -54,11 +54,17 @@ blueprint:
         device:
           filter:
             integration: mobile_app
+    ntfy_topic:
+      name: Topic for Ntfy notification (Optional)
+      description: |
+        The name of the topic to send notifications to via Ntfy.
+        If set, this will override the individual devices above.
+      default: ""
     notify_group:
       name: Notification Group or Android/Fire TV (Optional)
       description: |
         The name of the group or individual TV to send notifications to.
-        If set, this will override the individual devices above.
+        If set, this will override the individual devices and ntfy topic above.
 
         Note: If the group contains both mobile devices and TVs, the TV will not display the snapshot unless "TV notifications" is set to true. However, this will stop Android phones from receiving thumbnails.
       default: ""
@@ -998,6 +1004,8 @@ variables:
   final_update: !input final_update
   ios_live_view: !input ios_live_view
   android_auto: !input android_auto
+  ntfy_topic: !input ntfy_topic
+  ntfy: "{{true if (ntfy_topic | length > 0) else false}}"
   notify_group: !input notify_group
   notify_group_target: "{{ notify_group | lower | regex_replace('^notify\\.', '') | replace(' ','_') }}"
   telegram_chat_id: !input notify_telegram_chat_id
@@ -1162,7 +1170,11 @@ actions:
                           chat_id: "{{telegram_chat_id}}"
                           caption: "{{message}}"
                           url: "{{attachment|replace( base_url, telegram_base_url )}}"
-                  - conditions: "{{ not notify_group_target }}"
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ not notify_group_target }}"
+                      - condition: template
+                        value_template: "{{ not ntfy }}"
                     sequence:
                       - device_id: !input notify_device
                         domain: mobile_app
@@ -1211,6 +1223,24 @@ actions:
                               uri: "{{url_3}}"
                               icon: "{{icon_3}}"
                               destructive: "{{not '/' in url_3}}"
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ not notify_group_target }}"
+                      - condition: template
+                        value_template: "{{ ntfy }}"
+                    sequence:
+                      - action: shell_command.ntfy_send
+                        metadata: {}
+                        data:
+                          topic: "{{ntfy_topic}}"
+                          title: "{{title}}"
+                          message: "{{message}}"
+                          tags: "{{ tag }}"
+                          priority: "{{ 5 if critical else 3 }}"
+                          actions: "{{ 'view,'+button_1+',' + url_1 + ';' if url_1 else '' }}{{ 'view,'+button_2+',' + url_2 + ';' if url_2 else '' }}{{ 'view,'+button_3+',' + url_3 + ';' if url_3 else '' }}"
+                          click: "{{attachment | replace('thumbnail.jpg', 'snapshot.jpg') | replace('review_preview.gif','snapshot.jpg') | replace('event_preview.gif','snapshot.jpg')}}"
+                          icon: "{{icon | replace('mdi:homeassistant', base_url + '/local/images/homeassistant-icon.png') }}"
+                          attach: "{{ video if video else attachment }}"
                   - conditions: "{{ tv }}"
                     sequence:
                       - action: "notify.{{ notify_group_target }}"
@@ -1536,7 +1566,11 @@ actions:
                                         ["{{button_2}}", "{{url_2}}"],
                                       ]
                                     - [["{{button_3}}", "{{url_3}}"]]
-                          - conditions: "{{ not notify_group_target }}"
+                          - conditions:
+                              - condition: template
+                                value_template: "{{ not notify_group_target }}"
+                              - condition: template
+                                value_template: "{{ not ntfy }}"
                             sequence:
                               - device_id: !input notify_device
                                 domain: mobile_app
@@ -1587,6 +1621,24 @@ actions:
                                       uri: "{{url_3}}"
                                       icon: "{{icon_3}}"
                                       destructive: "{{not '/' in url_3}}"
+                          - conditions:
+                              - condition: template
+                                value_template: "{{ not notify_group_target }}"
+                              - condition: template
+                                value_template: "{{ ntfy }}"
+                            sequence:
+                              - action: shell_command.ntfy_send
+                                metadata: {}
+                                data:
+                                  topic: "{{ntfy_topic}}"
+                                  title: "{{title}}"
+                                  message: "{{message}}"
+                                  tags: "{{ tag }}"
+                                  priority: "{{ 5 if critical else 3 }}"
+                                  actions: "{{ 'view,'+button_1+',' + url_1 + ';' if url_1 else '' }}{{ 'view,'+button_2+',' + url_2 + ';' if url_2 else '' }}{{ 'view,'+button_3+',' + url_3 + ';' if url_3 else '' }}"
+                                  click: "{{attachment | replace('thumbnail.jpg', 'snapshot.jpg') | replace('review_preview.gif','snapshot.jpg') | replace('event_preview.gif','snapshot.jpg')}}"
+                                  icon: "{{icon | replace('mdi:homeassistant', base_url + '/local/images/homeassistant-icon.png') }}"
+                                  attach: "{{ video if video else attachment }}"
                           - conditions: "{{ tv }}"
                             sequence:
                               - action: "notify.{{ notify_group_target }}"
@@ -1704,7 +1756,11 @@ actions:
                         then:
                           sequence:
                             - choose:
-                                - conditions: "{{ not notify_group_target }}"
+                                - conditions:
+                                    - condition: template
+                                      value_template: "{{ not notify_group_target }}"
+                                    - condition: template
+                                      value_template: "{{ not ntfy }}"
                                   sequence:
                                     - device_id: !input notify_device
                                       domain: mobile_app
@@ -1714,6 +1770,19 @@ actions:
                                         tag: "{{ tag }}{{'-tts'}}"
                                         channel: "{{'alarm_stream' if critical else channel}}"
                                         alert_once: "{{ alert_once }}"
+                                        tts_text: "{{message}}"
+                                - conditions:
+                                    - condition: template
+                                      value_template: "{{ not notify_group_target }}"
+                                    - condition: template
+                                      value_template: "{{ ntfy }}"
+                                  sequence:
+                                    - action: shell_command.ntfy_send
+                                      metadata: {}
+                                      data:
+                                        topic: "{{ntfy_topic}}"
+                                        message: "{{'TTS'}}"
+                                        tags: "{{ tag }}{{'-tts'}}"
                                         tts_text: "{{message}}"
                               default:
                                 - action: "notify.{{ notify_group_target }}"
@@ -2013,7 +2082,11 @@ actions:
                                                   ["{{button_2}}", "{{url_2}}"],
                                                 ]
                                               - [["{{button_3}}", "{{url_3}}"]]
-                                - conditions: "{{ not notify_group_target }}"
+                                - conditions:
+                                    - condition: template
+                                      value_template: "{{ not notify_group_target }}"
+                                    - condition: template
+                                      value_template: "{{ not ntfy }}"
                                   sequence:
                                     - device_id: !input notify_device
                                       domain: mobile_app
@@ -2065,6 +2138,24 @@ actions:
                                             uri: "{{url_3}}"
                                             icon: "{{icon_3}}"
                                             destructive: "{{not '/' in url_3}}"
+                                - conditions:
+                                    - condition: template
+                                      value_template: "{{ not notify_group_target }}"
+                                    - condition: template
+                                      value_template: "{{ ntfy }}"
+                                  sequence:
+                                    - action: shell_command.ntfy_send
+                                      metadata: {}
+                                      data:
+                                        topic: "{{ntfy_topic}}"
+                                        title: "{{title}}"
+                                        message: "{{message}}"
+                                        tags: "{{ tag }}"
+                                        priority: "{{ 5 if critical else 3 }}"
+                                        actions: "{{ 'view,'+button_1+',' + url_1 + ';' if url_1 else '' }}{{ 'view,'+button_2+',' + url_2 + ';' if url_2 else '' }}{{ 'view,'+button_3+',' + url_3 + ';' if url_3 else '' }}"
+                                        click: "{{attachment | replace('thumbnail.jpg', 'snapshot.jpg') | replace('review_preview.gif','snapshot.jpg') | replace('event_preview.gif','snapshot.jpg')}}"
+                                        icon: "{{icon | replace('mdi:homeassistant', base_url + '/local/images/homeassistant-icon.png') }}"
+                                        attach: "{{ video if video else attachment }}"
                                 - conditions: "{{ tv }}"
                                   sequence:
                                     - action: "notify.{{ notify_group_target }}"
@@ -2185,7 +2276,11 @@ actions:
                               then:
                                 sequence:
                                   - choose:
-                                      - conditions: "{{ not notify_group_target }}"
+                                      - conditions:
+                                          - condition: template
+                                            value_template: "{{ not notify_group_target }}"
+                                          - condition: template
+                                            value_template: "{{ not ntfy }}"
                                         sequence:
                                           - device_id: !input notify_device
                                             domain: mobile_app
@@ -2195,6 +2290,20 @@ actions:
                                               tag: "{{ tag }}{{'-loitering-tts' if loitering}}"
                                               channel: "{{'alarm_stream' if critical else channel}}"
                                               alert_once: "{{ alert_once }}"
+                                              tts_text: "{{message}}"
+
+                                      - conditions:
+                                          - condition: template
+                                            value_template: "{{ not notify_group_target }}"
+                                          - condition: template
+                                            value_template: "{{ ntfy }}"
+                                        sequence:
+                                          - action: shell_command.ntfy_send
+                                            metadata: {}
+                                            data:
+                                              topic: "{{ntfy_topic}}"
+                                              message: "{{'TTS'}}"
+                                              tags: "{{ tag }}{{'-loitering-tts' if loitering}}"
                                               tts_text: "{{message}}"
 
                                     default:
