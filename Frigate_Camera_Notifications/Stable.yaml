@@ -399,15 +399,22 @@ blueprint:
           description: |
             Set lock screen visibility for Android notifications.
             Use `public` to show full notification content on the lock screen.
-          default: default
+
+            You can select from presets below or enter your own value/template.
+
+          default: "default"
           selector:
             select:
-              mode: dropdown
               options:
-                - default
-                - public
-                - private
-                - secret
+                - label: "Default: Uses your device/app notification visibility setting"
+                  value: "default"
+                - label: "Public:  Show full notification content on lock screen"
+                  value: "public"
+                - label: "Private: Hide sensitive content on lock screen"
+                  value: "private"
+                - label: "Secret:  Hide notification from lock screen"
+                  value: "secret"
+              custom_value: true
         sticky:
           name: Sticky - Android only (Optional)
           description: |
