@@ -153,6 +153,11 @@ Attach a live view from the selected entity to the notification for iOS devices.
 
 Show the notification on Android Auto if the receiving device is connected.
 
+### Visibility (Android)
+
+Controls how much of the notification content is shown on the lock screen.
+Set this to `public` if you want full notification details visible on the lock screen.
+
 ### Sticky (Android)
 
 By default, tapping on the notification on android (except for when using the action buttons) clears the notification. This sticky option stops the notification from clearing when tapped and notifications must be manually swiped away.
