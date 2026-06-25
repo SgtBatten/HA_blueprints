@@ -402,6 +402,7 @@ blueprint:
           default: default
           selector:
             select:
+              mode: dropdown
               options:
                 - default
                 - public
