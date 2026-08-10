@@ -1009,7 +1009,10 @@ variables:
   zone_order_enforced: !input zone_order_enforced
   input_labels: !input labels
   labels: "{{ input_labels | list | lower }}"
-  presence_entity: !input presence_filter
+  presence_filter_input: !input presence_filter
+  presence_entity: >-
+    {% set p = presence_filter_input %}
+    {{ [p] if p is string and p != '' else (p or []) }}
   disable_times: !input disable_times
   cooldown: !input cooldown
   timeout: !input timeout
@@ -1041,7 +1044,7 @@ variables:
   severity_satisfied: "{{input_severity|select('in', severity)|list|length > 0 if trigger.id in ['frigate-event', 'genai-event']}}"
   objects: "{{ trigger.payload_json['after']['data']['objects'] if trigger.id in ['frigate-event', 'genai-event'] }}"
   objects_satisfied: "{{ not labels|length or labels|select('in', objects)|list|length > 0 or objects|map('regex_replace', '-verified$', '')|select('in', labels)|list|length > 0 }}"
-  initial_home: "{{ presence_entity != '' and presence_entity|expand|selectattr('state','eq','home')|list|length != 0 }}"
+  initial_home: "{{ presence_entity|length > 0 and presence_entity|expand|selectattr('state','eq','home')|list|length != 0 }}"
   state_satisfied: "{{ not state_only or states(input_entity)|lower in states_filter }}"
   before_zones: "{{ trigger.payload_json['before']['data']['zones'] | list | lower if trigger.id in ['frigate-event', 'genai-event'] }}"
   after_zones: "{{ trigger.payload_json['after']['data']['zones'] | list | lower if trigger.id in ['frigate-event', 'genai-event'] }}"
