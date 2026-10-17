@@ -1022,7 +1022,6 @@ variables:
   input_entity: !input state_entity
   input_states: !input state_filter_states
   states_filter: "{{ input_states | list | lower }}"
-  custom_filter: !input custom_filter
   color: !input color
   sound: !input sound
   input_volume: !input volume
@@ -1046,6 +1045,7 @@ variables:
   before_zones: "{{ trigger.payload_json['before']['data']['zones'] | list | lower if trigger.id in ['frigate-event', 'genai-event'] }}"
   after_zones: "{{ trigger.payload_json['after']['data']['zones'] | list | lower if trigger.id in ['frigate-event', 'genai-event'] }}"
   zone_multi_filter: "{{zone_only and zone_multi and after_zones|length and zones and zones |reject('in', after_zones) |list |length == 0 }}"
+  custom_filter: !input custom_filter
   filters_satisfied: "{{ severity_satisfied and objects_satisfied and not initial_home and state_satisfied and custom_filter }}"
 conditions:
   condition: or
