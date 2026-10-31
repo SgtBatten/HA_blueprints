@@ -31,6 +31,8 @@ Valid inputs are the full service e.g `notify.android_tv`, the entity id without
 
 This will override the Mobile device input.
 
+For Android/Fire TVs, prefer the [TV Entities](#tv-entities) option: notifying a TV through its legacy `notify.<tv>` action (directly or through a notify group) is deprecated and will stop working in Home Assistant 2027.5.
+
 ### Base URL 
 
 The Base URL field is for you to enter the external url of your Home Assistant Install. e.g `https://ha.mydomain.com` or `https://1234567890.ui.nabu.casa/`
@@ -221,6 +223,14 @@ Only notify if ALL of the selected presence entities are not "home".
 ### Action Button 3
 
 ## TV Options
+
+### TV Entities
+
+Requires Home Assistant 2026.11 or later.
+
+The notify entities of your Android/Fire TVs, created by the [Notifications for Android TV / Fire TV](https://www.home-assistant.io/integrations/nfandroidtv/) integration. When set, and TV Notification is enabled, the TVs are notified with the `nfandroidtv.send_message` action, and the Mobile Device and Notification Group are not notified.
+
+This action only accepts Home Assistant media sources as image, not URLs: the TV shows the latest snapshot of the detected object (the Frigate `image.<camera>_<label>` entity) or, if there is none, the current camera image.
 
 ### Position
 
