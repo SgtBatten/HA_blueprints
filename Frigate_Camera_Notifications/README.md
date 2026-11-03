@@ -32,6 +32,7 @@ With this blueprint, you may send the notification to multiple devices by leavin
   - an Android TV using https://www.home-assistant.io/integrations/nfandroidtv/
   - a [group](https://github.com/SgtBatten/HA_blueprints/blob/main/Frigate_Camera_Notifications/Guide:%20Configuration%20Options.md#notification-group-or-androidfire-tv) containing any combination of the above.
 - Configure the [title](https://github.com/SgtBatten/HA_blueprints/blob/main/Frigate_Camera_Notifications/Guide:%20Configuration%20Options.md#title) and [message](https://github.com/SgtBatten/HA_blueprints/blob/main/Frigate_Camera_Notifications/Guide:%20Configuration%20Options.md#message) of the notification.
+- Override every text of the notification to [translate it](#translating-notifications) into your language.
 - Include a thumbnail, snapshot, GIF or video of the event with bounding box and crop options for images.
 - Dynamically handle things like object type, zones and face detection from doubletake.
 - Automatically handle some common errors like case matching and bad urls etc.
@@ -65,3 +66,56 @@ With this blueprint, you may send the notification to multiple devices by leavin
 - Configure custom [notification channels](https://github.com/SgtBatten/HA_blueprints/blob/main/Frigate_Camera_Notifications/Guide:%20Configuration%20Options.md#channel-android) on Android.
 - Android Sticky  options as per https://community.home-assistant.io/t/frigate-mobile-app-notifications/311091/1043
 - Android Auto
+
+### Translating notifications
+
+Home Assistant does not support translating blueprints, so the configuration screens stay in English. However every text sent in the notifications can be overridden:
+
+| Text | Option |
+| ---- | ------ |
+| Title and message | [Title](Guide%20-%20Configuration%20Options.md#title), [Message](Guide%20-%20Configuration%20Options.md#message) and Subtitle |
+| Object names used by `{{ label }}` (`Person`, `Car`...) | [Object Names](Guide%20-%20Configuration%20Options.md#object-names) |
+| GenAI title prefixes (`Security Concern:`, `Needs Review:`) | [GenAI Notification Title](Guide%20-%20Configuration%20Options.md#genai-notification-title) |
+| Action buttons (`View Clip`, `View Snapshot`, `Silence New Notifications`) | Action Button 1, 2 and 3 text |
+
+The default icon template compares `{{ label }}` to the English object names. When using Object Names, base the icon on `{{ objects }}` instead.
+
+#### Example: French
+
+The `input` section of the automation, in YAML mode. Object names include the article, and the message makes the verb agree with the gender and number of the detected objects (_"Une personne a été détectée sur la caméra Jardin."_, _"Une voiture, un chien ont été détectés sur la caméra Allée."_):
+
+```yaml
+input:
+  label_names:
+    person: une personne
+    car: une voiture
+    motorcycle: une moto
+    bicycle: un vélo
+    bus: un bus
+    truck: un camion
+    boat: un bateau
+    dog: un chien
+    cat: un chat
+    bird: un oiseau
+    horse: un cheval
+    deer: un cerf
+    fox: un renard
+    squirrel: un écureuil
+    rabbit: un lapin
+    package: un colis
+    face: un visage
+    license_plate: une plaque d'immatriculation
+  message: >-
+    {%- set feminine = ['person', 'car', 'motorcycle', 'license_plate'] -%}
+    {%- set detected = objects | map('regex_replace', '-verified$', '') | unique | list -%}
+    {%- set e = 'e' if detected | reject('in', feminine) | list | length == 0 else '' -%}
+    {%- set s = 's' if ', ' in label else '' -%}
+    {{ label[:1] | upper }}{{ label[1:] }} {{ 'ont' if s else 'a' }} été détecté{{ e }}{{ s }} sur la caméra {{ camera_name }}.
+  genai_notification_title: "{{ 'Problème de sécurité : ' if genai_threat_level == 2 else 'À vérifier : ' if genai_threat_level == 1 else '' }}{{ genai_title }}"
+  icon: "mdi:{{ 'account-outline' if 'person' in objects else 'dog' if 'dog' in objects else 'cat' if 'cat' in objects else 'car' if 'car' in objects else 'home-assistant' }}"
+  button_1: Voir le clip
+  button_2: Voir l'instantané
+  button_3: Suspendre les notifications
+```
+
+When adding other objects to `label_names`, add the feminine ones to the `feminine` list of the message.
