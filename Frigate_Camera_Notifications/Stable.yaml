@@ -107,6 +107,16 @@ blueprint:
             The topic (message thread) ID to send telegram notifications to.
             Use this if your Telegram group has topics (forum) enabled. Leave empty to send to the general topic.
           default: ""
+        notify_telegram_config_entry:
+          name: Telegram Bot (Optional)
+          description: |
+            The Telegram bot to send notifications with.
+            Required if you have more than one Telegram bot configured in Home Assistant, otherwise sending fails with "Please specify at least 1 notify entity".
+            Leave empty if you only have one Telegram bot.
+          default: ""
+          selector:
+            config_entry:
+              integration: telegram_bot
     notification_customisations:
       name: |
         # Notification Customisations
@@ -968,6 +978,7 @@ variables:
   notify_group_target: "{{ notify_group | lower | regex_replace('^notify\\.', '') | replace(' ','_') }}"
   telegram_chat_id: !input notify_telegram_chat_id
   telegram_topic_id: !input notify_telegram_topic_id
+  telegram_config_entry: !input notify_telegram_config_entry
   telegram: "{{true if (telegram_chat_id | length > 0) else false}}"
   zone_only: !input zone_filter
   input_zones: !input zones
@@ -989,7 +1000,6 @@ variables:
   input_entity: !input state_entity
   input_states: !input state_filter_states
   states_filter: "{{ input_states | list | lower }}"
-  custom_filter: !input custom_filter
   color: !input color
   sound: !input sound
   input_volume: !input volume
@@ -1013,6 +1023,7 @@ variables:
   before_zones: "{{ trigger.payload_json['before']['data']['zones'] if trigger.id in ['frigate-event', 'genai-event'] }}"
   after_zones: "{{ trigger.payload_json['after']['data']['zones'] if trigger.id in ['frigate-event', 'genai-event'] }}"
   zone_multi_filter: "{{zone_only and zone_multi and after_zones|length and zones and zones |reject('in', after_zones) |list |length == 0 }}"
+  custom_filter: !input custom_filter
   filters_satisfied: "{{ severity_satisfied and objects_satisfied and not initial_home and state_satisfied and custom_filter }}"
 conditions:
   condition: or
@@ -1093,7 +1104,7 @@ actions:
               message: "{{ genai_shortSummary }}"
               subtitle: !input subtitle
               group: !input group
-              tag: "{{ review_id }}"
+              tag: "{{ id }}"
               channel: !input channel
               sticky: false
               sound: "none"
@@ -1123,12 +1134,24 @@ actions:
               - choose:
                   - conditions: "{{ telegram }}"
                     sequence:
-                      - action: telegram_bot.send_photo
-                        data:
-                          chat_id: "{{telegram_chat_id}}"
-                          message_thread_id: "{{telegram_topic_id if telegram_topic_id else omit}}"
-                          caption: "{{message}}"
-                          url: "{{attachment|replace( base_url, telegram_base_url )}}"
+                      - if: "{{ telegram_config_entry | length > 0 }}"
+                        then:
+                          - action: telegram_bot.send_photo
+                            data:
+                              config_entry_id: "{{telegram_config_entry}}"
+                              chat_id: "{{telegram_chat_id}}"
+                              message_thread_id: "{{telegram_topic_id if telegram_topic_id else omit}}"
+                              caption: "{{message}}"
+                              parse_mode: plain_text
+                              url: "{{attachment|replace( base_url, telegram_base_url )}}"
+                        else:
+                          - action: telegram_bot.send_photo
+                            data:
+                              chat_id: "{{telegram_chat_id}}"
+                              message_thread_id: "{{telegram_topic_id if telegram_topic_id else omit}}"
+                              caption: "{{message}}"
+                              parse_mode: plain_text
+                              url: "{{attachment|replace( base_url, telegram_base_url )}}"
                   - conditions: "{{ not notify_group_target }}"
                     sequence:
                       - device_id: !input notify_device
@@ -1425,6 +1448,7 @@ actions:
                             Telegram: {{telegram}},
                             Telegram_chat_id: {{telegram_chat_id}},
                             Telegram_topic_id: {{telegram_topic_id}},
+                            Telegram_config_entry: {{telegram_config_entry}},
                           Filters: 
                             Severity:
                               Required Severity: {{input_severity}},
@@ -1485,12 +1509,24 @@ actions:
                       - choose:
                           - conditions: "{{ telegram }}"
                             sequence:
-                              - action: telegram_bot.send_photo
-                                data:
-                                  chat_id: "{{telegram_chat_id}}"
-                                  message_thread_id: "{{telegram_topic_id if telegram_topic_id else omit}}"
-                                  caption: "{{message}}"
-                                  url: "{{attachment|replace( base_url, telegram_base_url )}}"
+                              - if: "{{ telegram_config_entry | length > 0 }}"
+                                then:
+                                  - action: telegram_bot.send_photo
+                                    data:
+                                      config_entry_id: "{{telegram_config_entry}}"
+                                      chat_id: "{{telegram_chat_id}}"
+                                      message_thread_id: "{{telegram_topic_id if telegram_topic_id else omit}}"
+                                      caption: "{{message}}"
+                                      parse_mode: plain_text
+                                      url: "{{attachment|replace( base_url, telegram_base_url )}}"
+                                else:
+                                  - action: telegram_bot.send_photo
+                                    data:
+                                      chat_id: "{{telegram_chat_id}}"
+                                      message_thread_id: "{{telegram_topic_id if telegram_topic_id else omit}}"
+                                      caption: "{{message}}"
+                                      parse_mode: plain_text
+                                      url: "{{attachment|replace( base_url, telegram_base_url )}}"
                           - conditions: "{{ not notify_group_target }}"
                             sequence:
                               - device_id: !input notify_device
@@ -1926,42 +1962,86 @@ actions:
                                             - "{{ event['type'] == 'end' }}"
                                             - "{{ video | length > 0 }}"
                                           sequence:
-                                            - action: telegram_bot.send_video
+                                            - if: "{{ telegram_config_entry | length > 0 }}"
+                                              then:
+                                                - action: telegram_bot.send_video
+                                                  data:
+                                                    config_entry_id: "{{telegram_config_entry}}"
+                                                    chat_id: "{{telegram_chat_id}}"
+                                                    caption: "{{message}}"
+                                                    parse_mode: plain_text
+                                                    url: "{{ video | replace(base_url, telegram_base_url) }}"
+                                                    inline_keyboard:
+                                                      - [
+                                                          [
+                                                            "{{button_1}}",
+                                                            "{{url_1}}",
+                                                          ],
+                                                          [
+                                                            "{{button_2}}",
+                                                            "{{url_2}}",
+                                                          ],
+                                                        ]
+                                                      - [
+                                                          [
+                                                            "{{button_3}}",
+                                                            "{{url_3}}",
+                                                          ],
+                                                        ]
+                                              else:
+                                                - action: telegram_bot.send_video
+                                                  data:
+                                                    chat_id: "{{telegram_chat_id}}"
+                                                    caption: "{{message}}"
+                                                    parse_mode: plain_text
+                                                    url: "{{ video | replace(base_url, telegram_base_url) }}"
+                                                    inline_keyboard:
+                                                      - [
+                                                          [
+                                                            "{{button_1}}",
+                                                            "{{url_1}}",
+                                                          ],
+                                                          [
+                                                            "{{button_2}}",
+                                                            "{{url_2}}",
+                                                          ],
+                                                        ]
+                                                      - [
+                                                          [
+                                                            "{{button_3}}",
+                                                            "{{url_3}}",
+                                                          ],
+                                                        ]
+                                      default:
+                                        - if: "{{ telegram_config_entry | length > 0 }}"
+                                          then:
+                                            - action: telegram_bot.send_photo
                                               data:
+                                                config_entry_id: "{{telegram_config_entry}}"
                                                 chat_id: "{{telegram_chat_id}}"
                                                 message_thread_id: "{{telegram_topic_id if telegram_topic_id else omit}}"
                                                 caption: "{{message}}"
-                                                url: "{{ video | replace(base_url, telegram_base_url) }}"
+                                                parse_mode: plain_text
+                                                url: "{{attachment | replace(base_url,telegram_base_url)}}"
                                                 inline_keyboard:
                                                   - [
-                                                      [
-                                                        "{{button_1}}",
-                                                        "{{url_1}}",
-                                                      ],
-                                                      [
-                                                        "{{button_2}}",
-                                                        "{{url_2}}",
-                                                      ],
+                                                      ["{{button_1}}", "{{url_1}}"],
+                                                      ["{{button_2}}", "{{url_2}}"],
                                                     ]
+                                                  - [["{{button_3}}", "{{url_3}}"]]
+                                          else:
+                                            - action: telegram_bot.send_photo
+                                              data:
+                                                chat_id: "{{telegram_chat_id}}"
+                                                caption: "{{message}}"
+                                                parse_mode: plain_text
+                                                url: "{{attachment | replace(base_url,telegram_base_url)}}"
+                                                inline_keyboard:
                                                   - [
-                                                      [
-                                                        "{{button_3}}",
-                                                        "{{url_3}}",
-                                                      ],
+                                                      ["{{button_1}}", "{{url_1}}"],
+                                                      ["{{button_2}}", "{{url_2}}"],
                                                     ]
-                                      default:
-                                        - action: telegram_bot.send_photo
-                                          data:
-                                            chat_id: "{{telegram_chat_id}}"
-                                            message_thread_id: "{{telegram_topic_id if telegram_topic_id else omit}}"
-                                            caption: "{{message}}"
-                                            url: "{{attachment | replace(base_url,telegram_base_url)}}"
-                                            inline_keyboard:
-                                              - [
-                                                  ["{{button_1}}", "{{url_1}}"],
-                                                  ["{{button_2}}", "{{url_2}}"],
-                                                ]
-                                              - [["{{button_3}}", "{{url_3}}"]]
+                                                  - [["{{button_3}}", "{{url_3}}"]]
                                 - conditions: "{{ not notify_group_target }}"
                                   sequence:
                                     - device_id: !input notify_device
