@@ -9,7 +9,7 @@ blueprint:
     A highly customisable Notification template for Frigate Camera Notifications.
 
     ### Software Version Requirements
-      - Minimum Home Assistant Version: 2024.11.0
+      - Minimum Home Assistant Version: 2026.11.0
       - Minimum Frigate Version: 0.14.0
       - Minimum Frigate Integration Version: 5.7.0
         - **Note:** "Enable the unauthenticated notification event proxy" must be ticked during setup
@@ -852,6 +852,20 @@ blueprint:
           default: false
           selector:
             boolean:
+        tv_entities:
+          name: TV Entities (Optional)
+          description: |
+            The notify entities of your Android/Fire TVs, from the "Notifications for Android TV / Fire TV" integration.
+            When set and "TV Notification" is true, the TVs are notified with the `nfandroidtv.send_message` action (Home Assistant 2026.11 or later) instead of the Notification Group, and the Mobile Device / Notification Group are not notified.
+            Use it instead of a TV or group of TVs in Notification Group: the legacy `notify.<tv>` action is deprecated and will be removed in Home Assistant 2027.5.
+            The TV shows the latest snapshot of the detected object (Frigate `image.<camera>_<label>` entity), or the current camera image if there is none.
+          default: []
+          selector:
+            entity:
+              multiple: true
+              filter:
+                - domain: notify
+                  integration: nfandroidtv
         tv_position:
           name: TV Notification Position (Optional)
           description: Set the position of the notification on your TV
@@ -999,6 +1013,7 @@ variables:
   volume: "{{ (1 * input_volume|int(100))/100 }}"
   sticky: !input sticky
   tv: !input tv
+  tv_entities: !input tv_entities
   tv_position: !input tv_position
   tv_size: !input tv_size
   tv_duration: !input tv_duration
@@ -1018,6 +1033,14 @@ variables:
   zone_multi_filter: "{{zone_only and zone_multi and after_zones|length and zones and zones |reject('in', after_zones) |list |length == 0 }}"
   custom_filter: !input custom_filter
   filters_satisfied: "{{ severity_satisfied and objects_satisfied and not initial_home and state_satisfied and custom_filter }}"
+  # nfandroidtv.send_message only takes media sources: the latest snapshot of
+  # the detected object (Frigate image entity), else the current camera image
+  tv_image: >-
+    {% set objs = (objects or []) | map('regex_replace', '-verified$', '') | list %}
+    {% set objs = (objs | select('in', labels) | list or objs) if labels | length else objs %}
+    {% set cam = camera | lower | replace('-','_') %}
+    {% set img = objs | map('regex_replace', '^', 'image.' ~ cam ~ '_') | select('has_value') | first | default('') %}
+    media-source://{{ 'image/' ~ img if img else 'camera/camera.' ~ cam }}
 conditions:
   condition: or
   conditions:
@@ -1143,6 +1166,24 @@ actions:
                               caption: "{{message}}"
                               parse_mode: plain_text
                               url: "{{attachment|replace( base_url, telegram_base_url )}}"
+                  - conditions: "{{ tv and tv_entities | length > 0 }}"
+                    sequence:
+                      - action: nfandroidtv.send_message
+                        target:
+                          entity_id: "{{ tv_entities }}"
+                        data:
+                          title: "{{title}}"
+                          message: "{{message}}"
+                          image:
+                            media_content_id: "{{ tv_image }}"
+                            media_content_type: image/jpeg
+                          fontsize: "{{tv_size}}"
+                          position: "{{tv_position}}"
+                          duration:
+                            seconds: "{{tv_duration}}"
+                          transparency: "{{tv_transparency}}"
+                          interactive: "{{tv_interrupt}}"
+                        continue_on_error: true
                   - conditions: "{{ not notify_group_target }}"
                     sequence:
                       - device_id: !input notify_device
@@ -1515,6 +1556,24 @@ actions:
                                       caption: "{{message}}"
                                       parse_mode: plain_text
                                       url: "{{attachment|replace( base_url, telegram_base_url )}}"
+                          - conditions: "{{ tv and tv_entities | length > 0 }}"
+                            sequence:
+                              - action: nfandroidtv.send_message
+                                target:
+                                  entity_id: "{{ tv_entities }}"
+                                data:
+                                  title: "{{title}}"
+                                  message: "{{message}}"
+                                  image:
+                                    media_content_id: "{{ tv_image }}"
+                                    media_content_type: image/jpeg
+                                  fontsize: "{{tv_size}}"
+                                  position: "{{tv_position}}"
+                                  duration:
+                                    seconds: "{{tv_duration}}"
+                                  transparency: "{{tv_transparency}}"
+                                  interactive: "{{tv_interrupt}}"
+                                continue_on_error: true
                           - conditions: "{{ not notify_group_target }}"
                             sequence:
                               - device_id: !input notify_device
@@ -2029,6 +2088,24 @@ actions:
                                                       ["{{button_2}}", "{{url_2}}"],
                                                     ]
                                                   - [["{{button_3}}", "{{url_3}}"]]
+                                - conditions: "{{ tv and tv_entities | length > 0 }}"
+                                  sequence:
+                                    - action: nfandroidtv.send_message
+                                      target:
+                                        entity_id: "{{ tv_entities }}"
+                                      data:
+                                        title: "{{title}}"
+                                        message: "{{message}}"
+                                        image:
+                                          media_content_id: "{{ tv_image }}"
+                                          media_content_type: image/jpeg
+                                        fontsize: "{{tv_size}}"
+                                        position: "{{tv_position}}"
+                                        duration:
+                                          seconds: "{{tv_duration}}"
+                                        transparency: "{{tv_transparency}}"
+                                        interactive: "{{tv_interrupt}}"
+                                      continue_on_error: true
                                 - conditions: "{{ not notify_group_target }}"
                                   sequence:
                                     - device_id: !input notify_device
