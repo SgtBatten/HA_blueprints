@@ -10,6 +10,8 @@ With this blueprint, you may send the notification to multiple devices by leavin
 ### BETA
 [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https://raw.githubusercontent.com/SgtBatten/HA_blueprints/main/Frigate_Camera_Notifications/Beta.yaml)
 
+**0.14.0.4-beta.1:** expanded GenAI stages, additional notification-service and native Matrix delivery, and independent per-camera cooldowns. See the [beta setup guide](Beta%20Setup.md) and [release notes](releases/0.14.0.4-beta.1.md) for required helpers, media-cache setup, and beta limitations.
+
 ### Software Version Requirements
 
 - Minimum Home Assistant Version: 2024.11
