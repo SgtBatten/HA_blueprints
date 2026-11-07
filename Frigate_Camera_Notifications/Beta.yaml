@@ -1108,6 +1108,8 @@ conditions:
         - alias: Disable Times
           condition: template
           value_template: "{{ not disable_times|length or not now().hour in disable_times|map('int')|list }}"
+# Template optional integration actions below so Spook does not require unused
+# notification channels to be installed. Selected channels still call the same actions.
 actions:
   - choose:
       - alias: "Silence New Object Notifications"
@@ -1193,7 +1195,7 @@ actions:
                     sequence:
                       - if: "{{ telegram_config_entry | length > 0 }}"
                         then:
-                          - action: telegram_bot.send_photo
+                          - action: "{{ 'telegram_bot.send_photo' }}"
                             data:
                               config_entry_id: "{{telegram_config_entry}}"
                               chat_id: "{{telegram_chat_id}}"
@@ -1201,7 +1203,7 @@ actions:
                               parse_mode: plain_text
                               url: "{{attachment|replace( base_url, telegram_base_url )}}"
                         else:
-                          - action: telegram_bot.send_photo
+                          - action: "{{ 'telegram_bot.send_photo' }}"
                             data:
                               chat_id: "{{telegram_chat_id}}"
                               caption: "{{message}}"
@@ -1209,7 +1211,7 @@ actions:
                               url: "{{attachment|replace( base_url, telegram_base_url )}}"
                   - conditions: "{{ tv and tv_entities | length > 0 }}"
                     sequence:
-                      - action: nfandroidtv.send_message
+                      - action: "{{ 'nfandroidtv.send_message' }}"
                         target:
                           entity_id: "{{ tv_entities }}"
                         data:
@@ -1591,7 +1593,7 @@ actions:
                             sequence:
                               - if: "{{ telegram_config_entry | length > 0 }}"
                                 then:
-                                  - action: telegram_bot.send_photo
+                                  - action: "{{ 'telegram_bot.send_photo' }}"
                                     data:
                                       config_entry_id: "{{telegram_config_entry}}"
                                       chat_id: "{{telegram_chat_id}}"
@@ -1605,7 +1607,7 @@ actions:
                                           ]
                                         - [["{{button_3}}", "{{url_3}}"]]
                                 else:
-                                  - action: telegram_bot.send_photo
+                                  - action: "{{ 'telegram_bot.send_photo' }}"
                                     data:
                                       chat_id: "{{telegram_chat_id}}"
                                       caption: "{{message}}"
@@ -1619,7 +1621,7 @@ actions:
                                         - [["{{button_3}}", "{{url_3}}"]]
                           - conditions: "{{ tv and tv_entities | length > 0 }}"
                             sequence:
-                              - action: nfandroidtv.send_message
+                              - action: "{{ 'nfandroidtv.send_message' }}"
                                 target:
                                   entity_id: "{{ tv_entities }}"
                                 data:
@@ -2080,7 +2082,7 @@ actions:
                                           sequence:
                                             - if: "{{ telegram_config_entry | length > 0 }}"
                                               then:
-                                                - action: telegram_bot.send_video
+                                                - action: "{{ 'telegram_bot.send_video' }}"
                                                   data:
                                                     config_entry_id: "{{telegram_config_entry}}"
                                                     chat_id: "{{telegram_chat_id}}"
@@ -2105,7 +2107,7 @@ actions:
                                                           ],
                                                         ]
                                               else:
-                                                - action: telegram_bot.send_video
+                                                - action: "{{ 'telegram_bot.send_video' }}"
                                                   data:
                                                     chat_id: "{{telegram_chat_id}}"
                                                     caption: "{{message}}"
@@ -2131,7 +2133,7 @@ actions:
                                       default:
                                         - if: "{{ telegram_config_entry | length > 0 }}"
                                           then:
-                                            - action: telegram_bot.send_photo
+                                            - action: "{{ 'telegram_bot.send_photo' }}"
                                               data:
                                                 config_entry_id: "{{telegram_config_entry}}"
                                                 chat_id: "{{telegram_chat_id}}"
@@ -2145,7 +2147,7 @@ actions:
                                                     ]
                                                   - [["{{button_3}}", "{{url_3}}"]]
                                           else:
-                                            - action: telegram_bot.send_photo
+                                            - action: "{{ 'telegram_bot.send_photo' }}"
                                               data:
                                                 chat_id: "{{telegram_chat_id}}"
                                                 caption: "{{message}}"
@@ -2159,7 +2161,7 @@ actions:
                                                   - [["{{button_3}}", "{{url_3}}"]]
                                 - conditions: "{{ tv and tv_entities | length > 0 }}"
                                   sequence:
-                                    - action: nfandroidtv.send_message
+                                    - action: "{{ 'nfandroidtv.send_message' }}"
                                       target:
                                         entity_id: "{{ tv_entities }}"
                                       data:
