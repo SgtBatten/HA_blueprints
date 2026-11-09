@@ -1,0 +1,20 @@
+# Timer entries for two example cameras. Rename/add entries for raw Frigate IDs.
+# Merge into an existing timer configuration; do not create a duplicate timer: key.
+# For a new configuration, save as /config/frigate_cooldown_timers.yaml and use:
+# timer: !include frigate_cooldown_timers.yaml
+frigate_sprinter_front_door:
+  name: Frigate Sprinter Front Door
+  duration: "00:00:30"
+  restore: true
+frigate_regular_front_door:
+  name: Frigate Regular Front Door
+  duration: "00:00:30"
+  restore: true
+frigate_sprinter_back_yard:
+  name: Frigate Sprinter Back Yard
+  duration: "00:00:30"
+  restore: true
+frigate_regular_back_yard:
+  name: Frigate Regular Back Yard
+  duration: "00:00:30"
+  restore: true
