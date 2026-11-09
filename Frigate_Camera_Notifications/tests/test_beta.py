@@ -80,7 +80,7 @@ class BetaTests(unittest.TestCase):
         self.assertTrue(all(value['data']['image']['media_content_id'] == '{{ tv_media_source }}' for value in sends))
 
     def test_final_summary_guard_is_boolean(self):
-        branch = self.blueprint['actions'][0]['choose'][3]
+        branch = next(branch for branch in self.blueprint['actions'][0]['choose'] if branch.get('alias') == 'Final GenAI Review Summary')
         guard = branch['sequence'][1]['choose'][0]['conditions'][1]
         for metadata, expected in [({}, False), ({'shortSummary': '  '}, False),
                                    ({'shortSummary': 'Person walking a dog'}, True),
@@ -88,7 +88,7 @@ class BetaTests(unittest.TestCase):
             self.assertIs(self.environment.from_string(guard).render(metadata=metadata), expected)
 
     def test_final_summary_fallback(self):
-        variables = self.blueprint['actions'][0]['choose'][3]['sequence'][0]['variables']
+        variables = next(branch for branch in self.blueprint['actions'][0]['choose'] if branch.get('alias') == 'Final GenAI Review Summary')['sequence'][0]['variables']
         expression = self.environment.from_string(variables['message'])
         self.assertEqual(expression.render(metadata={'scene': 'Scene'}, genai_final_description=True), 'Scene')
         self.assertEqual(expression.render(metadata={'shortSummary': 'Short', 'scene': 'Scene'}, genai_final_description=True), 'Short')
@@ -127,7 +127,7 @@ class BetaTests(unittest.TestCase):
     def test_separate_timers_and_final_exemption(self):
         self.assertNotEqual(self.inputs['regular_cooldown_timer_prefix']['default'],
                             self.inputs['genai_sprinter_timer_prefix']['default'])
-        final = json.dumps(self.blueprint['actions'][0]['choose'][3])
+        final = json.dumps(next(branch for branch in self.blueprint['actions'][0]['choose'] if branch.get('alias') == 'Final GenAI Review Summary'))
         self.assertNotIn('regular_timer_entity', final)
         self.assertNotIn('sprinter_timer_entity', final)
         self.assertEqual(self.inputs['genai_sprinter_interval']['default'], 0)

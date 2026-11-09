@@ -24,6 +24,9 @@ blueprint:
       - Mobile Device (Running HA Companion App), or a configured notification service
 
     ### Features:
+      - Late Sprinters are suppressed after a Final is committed for their object.
+        Uses retained MQTT markers automatically; no extra helpers. Markers protect
+        for 24 hours and are cleaned hourly (up to 100 expired markers per pass).
       - Easily select the camera entities or mobile device using a drop-down menu.
       - Configure multiple cameras in one automation.
       - Optional Sprinter and Final GenAI notification updates with separate attachment and description toggles.
@@ -1272,6 +1275,10 @@ trigger_variables:
   # severity: !input review_severity
   mqtt_topic: !input mqtt_topic
 triggers:
+  - trigger: time_pattern
+    hours: "*"
+    minutes: "17"
+    id: genai-guard-cleanup
   - trigger: mqtt
     topic: "{{mqtt_topic}}"
     payload: !input mqtt_payload
@@ -1308,6 +1315,8 @@ triggers:
       action: 'custom-{{ this.entity_id if this is defined and this.entity_id is defined else "" }}'
     id: custom
 variables:
+  # Private retained MQTT markers; isolated per automation, camera, and object.
+  genai_guard_root: "{{ mqtt_topic.rsplit('/', 1)[0] }}/ha_notification_guard/{{ this.entity_id }}"
   input_camera: !input camera
   input_camera_name: >-
     {% set ns = namespace(names=[]) %}
@@ -1467,6 +1476,8 @@ conditions:
   condition: or
   conditions:
     - condition: trigger
+      id: genai-guard-cleanup
+    - condition: trigger
       id: silence
     - condition: trigger
       id: custom
@@ -1517,6 +1528,31 @@ conditions:
           value_template: "{{ not disable_times|length or not now().hour in disable_times|map('int')|list }}"
 actions:
   - choose:
+      - alias: "Expire finalized object markers"
+        conditions: "{{ trigger.id == 'genai-guard-cleanup' }}"
+        sequence:
+          # Resubscribe for each removed marker. A retained empty payload deletes it.
+          # Limit work per hour; additional expired markers are removed next hour.
+          - repeat:
+              count: 100
+              sequence:
+                - wait_for_trigger:
+                    - trigger: mqtt
+                      topic: "{{ genai_guard_root }}/+/+"
+                      value_template: "{{ 'expired' if value | float(0) > 0 and as_timestamp(now()) - value | float(0) >= 86400 else 'keep' }}"
+                      payload: expired
+                  timeout:
+                    seconds: 2
+                  continue_on_timeout: true
+                - if: "{{ not wait.completed }}"
+                  then:
+                    - stop: "No more expired finalized object markers"
+                - action: mqtt.publish
+                  data:
+                    topic: "{{ wait.trigger.topic }}"
+                    payload: ""
+                    retain: true
+                    qos: 1
       - alias: "Silence New Object Notifications"
         conditions:
           - condition: trigger
@@ -1545,6 +1581,18 @@ actions:
           - "{{ type == 'description' }}"
           - "{{ input_camera_name|select('equalto', camera)|list|length>0 }}"
         sequence:
+          - alias: "Skip Sprinter if Final already committed for this object"
+            wait_for_trigger:
+              - trigger: mqtt
+                topic: "{{ genai_guard_root }}/{{ camera }}/{{ trigger_payload.get('id', '') }}"
+                value_template: "{{ 'finalized' if value | float(0) > 0 and as_timestamp(now()) - value | float(0) < 86400 else 'expired' }}"
+                payload: finalized
+            timeout:
+              seconds: 2
+            continue_on_timeout: true
+          - if: "{{ wait.completed }}"
+            then:
+              - stop: "Late Sprinter skipped: Final already committed for this object"
           - alias: Per camera Sprinter cooldown
             if: "{{ genai_sprinter_interval | int(0) > 0 }}"
             then:
@@ -1675,6 +1723,18 @@ actions:
                                               - choose:
                                                   - conditions: "{{ wait.trigger is not none and wait.trigger.id == 'downloaded' }}"
                                                     sequence:
+                                                      - alias: "Skip Sprinter if Final already committed for this object"
+                                                        wait_for_trigger:
+                                                          - trigger: mqtt
+                                                            topic: "{{ genai_guard_root }}/{{ camera }}/{{ trigger_payload.get('id', '') }}"
+                                                            value_template: "{{ 'finalized' if value | float(0) > 0 and as_timestamp(now()) - value | float(0) < 86400 else 'expired' }}"
+                                                            payload: finalized
+                                                        timeout:
+                                                          seconds: 2
+                                                        continue_on_timeout: true
+                                                      - if: "{{ wait.completed }}"
+                                                        then:
+                                                          - stop: "Late Sprinter skipped: Final already committed for this object"
                                                       - action: matrix.send_message
                                                         continue_on_error: true
                                                         data:
@@ -1688,6 +1748,18 @@ actions:
                                                     data:
                                                       level: warning
                                                       message: "Frigate Matrix media download failed or timed out for {{ camera }} (genai_sprinter). Check Downloader and media URL reachability."
+                                              - alias: "Skip Sprinter if Final already committed for this object"
+                                                wait_for_trigger:
+                                                  - trigger: mqtt
+                                                    topic: "{{ genai_guard_root }}/{{ camera }}/{{ trigger_payload.get('id', '') }}"
+                                                    value_template: "{{ 'finalized' if value | float(0) > 0 and as_timestamp(now()) - value | float(0) < 86400 else 'expired' }}"
+                                                    payload: finalized
+                                                timeout:
+                                                  seconds: 2
+                                                continue_on_timeout: true
+                                              - if: "{{ wait.completed }}"
+                                                then:
+                                                  - stop: "Late Sprinter skipped: Final already committed for this object"
                                               - action: matrix.send_message
                                                 data:
                                                   target: "{{ [matrix_room | trim] }}"
@@ -1711,6 +1783,18 @@ actions:
                                         data:
                                           level: warning
                                           message: "Frigate Matrix needs the Downloader integration for inline images/GIFs. Configure it to use {{ matrix_download_directory }} and allowlist that folder."
+                                  - alias: "Skip Sprinter if Final already committed for this object"
+                                    wait_for_trigger:
+                                      - trigger: mqtt
+                                        topic: "{{ genai_guard_root }}/{{ camera }}/{{ trigger_payload.get('id', '') }}"
+                                        value_template: "{{ 'finalized' if value | float(0) > 0 and as_timestamp(now()) - value | float(0) < 86400 else 'expired' }}"
+                                        payload: finalized
+                                    timeout:
+                                      seconds: 2
+                                    continue_on_timeout: true
+                                  - if: "{{ wait.completed }}"
+                                    then:
+                                      - stop: "Late Sprinter skipped: Final already committed for this object"
                                   - action: matrix.send_message
                                     data:
                                       target: "{{ [matrix_room | trim] }}"
@@ -1730,6 +1814,18 @@ actions:
                         {{ title ~ ('\n' ~ message if message else '')
                            ~ ('\nView clip: ' ~ tap_action_normalized if tap_action_normalized else '')
                            ~ ('\nMedia: ' ~ attachment if attachment and attachment != 'none' else '') }}
+          - alias: "Skip Sprinter if Final already committed for this object"
+            wait_for_trigger:
+              - trigger: mqtt
+                topic: "{{ genai_guard_root }}/{{ camera }}/{{ trigger_payload.get('id', '') }}"
+                value_template: "{{ 'finalized' if value | float(0) > 0 and as_timestamp(now()) - value | float(0) < 86400 else 'expired' }}"
+                payload: finalized
+            timeout:
+              seconds: 2
+            continue_on_timeout: true
+          - if: "{{ wait.completed }}"
+            then:
+              - stop: "Late Sprinter skipped: Final already committed for this object"
           - if: "{{ primary_notify_enabled and genai_sprinter }}"
             then:
               - choose:
@@ -2082,6 +2178,16 @@ actions:
                   - "{{ state_satisfied }}"
                   - "{{ custom_filter }}"
                 sequence:
+                  - alias: "Commit Final for every object in the review"
+                    repeat:
+                      for_each: "{{ detections | unique | list }}"
+                      sequence:
+                        - action: mqtt.publish
+                          data:
+                            topic: "{{ genai_guard_root }}/{{ camera }}/{{ repeat.item }}"
+                            payload: "{{ as_timestamp(now()) }}"
+                            retain: true
+                            qos: 1
                   - alias: Clear secondary object Sprinter cards
                     if: "{{ genai_cleanup_objects and genai_sprinter and primary_notify_enabled and not telegram and not tv and detections | count > 1 }}"
                     then:

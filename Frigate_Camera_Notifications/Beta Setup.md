@@ -82,3 +82,7 @@ python Frigate_Camera_Notifications/tests/test_beta.py
 ```
 
 These checks validate syntax and selected template/dispatch behavior. They do not replace live testing with the installed HA/Frigate versions and destination integrations.
+
+## Late Sprinter protection
+
+The blueprint automatically publishes per-object retained markers under `<Frigate MQTT prefix>/ha_notification_guard/<automation entity ID>/`. Home Assistant must be allowed to publish and subscribe to this namespace. No extra helper or MQTT discovery setup is required. Qualifying Finals mark all review object IDs before delivery, preventing later Sprinters from replacing them. Markers protect for 24 hours; hourly cleanup removes up to 100 expired markers per pass while the automation is enabled. Renaming/deleting an automation leaves its old namespace to be removed manually. Checks add up to two seconds per checkpoint when no marker exists. Already dispatched notifications cannot be recalled, and delivery failures after Final commitment do not undo the markers.
