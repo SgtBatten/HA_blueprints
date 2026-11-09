@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.2y)
+  name: Frigate Notifications (0.14.0.2z)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -404,6 +404,27 @@ blueprint:
           default: false
           selector:
             boolean:
+        visibility:
+          name: Visibility - Android only (Optional)
+          description: |
+            Set lock screen visibility for Android notifications.
+            Use `public` to show full notification content on the lock screen.
+
+            You can select from presets below or enter your own value/template.
+
+          default: "default"
+          selector:
+            select:
+              options:
+                - label: "Default: Uses your device/app notification visibility setting"
+                  value: "default"
+                - label: "Public:  Show full notification content on lock screen"
+                  value: "public"
+                - label: "Private: Hide sensitive content on lock screen"
+                  value: "private"
+                - label: "Secret:  Hide notification from lock screen"
+                  value: "secret"
+              custom_value: true
         sticky:
           name: Sticky - Android only (Optional)
           description: |
@@ -1011,6 +1032,7 @@ variables:
   sound: !input sound
   input_volume: !input volume
   volume: "{{ (1 * input_volume|int(100))/100 }}"
+  visibility: !input visibility
   sticky: !input sticky
   tv: !input tv
   tv_entities: !input tv_entities
@@ -1204,6 +1226,7 @@ actions:
                           sticky: "{{sticky}}"
                           channel: "{{'alarm_stream' if critical else channel}}"
                           car_ui: "{{android_auto}}"
+                          visibility: "{{ iif(visibility == 'default', none, visibility) }}"
                           # iOS Specific
                           subtitle: "{{subtitle}}"
                           url: "{{tap_action}}"
@@ -1248,6 +1271,7 @@ actions:
                             sticky: "{{sticky}}"
                             channel: "{{'alarm_stream' if critical else channel}}"
                             car_ui: "{{android_auto}}"
+                            visibility: "{{ iif(visibility == 'default', none, visibility) }}"
                             # Android/Fire TV
                             image:
                               #only send still images to TV
@@ -1303,6 +1327,7 @@ actions:
                         sticky: "{{sticky}}"
                         channel: "{{'alarm_stream' if critical else channel}}"
                         car_ui: "{{android_auto}}"
+                        visibility: "{{ iif(visibility == 'default', none, visibility) }}"
                         # Android/Fire TV
                         subtitle: "{{subtitle}}"
                         fontsize: "{{tv_size}}"
@@ -1462,6 +1487,7 @@ actions:
                             Tag: {{ id }}, 
                             Group: {{group}}, 
                             Channel: {{channel}} {{' - overridden by alarm_stream' if critical}}, 
+                            Visibility: {{visibility}},
                             Sticky: {{sticky}}, 
                             Title: {{title}}, 
                             Message: {{message}},
@@ -1596,6 +1622,7 @@ actions:
                                   sticky: "{{sticky}}"
                                   channel: "{{'alarm_stream' if critical else channel}}"
                                   car_ui: "{{android_auto}}"
+                                  visibility: "{{ iif(visibility == 'default', none, visibility) }}"
                                   # iOS Specific
                                   subtitle: "{{subtitle}}"
                                   url: "{{tap_action}}"
@@ -1642,6 +1669,7 @@ actions:
                                     sticky: "{{sticky}}"
                                     channel: "{{'alarm_stream' if critical else channel}}"
                                     car_ui: "{{android_auto}}"
+                                    visibility: "{{ iif(visibility == 'default', none, visibility) }}"
                                     # Android/Fire TV
                                     image:
                                       #only send still images to TV
@@ -1699,6 +1727,7 @@ actions:
                                 sticky: "{{sticky}}"
                                 channel: "{{'alarm_stream' if critical else channel}}"
                                 car_ui: "{{android_auto}}"
+                                visibility: "{{ iif(visibility == 'default', none, visibility) }}"
                                 # Android/Fire TV
                                 subtitle: "{{subtitle}}"
                                 fontsize: "{{tv_size}}"
@@ -2129,6 +2158,7 @@ actions:
                                         sticky: "{{sticky}}"
                                         channel: "{{'alarm_stream' if critical else channel}}"
                                         car_ui: "{{android_auto}}"
+                                        visibility: "{{ iif(visibility == 'default', none, visibility) }}"
                                         # iOS Specific
                                         subtitle: "{{subtitle}}"
                                         url: "{{tap_action}}"
@@ -2176,6 +2206,7 @@ actions:
                                           sticky: "{{sticky}}"
                                           channel: "{{'alarm_stream' if critical else channel}}"
                                           car_ui: "{{android_auto}}"
+                                          visibility: "{{ iif(visibility == 'default', none, visibility) }}"
                                           # Android/Fire TV
                                           image:
                                             url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
@@ -2234,6 +2265,7 @@ actions:
                                       sticky: "{{sticky}}"
                                       channel: "{{'alarm_stream' if critical else channel}}"
                                       car_ui: "{{android_auto}}"
+                                      visibility: "{{ iif(visibility == 'default', none, visibility) }}"
                                       # Android/Fire TV
                                       fontsize: "{{tv_size}}"
                                       position: "{{tv_position}}"
