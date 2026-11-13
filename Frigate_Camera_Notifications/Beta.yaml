@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.3l)
+  name: Frigate Notifications (0.14.0.3m)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -1268,9 +1268,12 @@ actions:
                             url: "{{video if video else attachment }}"
                             content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
                           push:
-                            sound:
-                              name: "{{sound}}"
-                              volume: "{{ iif(sound == 'none', 0, volume) }}"
+                            sound: >
+                              {% if sound == 'none' %}
+                                {{ sound }}
+                              {% else %}
+                                {"name": "{{ sound }}", "volume": {{ volume }}}
+                              {% endif %}
                             interruption-level: "{{ iif(critical, 1, interruption_level) }}"
                           entity_id: "{{ios_live_view}}"
                           # Actions
@@ -1324,9 +1327,12 @@ actions:
                               url: "{{video if video else attachment }}"
                               content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
                             push:
-                              sound:
-                                name: "{{sound}}"
-                                volume: "{{ iif(sound == 'none', 0, volume) }}"
+                              sound: >
+                                {% if sound == 'none' %}
+                                  {{ sound }}
+                                {% else %}
+                                  {"name": "{{ sound }}", "volume": {{ volume }}}
+                                {% endif %}
                               interruption-level: "{{ iif(critical, 1, interruption_level) }}"
                             entity_id: "{{ios_live_view}}"
                             # Actions
@@ -1377,9 +1383,12 @@ actions:
                           url: "{{video if video else attachment }}"
                           content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
                         push:
-                          sound:
-                            name: "{{sound}}"
-                            volume: "{{ iif(sound == 'none', 0, volume) }}"
+                          sound: >
+                            {% if sound == 'none' %}
+                              {{ sound }}
+                            {% else %}
+                              {"name": "{{ sound }}", "volume": {{ volume }}}
+                            {% endif %}
                           interruption-level: "{{ iif(critical, 1, interruption_level) }}"
                         entity_id: "{{ios_live_view}}"
                         # Actions
@@ -1680,9 +1689,12 @@ actions:
                                     url: "{{video if video else attachment }}"
                                     content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
                                   push:
-                                    sound:
-                                      name: "{{sound}}"
-                                      volume: "{{ iif(sound == 'none', 0, volume) }}"
+                                    sound: >
+                                      {% if sound == 'none' %}
+                                        {{ sound }}
+                                      {% else %}
+                                        {"name": "{{ sound }}", "volume": {{ volume }}}
+                                      {% endif %}
                                     interruption-level: "{{ iif(critical, 1, interruption_level) }}"
                                   entity_id: "{{ios_live_view}}"
                                   # Actions
@@ -1738,9 +1750,12 @@ actions:
                                       url: "{{video if video else attachment }}"
                                       content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
                                     push:
-                                      sound:
-                                        name: "{{sound}}"
-                                        volume: "{{ iif(sound == 'none', 0, volume) }}"
+                                      sound: >
+                                        {% if sound == 'none' %}
+                                          {{ sound }}
+                                        {% else %}
+                                          {"name": "{{ sound }}", "volume": {{ volume }}}
+                                        {% endif %}
                                       interruption-level: "{{ iif(critical, 1, interruption_level) }}"
                                     entity_id: "{{ios_live_view}}"
                                     # Actions
@@ -1793,9 +1808,12 @@ actions:
                                   url: "{{video if video else attachment }}"
                                   content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
                                 push:
-                                  sound:
-                                    name: "{{sound}}"
-                                    volume: "{{ iif(sound == 'none', 0, volume) }}"
+                                  sound: >
+                                    {% if sound == 'none' %}
+                                      {{ sound }}
+                                    {% else %}
+                                      {"name": "{{ sound }}", "volume": {{ volume }}}
+                                    {% endif %}
                                   interruption-level: "{{ iif(critical, 1, interruption_level) }}"
                                 entity_id: "{{ios_live_view}}"
                                 # Actions
@@ -2221,9 +2239,12 @@ actions:
                                           url: "{{video if video else attachment }}"
                                           content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
                                         push:
-                                          sound:
-                                            name: "{{ iif(silent_update, 'none', sound) }}"
-                                            volume: "{{ iif((silent_update or sound == 'none'), 0, volume) }}"
+                                          sound: >
+                                            {% if silentupdate or sound == 'none'%}
+                                              none
+                                            {% else %}
+                                              {"name": "{{ sound }}", "volume": {{ volume }}}
+                                            {% endif %}
                                           interruption-level: "{{ iif(critical, 1, interruption_level) }}"
                                         entity_id: "{{ios_live_view}}"
                                         # Actions
@@ -2280,9 +2301,12 @@ actions:
                                             url: "{{video if video else attachment }}"
                                             content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
                                           push:
-                                            sound:
-                                              name: "{{ iif(silent_update, 'none', sound) }}"
-                                              volume: "{{ iif((silent_update or sound == 'none'), 0, volume) }}"
+                                            sound: >
+                                              {% if silentupdate or sound == 'none'%}
+                                                none
+                                              {% else %}
+                                                {"name": "{{ sound }}", "volume": {{ volume }}}
+                                              {% endif %}
                                             interruption-level: "{{ iif(critical, 1, interruption_level) }}"
                                           entity_id: "{{ios_live_view}}"
                                           # Actions
@@ -2336,9 +2360,12 @@ actions:
                                         url: "{{video if video else attachment }}"
                                         content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mp4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
                                       push:
-                                        sound:
-                                          name: "{{ iif(silent_update, 'none', sound) }}"
-                                          volume: "{{ iif((silent_update or sound == 'none'), 0, volume) }}"
+                                        sound: >
+                                          {% if silentupdate or sound == 'none'%}
+                                            none
+                                          {% else %}
+                                            {"name": "{{ sound }}", "volume": {{ volume }}}
+                                          {% endif %}
                                         interruption-level: "{{ iif(critical, 1, interruption_level) }}"
                                       entity_id: "{{ios_live_view}}"
                                       # Actions
