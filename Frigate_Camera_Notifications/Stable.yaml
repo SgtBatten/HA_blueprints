@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate Notifications (0.14.0.2y)
+  name: Frigate Notifications (0.14.0.3y)
   author: SgtBatten
   homeassistant:
     min_version: 2024.11.0
@@ -100,6 +100,12 @@ blueprint:
             The chat ID to send telegram notifications to.
             If set, this will override individual devices and groups above. Note: TV (far below) must be set to false.
             Base URL must start with https since telegram URL buttons only work with https.
+          default: ""
+        notify_telegram_topic_id:
+          name: Telegram Topic ID (Optional)
+          description: |
+            The topic (message thread) ID to send telegram notifications to.
+            Use this if your Telegram group has topics (forum) enabled. Leave empty to send to the general topic.
           default: ""
         notify_telegram_config_entry:
           name: Telegram Bot (Optional)
@@ -1002,6 +1008,7 @@ variables:
   notify_group: !input notify_group
   notify_group_target: "{{ notify_group | lower | regex_replace('^notify\\.', '') | replace(' ','_') }}"
   telegram_chat_id: !input notify_telegram_chat_id
+  telegram_topic_id: !input notify_telegram_topic_id
   telegram_config_entry: !input notify_telegram_config_entry
   telegram: "{{true if (telegram_chat_id | length > 0) else false}}"
   # Actions of optional integrations are templated: a static action of an
@@ -1175,6 +1182,7 @@ actions:
                             data:
                               config_entry_id: "{{telegram_config_entry}}"
                               chat_id: "{{telegram_chat_id}}"
+                              message_thread_id: "{{telegram_topic_id if telegram_topic_id else omit}}"
                               caption: "{{message}}"
                               parse_mode: plain_text
                               url: "{{attachment|replace( base_url, telegram_base_url )}}"
@@ -1182,6 +1190,7 @@ actions:
                           - action: "{{ telegram_send_photo }}"
                             data:
                               chat_id: "{{telegram_chat_id}}"
+                              message_thread_id: "{{telegram_topic_id if telegram_topic_id else omit}}"
                               caption: "{{message}}"
                               parse_mode: plain_text
                               url: "{{attachment|replace( base_url, telegram_base_url )}}"
@@ -1498,6 +1507,7 @@ actions:
                               TV Interrupt: {{tv_interrupt}}, 
                             Telegram: {{telegram}},
                             Telegram_chat_id: {{telegram_chat_id}},
+                            Telegram_topic_id: {{telegram_topic_id}},
                             Telegram_config_entry: {{telegram_config_entry}},
                           Filters: 
                             Severity:
@@ -1565,6 +1575,7 @@ actions:
                                     data:
                                       config_entry_id: "{{telegram_config_entry}}"
                                       chat_id: "{{telegram_chat_id}}"
+                                      message_thread_id: "{{telegram_topic_id if telegram_topic_id else omit}}"
                                       caption: "{{message}}"
                                       parse_mode: plain_text
                                       url: "{{attachment|replace( base_url, telegram_base_url )}}"
@@ -1572,6 +1583,7 @@ actions:
                                   - action: "{{ telegram_send_photo }}"
                                     data:
                                       chat_id: "{{telegram_chat_id}}"
+                                      message_thread_id: "{{telegram_topic_id if telegram_topic_id else omit}}"
                                       caption: "{{message}}"
                                       parse_mode: plain_text
                                       url: "{{attachment|replace( base_url, telegram_base_url )}}"
@@ -2085,6 +2097,7 @@ actions:
                                               data:
                                                 config_entry_id: "{{telegram_config_entry}}"
                                                 chat_id: "{{telegram_chat_id}}"
+                                                message_thread_id: "{{telegram_topic_id if telegram_topic_id else omit}}"
                                                 caption: "{{message}}"
                                                 parse_mode: plain_text
                                                 url: "{{attachment | replace(base_url,telegram_base_url)}}"
