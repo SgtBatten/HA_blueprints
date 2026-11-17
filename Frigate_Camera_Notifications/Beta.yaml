@@ -378,6 +378,32 @@ blueprint:
                 - label: Snapshot cropped with bounding box (2:1)
                   value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1&crop=1&format=android"
               mode: dropdown
+        phone_rich_media_condition:
+          name: Phone Rich Media Condition (Optional)
+          description: |
+            Allow GIF/video attachments only when these conditions pass (for example,
+            your phone network-type sensor equals wifi). Otherwise use the fallback below.
+            Empty conditions allow rich media. Applies to all four phone notification stages,
+            including phone groups/all devices as one send; it is not evaluated per recipient.
+            Matrix, additional notification services, Telegram and TV media are unchanged.
+          default: []
+          selector:
+            condition: {}
+        phone_media_fallback:
+          name: Phone Attachment Fallback
+          description: Snapshot or thumbnail used when the rich media condition fails. Custom templates are accepted.
+          default: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1&crop=1"
+          selector:
+            select:
+              custom_value: true
+              options:
+                - label: Snapshot cropped with bounding box
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg?bbox=1&crop=1"
+                - label: Snapshot
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
+                - label: Thumbnail
+                  value: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/thumbnail.jpg"
+              mode: dropdown
         attachment_2:
           name: Subsequent Attachment (Optional)
           description: |
@@ -584,6 +610,7 @@ blueprint:
           name: Minimum Sprinter Interval per Camera
           description: |
             Seconds between admitted Sprinter notifications from each camera.
+            This limits Sprinters only, not ordinary review updates or Final summaries.
             Applies to both phone and notification service, across all object IDs.
             0 disables throttling. Start with 30 seconds. Final summaries are not throttled.
             For a nonzero interval, create one Timer helper per camera named
@@ -707,9 +734,10 @@ blueprint:
           name: Event Type
           description: |
             Specify the classification of Frigate events to be notified about.
+            Alerts only respects Frigate alert-zone qualification. Adding Detections also
+            permits activity outside alert zones. Existing automations keep their saved choices.
           default:
             - alert
-            - detection
           selector:
             select:
               options:
@@ -1275,6 +1303,9 @@ trigger_variables:
   # severity: !input review_severity
   mqtt_topic: !input mqtt_topic
 triggers:
+  - trigger: mqtt
+    topic: "{{mqtt_topic}}"
+    id: genai-context
   - trigger: time_pattern
     hours: "*"
     minutes: "17"
@@ -1330,7 +1361,7 @@ variables:
   trigger_after: "{{ trigger_payload.get('after', dict()) if trigger_payload is mapping else dict() }}"
   trigger_detections: "{{ trigger_after.get('data', {}).get('detections', []) if trigger_after is mapping else [] }}"
   camera: >
-    {% if trigger.id == 'frigate-event' %}
+    {% if trigger.id in ['frigate-event', 'genai-context'] %}
       {{ trigger_after.get('camera', '') }}
     {% elif trigger.id == 'genai-sprinter' %}
       {{ trigger_payload.get('camera', '') }}
@@ -1475,6 +1506,8 @@ variables:
 conditions:
   condition: or
   conditions:
+    - condition: template
+      value_template: "{{ trigger.id == 'genai-context' and trigger_payload.get('type') in ['new', 'update', 'end'] and camera in input_camera_name and genai_sprinter_active }}"
     - condition: trigger
       id: genai-guard-cleanup
     - condition: trigger
@@ -1494,6 +1527,9 @@ conditions:
         - alias: Camera Match
           condition: template
           value_template: "{{ input_camera_name|select('equalto', camera)|list|length>0 }}"
+        - alias: Disable Times
+          condition: template
+          value_template: "{{ not disable_times | length or now().hour not in disable_times | map('int') | list }}"
         - alias: Master Condition
           condition: !input master_condition
     - condition: and
@@ -1509,6 +1545,9 @@ conditions:
         - alias: Camera Match
           condition: template
           value_template: "{{ input_camera_name|select('equalto', camera)|list|length>0 }}"
+        - alias: Disable Times
+          condition: template
+          value_template: "{{ not disable_times | length or now().hour not in disable_times | map('int') | list }}"
         - alias: Master Condition
           condition: !input master_condition
     - condition: and
@@ -1520,14 +1559,23 @@ conditions:
           value_template: "{{ input_camera_name|select('equalto', camera)|list|length>0 }}"
         - alias: Master Condition
           condition: !input master_condition
-        - alias: Cooldown
-          condition: template
-          value_template: "{{ regular_cooldown_scope == 'per_camera' or cooldown | int(0) <= 0 or not this.attributes.last_triggered or (as_timestamp(now()) - as_timestamp(this.attributes.last_triggered)) > cooldown }}"
         - alias: Disable Times
           condition: template
           value_template: "{{ not disable_times|length or not now().hour in disable_times|map('int')|list }}"
 actions:
   - choose:
+      - alias: "Cache review filters for Sprinters"
+        conditions: "{{ trigger.id == 'genai-context' }}"
+        sequence:
+          - repeat:
+              for_each: "{{ trigger_detections | unique | list }}"
+              sequence:
+                - action: mqtt.publish
+                  data:
+                    topic: "{{ genai_guard_root }}/context/{{ camera }}/{{ repeat.item }}"
+                    payload: "{{ dict(cached_at=as_timestamp(now()), review=trigger_after) | to_json }}"
+                    retain: true
+                    qos: 1
       - alias: "Expire finalized object markers"
         conditions: "{{ trigger.id == 'genai-guard-cleanup' }}"
         sequence:
@@ -1538,8 +1586,8 @@ actions:
               sequence:
                 - wait_for_trigger:
                     - trigger: mqtt
-                      topic: "{{ genai_guard_root }}/+/+"
-                      value_template: "{{ 'expired' if value | float(0) > 0 and as_timestamp(now()) - value | float(0) >= 86400 else 'keep' }}"
+                      topic: "{{ genai_guard_root }}/#"
+                      value_template: "{{ 'expired' if (value_json.get('cached_at', 0) if value_json is defined and value_json is mapping else value | float(0)) > 0 and as_timestamp(now()) - (value_json.get('cached_at', 0) if value_json is defined and value_json is mapping else value | float(0)) >= 86400 else 'keep' }}"
                       payload: expired
                   timeout:
                     seconds: 2
@@ -1593,31 +1641,41 @@ actions:
           - if: "{{ wait.completed }}"
             then:
               - stop: "Late Sprinter skipped: Final already committed for this object"
-          - alias: Per camera Sprinter cooldown
-            if: "{{ genai_sprinter_interval | int(0) > 0 }}"
+          - alias: "Read Sprinter review context"
+            wait_for_trigger:
+              - trigger: mqtt
+                topic: "{{ genai_guard_root }}/context/{{ camera }}/{{ trigger_payload.get('id', '') }}"
+                value_template: "{{ 'current' if value_json is defined and value_json is mapping and as_timestamp(now()) - value_json.get('cached_at', 0) | float(0) < 86400 else 'expired' }}"
+                payload: current
+            timeout:
+              seconds: 2
+            continue_on_timeout: true
+          - if: "{{ not wait.completed }}"
             then:
-              - variables:
-                  sprinter_timer_entity: "{{ genai_sprinter_timer_prefix | trim }}{{ camera }}"
-              - choose:
-                  - conditions: "{{ states(sprinter_timer_entity) == 'idle' }}"
-                    sequence:
-                      - action: timer.start
-                        target:
-                          entity_id: "{{ sprinter_timer_entity }}"
-                        data:
-                          duration: "{{ genai_sprinter_interval | int }}"
-                  - conditions: "{{ states(sprinter_timer_entity) in ['active', 'paused'] }}"
-                    sequence:
-                      - stop: "Sprinter skipped during camera cooldown"
-                default:
-                  - action: system_log.write
-                    data:
-                      level: error
-                      message: "Frigate Sprinter limiter: create or restore {{ sprinter_timer_entity }}, or set Minimum Sprinter Interval per Camera to 0. No Sprinter sent for {{ camera }}."
-                  - stop: "Sprinter timer missing or unavailable"
+              - stop: "Sprinter skipped: no current review context to verify notification filters"
+          - variables:
+              sprinter_review: "{{ wait.trigger.payload_json['review'] }}"
+              event: "{{ dict(after=sprinter_review) }}"
+              review_id: "{{ sprinter_review.get('id', '') }}"
+              severity: "{{ sprinter_review.get('severity', '') }}"
+              objects: "{{ sprinter_review.get('data', {}).get('objects', []) }}"
+              after_zones: "{{ sprinter_review.get('data', {}).get('zones', []) | list | lower }}"
+              severity_satisfied: "{{ severity in input_severity }}"
+              objects_satisfied: "{{ not labels | length or labels | select('in', objects) | list | length > 0 or ('person-verified' in objects and 'person' in labels) }}"
+              zone_single_satisfied: "{{ not zone_only or zones | length == 0 or zones | select('in', after_zones) | list | length > 0 }}"
+              zone_multi_satisfied: "{{ not (zone_only and zone_multi) or zones | reject('in', after_zones) | list | length == 0 }}"
+              ordered_zones_match: >-
+                {% set ns = namespace(intersection=[]) %}
+                {% for item in after_zones %}
+                  {% if item in zones %}{% set ns.intersection = ns.intersection + [item] %}{% endif %}
+                {% endfor %}
+                {{ ns.intersection == zones }}
+              zones_satisfied: "{{ zone_single_satisfied and zone_multi_satisfied and (not zone_order_enforced or (zone_only and zone_multi and ordered_zones_match)) }}"
+              home: "{{ presence_entity != '' and presence_entity | expand | selectattr('state', 'eq', 'home') | list | length != 0 }}"
+              state_satisfied: "{{ not state_only or states(input_entity) | lower in states_filter }}"
           - variables:
               id: "{{ trigger.payload_json['id'] }}"
-              review_id: "{{ trigger.payload_json.get('review_id', trigger.payload_json['id']) }}"
+              review_id: "{{ sprinter_review.get('id', trigger.payload_json['id']) }}"
               label: "{{ trigger.payload_json.get('label', 'GenAI') | replace('_', ' ') | title }}"
               title: "Detection at {{ trigger.payload_json['camera'] | replace('_', ' ') | title }}"
               message: "{{ trigger.payload_json['description'] if genai_sprinter_description else '' }}"
@@ -1681,6 +1739,31 @@ actions:
               telegram_caption: "{{ title ~ ('\n' ~ message if message else '') }}"
               custom_filter: !input custom_filter
               attachment_content_type: "{{ 'mpeg4' if '.mp4' in attachment else 'jpeg' if '.jpg' in attachment or '.jpeg' in attachment else 'png' if '.png' in attachment else 'gif' }}"
+          - alias: "Apply Sprinter notification filters"
+            condition: template
+            value_template: "{{ severity_satisfied and objects_satisfied and zones_satisfied and not home and state_satisfied and custom_filter and (not disable_times | length or now().hour not in disable_times | map('int') | list) }}"
+          - alias: Per camera Sprinter cooldown
+            if: "{{ genai_sprinter_interval | int(0) > 0 }}"
+            then:
+              - variables:
+                  sprinter_timer_entity: "{{ genai_sprinter_timer_prefix | trim }}{{ camera }}"
+              - choose:
+                  - conditions: "{{ states(sprinter_timer_entity) == 'idle' }}"
+                    sequence:
+                      - action: timer.start
+                        target:
+                          entity_id: "{{ sprinter_timer_entity }}"
+                        data:
+                          duration: "{{ genai_sprinter_interval | int }}"
+                  - conditions: "{{ states(sprinter_timer_entity) in ['active', 'paused'] }}"
+                    sequence:
+                      - stop: "Sprinter skipped during camera cooldown"
+                default:
+                  - action: system_log.write
+                    data:
+                      level: error
+                      message: "Frigate Sprinter limiter: create or restore {{ sprinter_timer_entity }}, or set Minimum Sprinter Interval per Camera to 0. No Sprinter sent for {{ camera }}."
+                  - stop: "Sprinter timer missing or unavailable"
           - if: "{{ notification_service != '' and 'genai_sprinter' in notification_service_stages }}"
             then:
               - continue_on_error: true
@@ -1826,6 +1909,23 @@ actions:
           - if: "{{ wait.completed }}"
             then:
               - stop: "Late Sprinter skipped: Final already committed for this object"
+          - variables:
+              phone_attachment: "{{ attachment }}"
+              phone_video: "{{ video | default('') }}"
+          - alias: "Choose phone attachment for current connection"
+            if: !input phone_rich_media_condition
+            then:
+              - variables:
+                  phone_attachment: "{{ attachment }}"
+                  phone_video: "{{ video | default('') }}"
+            else:
+              - if: "{{ not tv and not telegram and ('.gif' in attachment | lower or '.mp4' in attachment | lower or '.m3u8' in attachment | lower or video | default('') | length > 0) }}"
+                then:
+                  - variables:
+                      phone_attachment: !input phone_media_fallback
+                      phone_video: ""
+          - variables:
+              phone_attachment_content_type: "{{ 'mpeg4' if '.mp4' in phone_attachment else 'jpeg' if '.jpg' in phone_attachment or '.jpeg' in phone_attachment else 'png' if '.png' in phone_attachment else 'gif' }}"
           - if: "{{ primary_notify_enabled and genai_sprinter }}"
             then:
               - choose:
@@ -1916,7 +2016,7 @@ actions:
                           group: "{{ group }}"
                           color: "{{color}}"
                           subject: "{{subtitle}}"
-                          image: "{{attachment}}"
+                          image: "{{phone_attachment}}"
                           clickAction: "{{tap_action_android}}"
                           ttl: 0
                           priority: high
@@ -1928,8 +2028,8 @@ actions:
                           subtitle: "{{subtitle}}"
                           url: "{{tap_action_single}}"
                           attachment:
-                            url: "{{attachment}}"
-                            content-type: "{{attachment_content_type}}"
+                            url: "{{phone_attachment}}"
+                            content-type: "{{phone_attachment_content_type}}"
                             hide-thumbnail: false
                           push:
                             sound:
@@ -1983,8 +2083,8 @@ actions:
                             subtitle: "{{subtitle}}"
                             url: "{{tap_action_ios}}"
                             attachment:
-                              url: "{{attachment}}"
-                              content-type: "{{attachment_content_type}}"
+                              url: "{{phone_attachment}}"
+                              content-type: "{{phone_attachment_content_type}}"
                               hide-thumbnail: false
                             push:
                               sound:
@@ -2018,7 +2118,7 @@ actions:
                         group: "{{ group }}"
                         color: "{{color}}"
                         subject: "{{subtitle}}"
-                        image: "{{attachment}}"
+                        image: "{{phone_attachment}}"
                         clickAction: "{{tap_action_android}}"
                         ttl: 0
                         priority: high
@@ -2035,8 +2135,8 @@ actions:
                         interrupt: "{{tv_interrupt}}"
                         url: "{{tap_action_ios}}"
                         attachment:
-                          url: "{{attachment}}"
-                          content-type: "{{attachment_content_type}}"
+                          url: "{{phone_attachment}}"
+                          content-type: "{{phone_attachment_content_type}}"
                           hide-thumbnail: false
                         push:
                           sound:
@@ -2320,6 +2420,23 @@ actions:
                                 {{ title ~ ('\n' ~ message if message else '')
                                    ~ ('\nView clip: ' ~ tap_action_normalized if tap_action_normalized else '')
                                    ~ ('\nMedia: ' ~ attachment if attachment and attachment != 'none' else '') }}
+                  - variables:
+                      phone_attachment: "{{ attachment }}"
+                      phone_video: "{{ video | default('') }}"
+                  - alias: "Choose phone attachment for current connection"
+                    if: !input phone_rich_media_condition
+                    then:
+                      - variables:
+                          phone_attachment: "{{ attachment }}"
+                          phone_video: "{{ video | default('') }}"
+                    else:
+                      - if: "{{ not tv and not telegram and ('.gif' in attachment | lower or '.mp4' in attachment | lower or '.m3u8' in attachment | lower or video | default('') | length > 0) }}"
+                        then:
+                          - variables:
+                              phone_attachment: !input phone_media_fallback
+                              phone_video: ""
+                  - variables:
+                      phone_attachment_content_type: "{{ 'mpeg4' if '.mp4' in phone_attachment else 'jpeg' if '.jpg' in phone_attachment or '.jpeg' in phone_attachment else 'png' if '.png' in phone_attachment else 'gif' }}"
                   - if: "{{ primary_notify_enabled and genai_final }}"
                     then:
                       - choose:
@@ -2410,7 +2527,7 @@ actions:
                                   group: "{{ group }}"
                                   color: "{{color}}"
                                   subject: "{{subtitle}}"
-                                  image: "{{attachment}}"
+                                  image: "{{phone_attachment}}"
                                   clickAction: "{{tap_action_android}}"
                                   ttl: 0
                                   priority: high
@@ -2422,8 +2539,8 @@ actions:
                                   subtitle: "{{subtitle}}"
                                   url: "{{tap_action_single}}"
                                   attachment:
-                                    url: "{{attachment}}"
-                                    content-type: "{{attachment_content_type}}"
+                                    url: "{{phone_attachment}}"
+                                    content-type: "{{phone_attachment_content_type}}"
                                     hide-thumbnail: false
                                   push:
                                     sound:
@@ -2477,8 +2594,8 @@ actions:
                                     subtitle: "{{subtitle}}"
                                     url: "{{tap_action_ios}}"
                                     attachment:
-                                      url: "{{attachment}}"
-                                      content-type: "{{attachment_content_type}}"
+                                      url: "{{phone_attachment}}"
+                                      content-type: "{{phone_attachment_content_type}}"
                                       hide-thumbnail: false
                                     push:
                                       sound:
@@ -2512,7 +2629,7 @@ actions:
                                 group: "{{ group }}"
                                 color: "{{color}}"
                                 subject: "{{subtitle}}"
-                                image: "{{attachment}}"
+                                image: "{{phone_attachment}}"
                                 clickAction: "{{tap_action_android}}"
                                 ttl: 0
                                 priority: high
@@ -2529,8 +2646,8 @@ actions:
                                 interrupt: "{{tv_interrupt}}"
                                 url: "{{tap_action_ios}}"
                                 attachment:
-                                  url: "{{attachment}}"
-                                  content-type: "{{attachment_content_type}}"
+                                  url: "{{phone_attachment}}"
+                                  content-type: "{{phone_attachment_content_type}}"
                                   hide-thumbnail: false
                                 push:
                                   sound:
@@ -2767,6 +2884,26 @@ actions:
                     condition: template
                     value_template: "{{ custom_filter }}"
                 sequence:
+                  - alias: Automation initial notification cooldown
+                    if: "{{ regular_cooldown_scope == 'automation' and cooldown | int(0) > 0 }}"
+                    then:
+                      - wait_for_trigger:
+                          - trigger: mqtt
+                            topic: "{{ genai_guard_root }}/regular_cooldown"
+                            value_template: "{{ 'recent' if value | float(0) > 0 and as_timestamp(now()) - value | float(0) < cooldown | int(0) else 'expired' }}"
+                            payload: recent
+                        timeout:
+                          seconds: 2
+                        continue_on_timeout: true
+                      - if: "{{ wait.completed }}"
+                        then:
+                          - stop: "Initial notification skipped during automation cooldown"
+                      - action: mqtt.publish
+                        data:
+                          topic: "{{ genai_guard_root }}/regular_cooldown"
+                          payload: "{{ as_timestamp(now()) }}"
+                          retain: true
+                          qos: 1
                   - alias: Start camera initial notification cooldown
                     if: "{{ regular_cooldown_scope == 'per_camera' and cooldown | int(0) > 0 }}"
                     then:
@@ -2884,6 +3021,23 @@ actions:
                                     {{ title ~ ('\n' ~ message if message else '')
                                        ~ ('\nView clip: ' ~ tap_action_normalized if tap_action_normalized else '')
                                        ~ ('\nMedia: ' ~ attachment if attachment and attachment != 'none' else '') }}
+                      - variables:
+                          phone_attachment: "{{ attachment }}"
+                          phone_video: "{{ video | default('') }}"
+                      - alias: "Choose phone attachment for current connection"
+                        if: !input phone_rich_media_condition
+                        then:
+                          - variables:
+                              phone_attachment: "{{ attachment }}"
+                              phone_video: "{{ video | default('') }}"
+                        else:
+                          - if: "{{ not tv and not telegram and ('.gif' in attachment | lower or '.mp4' in attachment | lower or '.m3u8' in attachment | lower or video | default('') | length > 0) }}"
+                            then:
+                              - variables:
+                                  phone_attachment: !input phone_media_fallback
+                                  phone_video: ""
+                      - variables:
+                          phone_attachment_content_type: "{{ 'mpeg4' if '.mp4' in phone_attachment else 'jpeg' if '.jpg' in phone_attachment or '.jpeg' in phone_attachment else 'png' if '.png' in phone_attachment else 'gif' }}"
                       - if: "{{ primary_notify_enabled }}"
                         then:
                           - choose:
@@ -2955,8 +3109,8 @@ actions:
                                       color: "{{color}}"
                                       # Android Specific
                                       subject: "{{subtitle}}"
-                                      image: "{{attachment}}"
-                                      video: "{{video}}"
+                                      image: "{{phone_attachment}}"
+                                      video: "{{phone_video}}"
                                       clickAction: "{{tap_action_android}}"
                                       ttl: 0
                                       priority: high
@@ -2968,8 +3122,8 @@ actions:
                                       subtitle: "{{subtitle}}"
                                       url: "{{tap_action_single}}"
                                       attachment:
-                                        url: "{{video if video else attachment }}"
-                                        content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mpeg4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
+                                        url: "{{phone_video if phone_video else phone_attachment }}"
+                                        content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in phone_video else 'mpeg4' if 'mp4' in phone_video else 'jpeg' if 'jpg' in phone_attachment else 'gif' }}"
                                       push:
                                         sound:
                                           name: "{{sound}}"
@@ -3026,8 +3180,8 @@ actions:
                                         subtitle: "{{subtitle}}"
                                         url: "{{tap_action_ios}}"
                                         attachment:
-                                          url: "{{video if video else attachment }}"
-                                          content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mpeg4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
+                                          url: "{{phone_video if phone_video else phone_attachment }}"
+                                          content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in phone_video else 'mpeg4' if 'mp4' in phone_video else 'jpeg' if 'jpg' in phone_attachment else 'gif' }}"
                                         push:
                                           sound:
                                             name: "{{sound}}"
@@ -3062,8 +3216,8 @@ actions:
                                     color: "{{color}}"
                                     # Android Specific
                                     subject: "{{subtitle}}"
-                                    image: "{{attachment}}"
-                                    video: "{{video}}"
+                                    image: "{{phone_attachment}}"
+                                    video: "{{phone_video}}"
                                     clickAction: "{{tap_action_android}}"
                                     ttl: 0
                                     priority: high
@@ -3081,8 +3235,8 @@ actions:
                                     # iOS Specific
                                     url: "{{tap_action_ios}}"
                                     attachment:
-                                      url: "{{video if video else attachment }}"
-                                      content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mpeg4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
+                                      url: "{{phone_video if phone_video else phone_attachment }}"
+                                      content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in phone_video else 'mpeg4' if 'mp4' in phone_video else 'jpeg' if 'jpg' in phone_attachment else 'gif' }}"
                                     push:
                                       sound:
                                         name: "{{sound}}"
@@ -3484,6 +3638,23 @@ actions:
                                           {{ title ~ ('\n' ~ message if message else '')
                                              ~ ('\nView clip: ' ~ tap_action_normalized if tap_action_normalized else '')
                                              ~ ('\nMedia: ' ~ attachment if attachment and attachment != 'none' else '') }}
+                            - variables:
+                                phone_attachment: "{{ attachment }}"
+                                phone_video: "{{ video | default('') }}"
+                            - alias: "Choose phone attachment for current connection"
+                              if: !input phone_rich_media_condition
+                              then:
+                                - variables:
+                                    phone_attachment: "{{ attachment }}"
+                                    phone_video: "{{ video | default('') }}"
+                              else:
+                                - if: "{{ not tv and not telegram and ('.gif' in attachment | lower or '.mp4' in attachment | lower or '.m3u8' in attachment | lower or video | default('') | length > 0) }}"
+                                  then:
+                                    - variables:
+                                        phone_attachment: !input phone_media_fallback
+                                        phone_video: ""
+                            - variables:
+                                phone_attachment_content_type: "{{ 'mpeg4' if '.mp4' in phone_attachment else 'jpeg' if '.jpg' in phone_attachment or '.jpeg' in phone_attachment else 'png' if '.png' in phone_attachment else 'gif' }}"
                             - if: "{{ primary_notify_enabled and (event['type'] != 'end' or final_update) }}"
                               then:
                                 - choose:
@@ -3611,8 +3782,8 @@ actions:
                                             color: "{{color}}"
                                             # Android Specific
                                             subject: "{{subtitle}}"
-                                            image: "{{attachment}}"
-                                            video: "{{video}}"
+                                            image: "{{phone_attachment}}"
+                                            video: "{{phone_video}}"
                                             clickAction: "{{tap_action_android}}"
                                             ttl: 0
                                             priority: high
@@ -3625,8 +3796,8 @@ actions:
                                             subtitle: "{{subtitle}}"
                                             url: "{{tap_action_single}}"
                                             attachment:
-                                              url: "{{video if video else attachment }}"
-                                              content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mpeg4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
+                                              url: "{{phone_video if phone_video else phone_attachment }}"
+                                              content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in phone_video else 'mpeg4' if 'mp4' in phone_video else 'jpeg' if 'jpg' in phone_attachment else 'gif' }}"
                                             push:
                                               sound:
                                                 name: "{{ iif(silent_update, 'none', sound) }}"
@@ -3673,7 +3844,7 @@ actions:
                                               # Android/Fire TV
                                               image:
                                                 url: "{{base_url}}/api/frigate{{client_id}}/notifications/{{id}}/snapshot.jpg"
-                                              video: "{{video}}"
+                                              video: "{{phone_video}}"
                                               fontsize: "{{tv_size}}"
                                               position: "{{tv_position}}"
                                               duration: "{{tv_duration}}"
@@ -3684,8 +3855,8 @@ actions:
                                               subtitle: "{{subtitle}}"
                                               url: "{{tap_action_ios}}"
                                               attachment:
-                                                url: "{{video if video else attachment }}"
-                                                content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mpeg4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
+                                                url: "{{phone_video if phone_video else phone_attachment }}"
+                                                content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in phone_video else 'mpeg4' if 'mp4' in phone_video else 'jpeg' if 'jpg' in phone_attachment else 'gif' }}"
                                               push:
                                                 sound:
                                                   name: "{{ iif(silent_update, 'none', sound) }}"
@@ -3720,8 +3891,8 @@ actions:
                                           color: "{{color}}"
                                           # Android Specific
                                           subject: "{{subtitle}}"
-                                          image: "{{attachment}}"
-                                          video: "{{video}}"
+                                          image: "{{phone_attachment}}"
+                                          video: "{{phone_video}}"
                                           clickAction: "{{tap_action_android}}"
                                           ttl: 0
                                           priority: high
@@ -3740,8 +3911,8 @@ actions:
                                           subtitle: "{{subtitle}}"
                                           url: "{{tap_action_ios}}"
                                           attachment:
-                                            url: "{{video if video else attachment }}"
-                                            content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in video else 'mpeg4' if 'mp4' in video else 'jpeg' if 'jpg' in attachment else 'gif' }}"
+                                            url: "{{phone_video if phone_video else phone_attachment }}"
+                                            content-type: "{{ 'application/vnd.apple.mpegurl' if 'm3u8' in phone_video else 'mpeg4' if 'mp4' in phone_video else 'jpeg' if 'jpg' in phone_attachment else 'gif' }}"
                                           push:
                                             sound:
                                               name: "{{ iif(silent_update, 'none', sound) }}"

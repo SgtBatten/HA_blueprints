@@ -32,8 +32,9 @@ class GuardTests(unittest.TestCase):
  def test_phone_rechecked_after_service(self):
   seq=self.sprinter['sequence']
   i=next(i for i,x in enumerate(seq) if x.get('if')=='{{ primary_notify_enabled and genai_sprinter }}')
-  self.assertIn('wait_for_trigger',seq[i-2])
-  self.assertIn('stop',seq[i-1]['then'][0])
+  guard=max(j for j in range(i) if seq[j].get('alias') == 'Skip Sprinter if Final already committed for this object')
+  self.assertIn('stop',seq[guard+1]['then'][0])
+  self.assertFalse(any('delay' in step for step in seq[guard+2:i]))
  def test_cleanup_scoped_and_bounded(self):
   branch=next(x for x in self.branches if x.get('alias')=='Expire finalized object markers')
   loop=branch['sequence'][0]['repeat']
