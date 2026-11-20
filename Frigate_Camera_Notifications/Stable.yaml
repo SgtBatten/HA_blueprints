@@ -1131,6 +1131,7 @@ actions:
               detections: "{{ event['after']['data']['detections'] }}"
               review_id: "{{ event['after']['id'] }}"
               id: "{{ detections[0] }}"
+              label: "{{ (objects | map('regex_replace', '-verified$', '') | first | default('')) | title }}"
               metadata: "{{ event['after']['data']['metadata'] | default({}) }}"
               genai_title: "{{ metadata.title | default('') }}"
               genai_shortSummary: "{{ metadata.shortSummary | default('') }}"
@@ -1138,6 +1139,7 @@ actions:
               title: !input genai_notification_title
               message: "{{ genai_shortSummary }}"
               subtitle: !input subtitle
+              icon: !input icon
               group: !input group
               tag: "{{ id }}"
               channel: !input channel
@@ -1213,6 +1215,7 @@ actions:
                         data:
                           tag: "{{ tag }}"
                           group: "{{ group }}"
+                          color: "{{color}}"
                           # Android Specific
                           subject: "{{subtitle}}"
                           image: "{{attachment}}"
@@ -1220,6 +1223,7 @@ actions:
                           clickAction: "{{tap_action}}"
                           ttl: 0
                           priority: high
+                          notification_icon: "{{icon}}"
                           sticky: "{{sticky}}"
                           channel: "{{'alarm_stream' if critical else channel}}"
                           car_ui: "{{android_auto}}"
@@ -1259,11 +1263,13 @@ actions:
                           data:
                             tag: "{{ tag }}"
                             group: "{{ group }}"
+                            color: "{{color}}"
                             # Android Specific
                             subject: "{{subtitle}}"
                             clickAction: "{{tap_action}}"
                             ttl: 0
                             priority: high
+                            notification_icon: "{{icon}}"
                             sticky: "{{sticky}}"
                             channel: "{{'alarm_stream' if critical else channel}}"
                             car_ui: "{{android_auto}}"
@@ -1312,6 +1318,7 @@ actions:
                       data:
                         tag: "{{ tag }}"
                         group: "{{ group }}"
+                        color: "{{color}}"
                         # Android Specific
                         subject: "{{subtitle}}"
                         image: "{{attachment}}"
@@ -1319,6 +1326,7 @@ actions:
                         clickAction: "{{tap_action}}"
                         ttl: 0
                         priority: high
+                        notification_icon: "{{icon}}"
                         sticky: "{{sticky}}"
                         channel: "{{'alarm_stream' if critical else channel}}"
                         car_ui: "{{android_auto}}"
@@ -1372,18 +1380,12 @@ actions:
                   {% set data = namespace(labels=[]) %} 
                   {% if labels|length %}
                     {% for obj in objects|select('in', labels) %}
-                      {% if "-verified" in obj %}
-                      {% else %}
-                        {% set data.labels = data.labels + [obj] %}
-                      {% endif %}
+                        {% set data.labels = data.labels + [obj | regex_replace('-verified$', '')] %}
                     {% endfor %} {% set data.labels = data.labels + sub_labels %} 
                     {% set names = namespace(list=[]) %}{% for l in data.labels | unique | list | sort %}{% set names.list = names.list + [label_names.get(l, l | title)] %}{% endfor %}{{ names.list | join(", ") }}
                   {% else %}
                     {% for obj in objects %}
-                      {% if "-verified" in obj %}
-                      {% else %}
-                        {% set data.labels = data.labels + [obj] %}
-                      {% endif %}
+                        {% set data.labels = data.labels + [obj | regex_replace('-verified$', '')] %}
                     {% endfor %} {% set data.labels = data.labels + sub_labels %} 
                     {% set names = namespace(list=[]) %}{% for l in data.labels | unique | list | sort %}{% set names.list = names.list + [label_names.get(l, l | title)] %}{% endfor %}{{ names.list | join(", ") }}
                   {% endif %}
@@ -1865,18 +1867,12 @@ actions:
                         {% set data = namespace(labels=[]) %} 
                         {% if labels|length %}
                           {% for obj in objects|select('in', labels) %}
-                            {% if "-verified" in obj %}
-                            {% else %}
-                              {% set data.labels = data.labels + [obj] %}
-                            {% endif %}
+                              {% set data.labels = data.labels + [obj | regex_replace('-verified$', '')] %}
                           {% endfor %} {% set data.labels = data.labels + sub_labels %} 
                           {% set names = namespace(list=[]) %}{% for l in data.labels | unique | list | sort %}{% set names.list = names.list + [label_names.get(l, l | title)] %}{% endfor %}{{ names.list | join(", ") }}
                         {% else %}
                           {% for obj in objects %}
-                            {% if "-verified" in obj %}
-                            {% else %}
-                              {% set data.labels = data.labels + [obj] %}
-                            {% endif %}
+                              {% set data.labels = data.labels + [obj | regex_replace('-verified$', '')] %}
                           {% endfor %} {% set data.labels = data.labels + sub_labels %} 
                           {% set names = namespace(list=[]) %}{% for l in data.labels | unique | list | sort %}{% set names.list = names.list + [label_names.get(l, l | title)] %}{% endfor %}{{ names.list | join(", ") }}
                         {% endif %}
